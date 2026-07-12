@@ -1,15 +1,15 @@
-import path from "node:path";
+﻿import path from "node:path";
 import fs from "node:fs/promises";
 import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
-import { getConsentFieldMappingByFormId } from "@/lib/server/consent-field-mappings";
+import { renderImcApprovedDoctorDraftPdf } from "@/lib/server/imc-approved-pdf-template-engine";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type RouteContext = {
-  params: Promise<{ formId: string }> | { formId: string };
+  params: Promise<{ formId: string }>;
 };
 
 const ALLOWED_PUBLIC_PREFIXES = [
@@ -509,6 +509,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const approvedPdfUrl = readString(body.approvedPdfUrl) || readString(body.pdfUrl);
   const values = readRecord(body.doctorCompletionValues) || readRecord(body.values) || {};
+  const physicianSignatureDataUrl =
+    readString(body.physicianSignatureDataUrl);
 
   if (!approvedPdfUrl) {
     return NextResponse.json({ ok: false, error: "approvedPdfUrl is required" }, { status: 400 });
@@ -519,40 +521,34 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ ok: false, error: "Approved PDF source could not be loaded for draft overlay" }, { status: 404 });
   }
 
-  const mapping = getConsentFieldMappingByFormId(formId);
-  if (!mapping) {
-    return NextResponse.json({ ok: false, error: "Consent field mapping not found for draft overlay" }, { status: 404 });
-  }
+  const rendered =
+    await renderImcApprovedDoctorDraftPdf({
+      pdfBytes,
+      formId,
+      doctorCompletionValues:
+        values,
+      physicianSignatureDataUrl,
+    });
 
-  const pdfDoc = await PDFDocument.load(pdfBytes);
-  const coordinateDrawnFields = await drawDoctorValuesFromCoordinates({
-    pdfDoc,
-    mapping: mapping as unknown as Record<string, unknown>,
-    values,
-  });
-  const runtimeCoordinateDrawnFields = coordinateDrawnFields > 0 ? 0 : await drawAdenotonsillectomyRuntimeCoordinates({
-    pdfDoc,
-    formId,
-    values,
-  });
-  const coordinateTotalDrawnFields = coordinateDrawnFields + runtimeCoordinateDrawnFields;
-  const drawnFields = coordinateTotalDrawnFields > 0 ? 0 : await drawDoctorValues({ pdfDoc, mapping, values });
-  const totalDrawnFields = drawnFields + coordinateTotalDrawnFields;
-  const fallbackDrawnFields = totalDrawnFields > 0 ? 0 : await drawFallbackDoctorValues({ pdfDoc, values });
-  const output = await pdfDoc.save();
-
-  return new NextResponse(Buffer.from(output), {
-    status: 200,
-    headers: {
-      "Content-Type": "application/pdf",
-      "Cache-Control": "no-store",
-      "X-WathiqCare-Draft-Overlay": "true",
-      "X-WathiqCare-Drawn-Fields": String(drawnFields),
-      "X-WathiqCare-Coordinate-Drawn-Fields": String(coordinateDrawnFields),
-      "X-WathiqCare-Runtime-Coordinate-Drawn-Fields": String(runtimeCoordinateDrawnFields),
-      "X-WathiqCare-Total-Drawn-Fields": String(totalDrawnFields),
-      "X-WathiqCare-Fallback-Drawn-Fields": String(fallbackDrawnFields),
-      "Content-Disposition": "inline; filename=\"" + formId + "-doctor-draft-preview.pdf\"",
+  return new NextResponse(
+    rendered.bytes,
+    {
+      status: 200,
+      headers: {
+        "Content-Type":
+          "application/pdf",
+        "Cache-Control":
+          "no-store",
+        "X-WathiqCare-Draft-Overlay":
+          "true",
+        "X-WathiqCare-Pdf-Engine":
+          rendered.renderingEngine,
+        "X-WathiqCare-Physician-Signature-Drawn":
+          String(
+            rendered
+              .physicianSignatureDrawn,
+          ),
+      },
     },
-  });
+  );
 }

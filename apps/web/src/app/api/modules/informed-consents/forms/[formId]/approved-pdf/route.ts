@@ -1,4 +1,4 @@
-import fs from "fs";
+﻿import fs from "fs";
 import path from "path";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
@@ -14,7 +14,7 @@ const ALLOWED_PUBLIC_PREFIXES = [
 ];
 
 type RouteContext = {
-  params: Promise<{ formId: string }> | { formId: string };
+  params: Promise<{ formId: string }>;
 };
 
 async function resolveParams(params: RouteContext["params"]) {

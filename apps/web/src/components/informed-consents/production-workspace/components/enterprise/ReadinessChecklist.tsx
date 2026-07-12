@@ -64,6 +64,39 @@ const CHECK_ITEMS_AR = [
 
 export function ReadinessChecklist({ readiness }: { readiness: Readiness }) {
   const { lang } = useI18n();
+  const doctorReport =
+    readiness.doctorReadinessReport;
+
+  const goToNextDoctorField = () => {
+    const field =
+      doctorReport.nextRequiredField;
+
+    if (!field) return;
+
+    const target =
+      document.getElementById(
+        "doctor-field-" + field.key,
+      );
+
+    target?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+
+    window.setTimeout(() => {
+      const focusable =
+        target?.querySelector<
+          HTMLTextAreaElement
+          | HTMLSelectElement
+          | HTMLInputElement
+          | HTMLButtonElement
+        >(
+          "textarea, select, input, button",
+        );
+
+      focusable?.focus();
+    }, 450);
+  };
   const fieldMapping = readiness.fieldMappingReadiness;
   const doctorFields = fieldMapping?.requiredDoctorFields ?? [];
   const anesthesiaFields = fieldMapping?.requiredAnesthesiaFields ?? [];
@@ -137,19 +170,68 @@ export function ReadinessChecklist({ readiness }: { readiness: Readiness }) {
           <div className="mt-4 grid gap-3">
             <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Physician-required fields</p>
-                <WorkspaceBadge tone={readiness.doctorCompletionReady ? "green" : "gold"}>
-                  {readiness.doctorCompletionReady ? "OK" : doctorFields.length + " pending"}
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  {lang === "ar"
+                    ? "?????? ???? ??????"
+                    : "Physician readiness"}
+                </p>
+                <WorkspaceBadge tone={doctorReport.ready ? "green" : "gold"}>
+                  {doctorReport.completedCount}
+                  {" / "}
+                  {doctorReport.totalCount}
                 </WorkspaceBadge>
               </div>
-              {doctorFields.length > 0 ? (
-                <ul className="mt-2 space-y-1 text-xs leading-5 text-slate-600">
-                  {doctorFields.slice(0, 6).map((field) => (
-                    <li key={field.key}>- {field.section ? field.section + ". " : ""}{field.labelEn}</li>
-                  ))}
-                </ul>
+
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
+                <div
+                  className="h-full rounded-full bg-emerald-500 transition-all"
+                  style={{
+                    width:
+                      doctorReport.progressPercentage
+                      + "%",
+                  }}
+                />
+              </div>
+
+              {doctorReport.missingFields.length > 0 ? (
+                <div className="mt-3 space-y-3">
+                  <div>
+                    <p className="text-xs font-semibold text-amber-800">
+                      {lang === "ar"
+                        ? "?????? ????????:"
+                        : "Missing physician fields:"}
+                    </p>
+                    <ul className="mt-2 space-y-1 text-xs leading-5 text-slate-700">
+                      {doctorReport.missingFields.map(
+                        (field) => (
+                          <li key={field.key}>
+                            ?{" "}
+                            {field.section
+                              ? field.section + " ? "
+                              : ""}
+                            {field.labelEn}
+                          </li>
+                        ),
+                      )}
+                    </ul>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={goToNextDoctorField}
+                    className="inline-flex h-9 items-center justify-center rounded-xl bg-blue-700 px-3 text-xs font-semibold text-white transition hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {lang === "ar"
+                      ? "???????? ??? ????? ??????"
+                      : "Go to next required field"}
+                  </button>
+                </div>
               ) : (
-                <p className="mt-2 text-xs leading-5 text-slate-500">No physician-required fields are pending in the current mapping snapshot.</p>
+                <p className="mt-3 text-xs leading-5 text-emerald-700">
+                  {lang === "ar"
+                    ? "?? ??????? ???? ?????? ???????? ??????."
+                    : "All physician-required fields are complete."}
+                </p>
               )}
             </div>
 

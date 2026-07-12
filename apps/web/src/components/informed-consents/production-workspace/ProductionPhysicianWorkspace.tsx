@@ -68,6 +68,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     setRecipientEmail,
     setPreviewReviewed,
     setDoctorCompletionValue,
+    setPhysicianSignatureDataUrl,
     approveDraft,
     send,
     sendDryRun,
@@ -106,8 +107,13 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     const approvedPdfUrl = resolveAssemblyApprovedPdfUrl(state.assembly);
     const values = state.doctorCompletionValues || {};
     const hasDoctorValues = Object.values(values).some((value) => String(value || "").trim().length > 0);
+    const hasPhysicianSignature =
+      Boolean(
+        state.physicianSignatureDataUrl
+          .trim(),
+      );
 
-    if (!formId || !approvedPdfUrl || !hasDoctorValues) {
+    if (!formId || !approvedPdfUrl || (!hasDoctorValues && !hasPhysicianSignature)) {
       setDraftPdfLoading(false);
       setDraftPdfError(undefined);
       setDraftPdfUrl((previous) => {
@@ -127,6 +133,8 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
           formId,
           approvedPdfUrl,
           doctorCompletionValues: values,
+          physicianSignatureDataUrl:
+            state.physicianSignatureDataUrl,
         },
         controller.signal,
       )
@@ -155,7 +163,12 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [state.assembly, state.fieldMappingReadiness?.formId, state.doctorCompletionValues]);
+  }, [
+    state.assembly,
+    state.fieldMappingReadiness?.formId,
+    state.doctorCompletionValues,
+    state.physicianSignatureDataUrl,
+  ]);
 
   const sendReason = (() => {
     if (sendLoading) return "Sending…";
@@ -225,7 +238,9 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
             <DoctorCompletionPanel
               mapping={state.fieldMappingReadiness}
               values={state.doctorCompletionValues}
+              physicianSignatureDataUrl={state.physicianSignatureDataUrl}
               onValueChange={setDoctorCompletionValue}
+              onPhysicianSignatureChange={setPhysicianSignatureDataUrl}
               disabled={sendLoading}
             />
             <ReadinessChecklist readiness={readiness} />

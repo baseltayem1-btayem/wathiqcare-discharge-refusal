@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { isAssemblyApprovedPdfSourceVerified } from "../utils/approvedPdfSource";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -18,6 +18,7 @@ import {
   resolveContentMapping,
   dryRunSendSecureSigningLink,
   fetchTimeline,
+  capturePhysicianSignatureForDocument,
   createConsentDocument,
   sendSecureSigningLinkForDocument,
   checkSendEligibility,
@@ -25,6 +26,7 @@ import {
   fetchConsentFieldMappingReadiness,
 } from "../lib/api";
 import type { ConsentFieldMappingReadiness } from "../lib/api";
+import { analyzeDoctorReadiness, type DoctorReadinessReport } from "../doctorReadiness";
 
 export type WorkspaceStep = "patient" | "encounter" | "procedure" | "review" | "sent";
 
@@ -48,6 +50,7 @@ export type ProductionWorkspaceState = {
   sendEligibility?: { pilotEnabled: boolean; allowlisted: boolean; reason: string };
   fieldMappingReadiness?: ConsentFieldMappingReadiness;
   doctorCompletionValues: Record<string, string>;
+  physicianSignatureDataUrl: string;
   sentAt?: string;
   signingResult?: SecureSigningResult;
   dryRunSuccess?: boolean;
@@ -70,6 +73,7 @@ export type Readiness = {
   draftApproved: boolean;
   fieldMappingVerified: boolean;
   doctorCompletionReady: boolean;
+  doctorReadinessReport: DoctorReadinessReport;
   anesthesiaMappingReady: boolean;
   patientSignatureMapped: boolean;
   fieldMappingReadiness?: ConsentFieldMappingReadiness;
@@ -108,6 +112,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     recipientMobile: "",
     recipientEmail: "",
     doctorCompletionValues: {},
+    physicianSignatureDataUrl: "",
     timeline: [],
     acknowledgedBlockers: new Set(),
     acknowledgedAlerts: new Set(),
@@ -222,6 +227,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         assembly: undefined,
         fieldMappingReadiness: undefined,
         doctorCompletionValues: {},
+        physicianSignatureDataUrl: "",
         selectedProcedureId: undefined,
         selectedProcedureTitle: undefined,
         selectedProcedure: undefined,
@@ -249,6 +255,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       assembly: undefined,
         fieldMappingReadiness: undefined,
         doctorCompletionValues: {},
+        physicianSignatureDataUrl: "",
       selectedProcedureId: undefined,
       selectedProcedureTitle: undefined,
       selectedProcedure: undefined,
@@ -275,6 +282,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       assembly: undefined,
         fieldMappingReadiness: undefined,
         doctorCompletionValues: {},
+        physicianSignatureDataUrl: "",
       draftApproved: false,
       previewReviewed: false,
     }));
@@ -359,6 +367,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         assembly: result.clinicalKnowledgeAssembly,
         fieldMappingReadiness,
         doctorCompletionValues: {},
+        physicianSignatureDataUrl: "",
         step: "review",
         draftApproved: false,
         previewReviewed: false,
@@ -420,6 +429,18 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     }));
   }, []);
 
+  const setPhysicianSignatureDataUrl = useCallback(
+    (physicianSignatureDataUrl: string) => {
+      setState((current) => ({
+        ...current,
+        physicianSignatureDataUrl,
+        draftApproved: false,
+        previewReviewed: false,
+      }));
+    },
+    [],
+  );
+
   const validateSendPrerequisites = useCallback((): string | undefined => {
     if (!state.patient) return "Select a patient first.";
     if (!state.encounter) return "Select an encounter first.";
@@ -429,13 +450,20 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     if (!state.fieldMappingReadiness) return "Consent field mapping readiness must be loaded before sending.";
     if (!state.fieldMappingReadiness.hasMapping) return "Consent field mapping is required before sending.";
 
-    const requiredDoctorFields = state.fieldMappingReadiness.requiredDoctorFields ?? [];
-    const isDoctorFieldComplete = (field: { key: string; type: string }) => {
-      const value = state.doctorCompletionValues[field.key];
-      if (field.type === "CHECKBOX") return value === "true" || value === "false";
-      return Boolean(value?.trim());
-    };
-    const missingDoctorFields = requiredDoctorFields.filter((field) => !isDoctorFieldComplete(field));
+    const requiredDoctorFields =
+      state.fieldMappingReadiness.requiredDoctorFields ?? [];
+
+    const doctorReadinessReport =
+      analyzeDoctorReadiness({
+        fields: requiredDoctorFields,
+        values:
+          state.doctorCompletionValues,
+        physicianSignatureDataUrl:
+          state.physicianSignatureDataUrl,
+      });
+
+    const missingDoctorFields =
+      doctorReadinessReport.missingFields;
     if (missingDoctorFields.length > 0) {
       return "Complete required physician field: " + missingDoctorFields[0].labelEn + ".";
     }
@@ -527,6 +555,12 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         },
       });
 
+      await capturePhysicianSignatureForDocument({
+        documentId: document.id,
+
+        signatureDataUrl: state.physicianSignatureDataUrl,
+      });
+
       const result = await sendSecureSigningLinkForDocument({
         documentId: document.id,
         caseId: state.patient.caseId || state.encounter.id,
@@ -603,6 +637,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       recipientMobile: "",
       recipientEmail: "",
       doctorCompletionValues: {},
+      physicianSignatureDataUrl: "",
       dryRunSuccess: false,
       dryRunMessage: undefined,
       timeline: [],
@@ -632,13 +667,23 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     const fieldMappingVerified = Boolean(
       fieldMappingReadiness?.hasMapping && fieldMappingReadiness.verificationStatus === "VERIFIED",
     );
-    const requiredDoctorFields = fieldMappingReadiness?.requiredDoctorFields ?? [];
-    const isDoctorFieldComplete = (field: { key: string; type: string }) => {
-      const value = state.doctorCompletionValues[field.key];
-      if (field.type === "CHECKBOX") return value === "true" || value === "false";
-      return Boolean(value?.trim());
-    };
-    const doctorCompletionReady = Boolean(fieldMappingReadiness && requiredDoctorFields.every((field) => isDoctorFieldComplete(field)));
+    const requiredDoctorFields =
+      fieldMappingReadiness?.requiredDoctorFields ?? [];
+
+    const doctorReadinessReport =
+      analyzeDoctorReadiness({
+        fields: requiredDoctorFields,
+        values:
+          state.doctorCompletionValues,
+        physicianSignatureDataUrl:
+          state.physicianSignatureDataUrl,
+      });
+
+    const doctorCompletionReady =
+      Boolean(
+        fieldMappingReadiness
+        && doctorReadinessReport.ready,
+      );
     const requiredAnesthesiaFields = fieldMappingReadiness?.requiredAnesthesiaFields ?? [];
     const anesthesiaDecision = state.doctorCompletionValues.anesthesia_applies;
     const anesthesiaMappingReady = Boolean(
@@ -659,7 +704,18 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       if (!fieldMappingReadiness.hasMapping) missingItems.push("Consent field mapping exists");
       if (!fieldMappingVerified) missingItems.push("Consent field mapping verified");
       if (!patientSignatureMapped) missingItems.push("Patient signature field mapped");
-      if (!doctorCompletionReady) missingItems.push("Doctor completion fields completed");
+      if (!doctorCompletionReady) {
+        doctorReadinessReport.missingFields.forEach(
+          (field) =>
+            missingItems.push(
+              "Physician field: "
+              + (field.section
+                ? field.section + " · "
+                : "")
+              + field.labelEn,
+            ),
+        );
+      }
       if (!anesthesiaMappingReady) missingItems.push("Anesthesia workflow reviewed when applicable");
     }
     if (!educationReady) missingItems.push("Education material loaded or confirmed unavailable");
@@ -702,6 +758,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       draftApproved,
       fieldMappingVerified,
       doctorCompletionReady,
+      doctorReadinessReport,
       anesthesiaMappingReady,
       patientSignatureMapped,
       fieldMappingReadiness,
@@ -788,6 +845,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     setReviewMode,
     setPreviewReviewed,
     setDoctorCompletionValue,
+    setPhysicianSignatureDataUrl,
     approveDraft,
     acknowledgeBlocker,
     acknowledgeAlert,

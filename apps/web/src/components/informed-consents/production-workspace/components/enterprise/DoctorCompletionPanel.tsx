@@ -1,64 +1,42 @@
-"use client";
+﻿"use client";
 
 import { AlertTriangle, ClipboardSignature, ShieldCheck } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
+import TabletSignaturePad from "@/components/forms/TabletSignaturePad";
 import type { ConsentFieldMappingReadiness } from "../../lib/api";
+import { analyzeDoctorReadiness } from "../../doctorReadiness";
 import { WorkspaceBadge, WorkspaceCard, WorkspaceCardHeader } from "../WorkspaceAtoms";
-
-type DoctorCompletionField = {
-  key: string;
-  labelEn?: string;
-  labelAr?: string;
-  section?: string;
-  type?: string;
-  role?: string;
-  required?: boolean;
-};
-
-function deriveRequiredDoctorFields(mapping?: ConsentFieldMappingReadiness): DoctorCompletionField[] {
-  const explicitFields = mapping?.requiredDoctorFields ?? [];
-  if (explicitFields.length > 0) return explicitFields as DoctorCompletionField[];
-
-  const nestedFields = Array.isArray(mapping?.mapping?.fields) ? mapping.mapping.fields : [];
-
-  return nestedFields
-    .filter((field): field is DoctorCompletionField => {
-      if (!field || typeof field !== 'object') return false;
-      const candidate = field as DoctorCompletionField;
-      return Boolean(
-        candidate.key &&
-        candidate.required === true &&
-        candidate.role === 'PHYSICIAN_REQUIRED'
-      );
-    })
-    .map((field) => ({
-      key: field.key,
-      labelEn: field.labelEn,
-      labelAr: field.labelAr,
-      section: field.section,
-      type: field.type,
-      role: field.role,
-      required: field.required,
-    }));
-}
 
 interface DoctorCompletionPanelProps {
   mapping?: ConsentFieldMappingReadiness;
   values: Record<string, string>;
+  physicianSignatureDataUrl: string;
   onValueChange: (key: string, value: string) => void;
+  onPhysicianSignatureChange: (signatureDataUrl: string) => void;
   disabled?: boolean;
 }
 
-function isFieldComplete(type: string, value: string | undefined): boolean {
-  if (type === "CHECKBOX") return value === "true" || value === "false";
-  return Boolean(value?.trim());
-}
-
-export function DoctorCompletionPanel({ mapping, values, onValueChange, disabled }: DoctorCompletionPanelProps) {
+export function DoctorCompletionPanel({
+  mapping,
+  values,
+  physicianSignatureDataUrl,
+  onValueChange,
+  onPhysicianSignatureChange,
+  disabled,
+}: DoctorCompletionPanelProps) {
   const { lang } = useI18n();
   const doctorFields = mapping?.requiredDoctorFields ?? [];
   const anesthesiaFields = mapping?.requiredAnesthesiaFields ?? [];
-  const completedDoctorFields = doctorFields.filter((field) => isFieldComplete(field.type, values[field.key])).length;
+
+  const doctorReadinessReport =
+    analyzeDoctorReadiness({
+      fields: doctorFields,
+      values,
+      physicianSignatureDataUrl,
+    });
+
+  const completedDoctorFields =
+    doctorReadinessReport.completedCount;
   const anesthesiaDecision = values.anesthesia_applies;
   const anesthesiaApplies = anesthesiaDecision === "true";
   const anesthesiaNotApplicable = anesthesiaDecision === "false";
@@ -94,7 +72,7 @@ export function DoctorCompletionPanel({ mapping, values, onValueChange, disabled
             </WorkspaceBadge>
           </div>
           <p className="text-xs leading-5 text-slate-500">
-            These values will be preserved in the consent document metadata and used later by the PDF overlay engine.
+            Clinical values are preserved in the document metadata. The treating physician signature is stored separately as authenticated signature evidence.
           </p>
         </div>
 
@@ -102,23 +80,41 @@ export function DoctorCompletionPanel({ mapping, values, onValueChange, disabled
           <div className="space-y-3">
             {doctorFields.map((field) => {
               const value = values[field.key] ?? "";
-              const complete = isFieldComplete(field.type, value);
+              const complete =
+                doctorReadinessReport.fields
+                  .find(
+                    (candidate) =>
+                      candidate.key === field.key,
+                  )
+                  ?.complete
+                ?? false;
 
               return (
-                <div key={field.key} className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+                <div
+                  key={field.key}
+                  id={"doctor-field-" + field.key}
+                  data-doctor-field={field.key}
+                  className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white px-4 py-4"
+                >
                   <div className="mb-2 flex items-start justify-between gap-3">
                     <div>
                       <label className="text-sm font-semibold text-slate-900" htmlFor={field.key}>
                         {field.labelEn}
                       </label>
                       <p className="mt-1 text-xs text-slate-500">
-                        {field.section ? "Section " + field.section + " · " : ""}{field.type}
+                        {field.section ? "Section " + field.section + " Â· " : ""}{field.type}
                       </p>
                     </div>
                     <WorkspaceBadge tone={complete ? "green" : "gold"}>{complete ? "Complete" : "Required"}</WorkspaceBadge>
                   </div>
 
-                  {field.type === "CHECKBOX" ? (
+                  {field.type === "SIGNATURE" ? (
+                    <TabletSignaturePad
+                      value={physicianSignatureDataUrl}
+                      onChange={onPhysicianSignatureChange}
+                      disabled={disabled}
+                    />
+                  ) : field.type === "CHECKBOX" ? (
                     <select
                       id={field.key}
                       value={value}

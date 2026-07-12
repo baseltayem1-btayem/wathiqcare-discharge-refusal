@@ -335,6 +335,71 @@ export async function createConsentDocument(args: {
   };
 }
 
+export async function capturePhysicianSignatureForDocument(args: {
+  documentId: string;
+  signatureDataUrl: string;
+}): Promise<{
+  ok: true;
+  alreadyCaptured: boolean;
+  signatureId: string;
+  status: string;
+}> {
+  const response = await fetch(
+    `/api/modules/informed-consents/documents/${encodeURIComponent(args.documentId)}/physician-signature`,
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+
+      body: JSON.stringify({
+        signatureDataUrl:
+          args.signatureDataUrl,
+      }),
+    },
+  );
+
+  const payload =
+    (await response
+      .json()
+      .catch(() => ({}))) as Record<string, unknown>;
+
+  if (
+    !response.ok
+    || payload.ok !== true
+  ) {
+    throw new Error(
+      String(
+        payload.error
+        || "Failed to capture the treating physician signature.",
+      ),
+    );
+  }
+
+  return {
+    ok: true,
+
+    alreadyCaptured:
+      Boolean(
+        payload.alreadyCaptured,
+      ),
+
+    signatureId:
+      String(
+        payload.signatureId
+        || "",
+      ),
+
+    status:
+      String(
+        payload.status
+        || "",
+      ),
+  };
+}
+
 export async function sendSecureSigningLinkForDocument(args: {
   documentId: string;
   caseId: string;
@@ -436,6 +501,7 @@ export async function createDoctorCompletedDraftPdfPreview(
     formId: string;
     approvedPdfUrl: string;
     doctorCompletionValues: Record<string, string>;
+    physicianSignatureDataUrl: string;
   },
   signal?: AbortSignal,
 ): Promise<string> {
@@ -449,6 +515,8 @@ export async function createDoctorCompletedDraftPdfPreview(
       body: JSON.stringify({
         approvedPdfUrl: args.approvedPdfUrl,
         doctorCompletionValues: args.doctorCompletionValues,
+        physicianSignatureDataUrl:
+          args.physicianSignatureDataUrl,
       }),
     },
   );

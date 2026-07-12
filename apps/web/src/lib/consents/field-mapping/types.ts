@@ -46,6 +46,7 @@ export type ConsentFieldDefinition = {
   required: boolean;
   requiredWhen?: string;
   coordinates?: ConsentFieldCoordinates;
+  arabicCoordinates?: ConsentFieldCoordinates;
   maxLength?: number;
   multiline?: boolean;
   sourcePath?: string;

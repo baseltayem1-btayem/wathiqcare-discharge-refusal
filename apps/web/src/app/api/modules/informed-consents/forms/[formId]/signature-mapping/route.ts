@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type RouteContext = {
-  params: Promise<{ formId: string }> | { formId: string };
+  params: Promise<{ formId: string }>;
 };
 
 const ALLOWED_FIELD_TYPES = new Set([
