@@ -265,6 +265,21 @@ enum ConsentEvidenceCopyType {
   LEGAL_ARCHIVE_COPY
 }
 
+enum PatientMessageChannel {
+  SMS
+  EMAIL
+}
+
+enum PatientMessageStatus {
+  PENDING
+  CLAIMED
+  ACCEPTED
+  SENT
+  DELIVERED
+  FAILED
+  PERMANENT_FAILURE
+}
+
 enum ProcedureEducationStatus {
   DRAFT
   ACTIVE
@@ -1767,68 +1782,70 @@ model ConsentAIPrompt {
 }
 
 model ConsentDocument {
-  id                  String                @id @default(uuid())
-  tenantId            String                @map("tenant_id")
-  caseId              String                @map("case_id")
-  templateId          String                @map("template_id")
-  templateVersionId   String                @map("template_version_id")
-  consentReference    String                @map("consent_reference")
-  status              ConsentDocumentStatus @default(DRAFT)
-  language            String                @default("bilingual")
-  patientName         String                @map("patient_name")
-  mrn                 String?
-  dob                 String?
-  gender              String?
-  physicianName       String                @map("physician_name")
-  physicianLicense    String?               @map("physician_license")
-  physicianSpecialty  String                @map("physician_specialty")
-  department          String?
-  diagnosis           String?
-  plannedProcedure    String?               @map("planned_procedure")
-  admissionDetails    String?               @map("admission_details")
-  procedureDetails    String?               @map("procedure_details")
-  risksAr             String?               @map("risks_ar")
-  risksEn             String?               @map("risks_en")
-  sideEffectsAr       String?               @map("side_effects_ar")
-  sideEffectsEn       String?               @map("side_effects_en")
-  alternativesAr      String?               @map("alternatives_ar")
-  alternativesEn      String?               @map("alternatives_en")
-  refusalRisksAr      String?               @map("refusal_risks_ar")
-  refusalRisksEn      String?               @map("refusal_risks_en")
-  expectedOutcomesAr  String?               @map("expected_outcomes_ar")
-  expectedOutcomesEn  String?               @map("expected_outcomes_en")
-  physicianNotesAr    String?               @map("physician_notes_ar")
-  physicianNotesEn    String?               @map("physician_notes_en")
-  legalTextAr         String                @map("legal_text_ar")
-  legalTextEn         String                @map("legal_text_en")
-  pdplTextAr          String                @map("pdpl_text_ar")
-  pdplTextEn          String                @map("pdpl_text_en")
-  witnessDeclAr       String                @map("witness_decl_ar")
-  witnessDeclEn       String                @map("witness_decl_en")
-  physicianCertAr     String                @map("physician_cert_ar")
-  physicianCertEn     String                @map("physician_cert_en")
-  aiWarningAr         String                @map("ai_warning_ar")
-  aiWarningEn         String                @map("ai_warning_en")
-  aiGeneratedAt       DateTime?             @map("ai_generated_at")
-  aiGeneratedByUserId String?               @map("ai_generated_by_user_id")
-  aiValidatedAt       DateTime?             @map("ai_validated_at")
-  aiValidatedByUserId String?               @map("ai_validated_by_user_id")
-  approvedAt          DateTime?             @map("approved_at")
-  approvedByUserId    String?               @map("approved_by_user_id")
-  finalizedAt         DateTime?             @map("finalized_at")
-  finalizedByUserId   String?               @map("finalized_by_user_id")
-  immutablePdfUrl     String?               @map("immutable_pdf_url")
-  immutablePdfHash    String?               @map("immutable_pdf_hash")
-  qrPayload           String?               @map("qr_payload")
-  documentVersion     String?               @map("document_version")
-  auditChecksum       String?               @map("audit_checksum")
-  generatedByModel    String?               @map("generated_by_model")
-  legalHold           Boolean               @default(false) @map("legal_hold")
-  legalHoldReason     String?               @map("legal_hold_reason")
-  retentionUntil      DateTime?             @map("retention_until")
-  metadata            Json?
-  createdAt           DateTime              @default(now()) @map("created_at")
-  updatedAt           DateTime              @updatedAt @map("updated_at")
+  id                     String                @id @default(uuid())
+  tenantId               String                @map("tenant_id")
+  caseId                 String                @map("case_id")
+  templateId             String                @map("template_id")
+  templateVersionId      String                @map("template_version_id")
+  consentReference       String                @map("consent_reference")
+  status                 ConsentDocumentStatus @default(DRAFT)
+  language               String                @default("bilingual")
+  patientName            String                @map("patient_name")
+  mrn                    String?
+  dob                    String?
+  gender                 String?
+  physicianName          String                @map("physician_name")
+  physicianLicense       String?               @map("physician_license")
+  physicianSpecialty     String                @map("physician_specialty")
+  department             String?
+  diagnosis              String?
+  plannedProcedure       String?               @map("planned_procedure")
+  admissionDetails       String?               @map("admission_details")
+  procedureDetails       String?               @map("procedure_details")
+  risksAr                String?               @map("risks_ar")
+  risksEn                String?               @map("risks_en")
+  sideEffectsAr          String?               @map("side_effects_ar")
+  sideEffectsEn          String?               @map("side_effects_en")
+  alternativesAr         String?               @map("alternatives_ar")
+  alternativesEn         String?               @map("alternatives_en")
+  refusalRisksAr         String?               @map("refusal_risks_ar")
+  refusalRisksEn         String?               @map("refusal_risks_en")
+  expectedOutcomesAr     String?               @map("expected_outcomes_ar")
+  expectedOutcomesEn     String?               @map("expected_outcomes_en")
+  physicianNotesAr       String?               @map("physician_notes_ar")
+  physicianNotesEn       String?               @map("physician_notes_en")
+  legalTextAr            String                @map("legal_text_ar")
+  legalTextEn            String                @map("legal_text_en")
+  pdplTextAr             String                @map("pdpl_text_ar")
+  pdplTextEn             String                @map("pdpl_text_en")
+  witnessDeclAr          String                @map("witness_decl_ar")
+  witnessDeclEn          String                @map("witness_decl_en")
+  physicianCertAr        String                @map("physician_cert_ar")
+  physicianCertEn        String                @map("physician_cert_en")
+  aiWarningAr            String                @map("ai_warning_ar")
+  aiWarningEn            String                @map("ai_warning_en")
+  aiGeneratedAt          DateTime?             @map("ai_generated_at")
+  aiGeneratedByUserId    String?               @map("ai_generated_by_user_id")
+  aiValidatedAt          DateTime?             @map("ai_validated_at")
+  aiValidatedByUserId    String?               @map("ai_validated_by_user_id")
+  approvedAt             DateTime?             @map("approved_at")
+  approvedByUserId       String?               @map("approved_by_user_id")
+  finalizedAt            DateTime?             @map("finalized_at")
+  finalizedByUserId      String?               @map("finalized_by_user_id")
+  immutablePdfUrl        String?               @map("immutable_pdf_url")
+  immutablePdfHash       String?               @map("immutable_pdf_hash")
+  qrPayload              String?               @map("qr_payload")
+  documentVersion        String?               @map("document_version")
+  auditChecksum          String?               @map("audit_checksum")
+  generatedByModel       String?               @map("generated_by_model")
+  legalHold              Boolean               @default(false) @map("legal_hold")
+  legalHoldReason        String?               @map("legal_hold_reason")
+  retentionUntil         DateTime?             @map("retention_until")
+  idempotencyKey         String?               @map("idempotency_key")
+  idempotencyFingerprint String?               @map("idempotency_fingerprint")
+  metadata               Json?
+  createdAt              DateTime              @default(now()) @map("created_at")
+  updatedAt              DateTime              @updatedAt @map("updated_at")
 
   tenant              Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   case                Case                        @relation(fields: [caseId], references: [id], onDelete: Cascade)
@@ -1849,6 +1866,7 @@ model ConsentDocument {
   sourceSnapshots     ConsentSourceSnapshot[]
 
   @@unique([tenantId, consentReference], map: "uq_consent_documents_tenant_reference")
+  @@unique([tenantId, idempotencyKey], map: "uq_consent_documents_tenant_idempotency_key")
   @@index([tenantId, caseId, status, createdAt], map: "idx_consent_documents_tenant_case_status_created")
   @@index([tenantId, templateId, templateVersionId], map: "idx_consent_documents_tenant_template_version")
   @@map("consent_documents")
@@ -1921,6 +1939,93 @@ model ConsentAuditEvent {
   @@index([tenantId, consentDocumentId, createdAt], map: "idx_consent_audit_events_doc_created")
   @@index([tenantId, action, createdAt], map: "idx_consent_audit_events_action_created")
   @@map("consent_audit_events")
+}
+
+model SigningSession {
+  id                     String    @id @default(uuid()) @db.Uuid
+  tenantId               String    @map("tenant_id")
+  documentId             String    @map("document_id")
+  moduleType             String    @map("module_type")
+  providerKey            String    @map("provider_key")
+  providerSessionId      String?   @map("provider_session_id")
+  status                 String    @default("PENDING")
+  requiredSigners        Json      @map("required_signers")
+  completedSigners       Json      @default("[]") @map("completed_signers")
+  signerLinks            Json      @default("{}") @map("signer_links")
+  expiresAt              DateTime? @map("expires_at")
+  completedAt            DateTime? @map("completed_at")
+  revokedAt              DateTime? @map("revoked_at")
+  revokedReason          String?   @map("revoked_reason")
+  signedPdfKey           String?   @map("signed_pdf_key")
+  initiatedById          String    @map("initiated_by_id") @db.Uuid
+  resendCount            Int       @default(0) @map("resend_count")
+  lastResentAt           DateTime? @map("last_resent_at")
+  idempotencyKey         String?   @map("idempotency_key")
+  idempotencyFingerprint String?   @map("idempotency_fingerprint")
+  metadata               Json?
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  tokens     SigningSecureToken[]
+  dispatches PatientMessageDispatch[]
+
+  @@index([tenantId, documentId, status, createdAt], map: "idx_signing_sessions_tenant_doc_status_created")
+  @@index([tenantId, documentId, status], map: "idx_signing_sessions_tenant_doc_status")
+  @@index([tenantId, idempotencyKey], map: "idx_signing_sessions_tenant_idempotency_key_v1")
+  @@map("signing_sessions")
+}
+
+model SigningSecureToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  sessionId  String    @map("session_id") @db.Uuid
+  tenantId   String    @map("tenant_id")
+  signerRole String    @map("signer_role")
+  tokenHash  String?   @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  usedAt     DateTime? @map("used_at")
+  revokedAt  DateTime? @map("revoked_at")
+  ipOnUse    String?   @map("ip_on_use")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  session SigningSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, sessionId], map: "idx_signing_secure_tokens_tenant_session")
+  @@index([tokenHash], map: "idx_signing_secure_tokens_hash")
+  @@index([sessionId, revokedAt, usedAt], map: "idx_signing_secure_tokens_session_active")
+  @@map("signing_secure_tokens")
+}
+
+model PatientMessageDispatch {
+  id                     String                @id @default(uuid()) @db.Uuid
+  tenantId               String                @map("tenant_id")
+  signingSessionId       String                @map("signing_session_id") @db.Uuid
+  channel                PatientMessageChannel
+  idempotencyKey         String                @map("idempotency_key")
+  idempotencyFingerprint String                @map("idempotency_fingerprint")
+  recipientHash          String                @map("recipient_hash")
+  recipientReference     String                @map("recipient_reference")
+  status                 PatientMessageStatus  @default(PENDING)
+  attemptCount           Int                   @default(0) @map("attempt_count")
+  maxAttempts            Int                   @default(5) @map("max_attempts")
+  claimedAt              DateTime?             @map("claimed_at")
+  claimExpiresAt         DateTime?             @map("claim_expires_at")
+  lastAttemptAt          DateTime?             @map("last_attempt_at")
+  nextAttemptAt          DateTime              @default(now()) @map("next_attempt_at")
+  providerMessageId      String?               @map("provider_message_id")
+  lastErrorCode          String?               @map("last_error_code")
+  lastErrorMessage       String?               @map("last_error_message")
+  createdAt              DateTime              @default(now()) @map("created_at")
+  acceptedAt             DateTime?             @map("accepted_at")
+  sentAt                 DateTime?             @map("sent_at")
+  deliveredAt            DateTime?             @map("delivered_at")
+  metadata               Json?
+
+  session SigningSession @relation(fields: [signingSessionId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, signingSessionId, channel, idempotencyKey], map: "uq_patient_message_dispatch_tenant_session_channel_key")
+  @@index([tenantId, status, nextAttemptAt], map: "idx_patient_message_dispatches_tenant_status_next")
+  @@index([tenantId, signingSessionId, channel], map: "idx_patient_message_dispatches_tenant_session_channel")
+  @@map("patient_message_dispatches")
 }
 
 model ProcedureEducation {

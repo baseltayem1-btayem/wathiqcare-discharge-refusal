@@ -7,6 +7,56 @@ import { writeAuditLog } from "@/lib/server/saas-services";
 
 const prisma = () => getPrisma();
 
+export type ConsentAuditEventInput = {
+  tenantId: string;
+  actorUserId: string;
+  actorRole?: string | null;
+  action: string;
+  summary: string;
+  source?: string;
+  consentDocumentId?: string;
+  templateId?: string;
+  templateVersionId?: string;
+  caseId?: string;
+  metadata?: Record<string, unknown>;
+};
+
+export async function writeConsentAuditInTx(
+  tx: Prisma.TransactionClient,
+  args: ConsentAuditEventInput,
+): Promise<void> {
+  await tx.consentAuditEvent.create({
+    data: {
+      tenantId: args.tenantId,
+      consentDocumentId: args.consentDocumentId,
+      templateId: args.templateId,
+      templateVersionId: args.templateVersionId,
+      action: args.action,
+      source: args.source,
+      actorUserId: args.actorUserId,
+      actorRole: args.actorRole ?? null,
+      summary: args.summary,
+      metadata: args.metadata as Prisma.InputJsonValue | undefined,
+    },
+  });
+
+  if (args.consentDocumentId) {
+    await tx.consentTimelineEvent.create({
+      data: {
+        tenantId: args.tenantId,
+        consentDocumentId: args.consentDocumentId,
+        action: args.action,
+        actorUserId: args.actorUserId,
+        actorRole: args.actorRole ?? null,
+        deviceInfo: null,
+        ipAddress: null,
+        userAgent: null,
+        metadata: (args.metadata || {}) as Prisma.InputJsonValue,
+      },
+    });
+  }
+}
+
 export async function writeConsentAudit(args: {
   tenantId: string;
   auth: AuthContext;

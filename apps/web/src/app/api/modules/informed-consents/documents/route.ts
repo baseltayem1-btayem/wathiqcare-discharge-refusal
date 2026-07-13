@@ -10,6 +10,7 @@ import { ENABLE_IMC_PILOT_PATIENTS } from "@/lib/config/feature-flags";
 import { imcPilotPatients } from "@/components/informed-consents/production-workspace/lib/pilot-patients";
 import { imcApprovedConsentLibraryGenerated } from "@/components/informed-consents/enterprise-workflow/imcApprovedConsentLibrary.generated";
 import { listRuntimeConsentTemplates } from "@/lib/server/informed-consents-template-catalog";
+import { validateIdempotencyKey } from "@/lib/server/idempotency-core";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -1100,6 +1101,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "caseId is required" }, { status: 400 });
   }
 
+  let idempotencyKey: string | undefined;
+  try {
+    const header = request.headers.get("Idempotency-Key")?.trim();
+    const fromBody = typeof body.idempotencyKey === "string" ? body.idempotencyKey.trim() : undefined;
+    idempotencyKey = header || fromBody;
+    if (idempotencyKey) validateIdempotencyKey(idempotencyKey);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+  }
+
   try {
     const prisma = getPrisma();
     await ensureConsentOperationalSchema();
@@ -1309,6 +1321,11 @@ export async function POST(request: NextRequest) {
       department: typeof body.department === "string" ? body.department.trim() : undefined,
       diagnosis: diagnosis || undefined,
       plannedProcedure: plannedProcedure || undefined,
+      idempotencyKey,
+      idempotencyFingerprint:
+        typeof body.idempotencyFingerprint === "string"
+          ? body.idempotencyFingerprint.trim()
+          : undefined,
       metadata: {
         ...requestMetadata,
 

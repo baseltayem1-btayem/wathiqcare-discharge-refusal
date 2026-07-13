@@ -13,6 +13,7 @@
 
 import crypto from "crypto";
 import { SIGNATURE_CONFIG } from "@/lib/config/platform-config";
+import { resolveTrustedSigningBaseUrl } from "@/lib/server/signing-url-config";
 import {
   ENABLE_EXTERNAL_SIGNATURES,
   ENABLE_IMC_PILOT_PATIENTS,
@@ -58,6 +59,8 @@ export interface SigningSessionInput {
   expiryHours?: number;
   /** Actor who initiated */
   initiatedBy: string;
+  /** Preferred locale for signer communications */
+  locale?: "ar" | "en";
 }
 
 export interface SigningSession {
@@ -99,7 +102,7 @@ export function generateSecureSigningToken(): string {
  * Route must be registered in the Next.js app under /sign/[token].
  */
 export function buildSigningUrl(token: string, baseUrl?: string): string {
-  const base = baseUrl ?? process.env.NEXTAUTH_URL ?? "https://wathiqcare.online";
+  const base = resolveTrustedSigningBaseUrl(baseUrl);
   return `${base}/sign/${encodeURIComponent(token)}`;
 }
 

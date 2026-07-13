@@ -1,17 +1,26 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
-import { sendModuleSecureSigningLink } from "@/lib/server/module-secure-signing-service";
+import {
+  sendModuleSecureSigningLink,
+  deriveSendRootOperationKey,
+  resolveTrustedPdfHash,
+} from "@/lib/server/module-secure-signing-service";
 import { writeConsentAudit } from "@/lib/server/consent-library-service";
 import { isTaqnyatReady } from "@/services/sms/taqnyatClient";
 import { logRuntimeIncident } from "@/lib/server/runtime-observability";
 import { verifyPublicAssetSource } from "@/lib/server/clinical-knowledge/services/source-verification";
 import { getPrisma } from "@/lib/server/prisma";
 import { isAllowlistedRecipient } from "@/lib/server/workspace-consent-helpers";
+import {
+  validateIdempotencyKey,
+  hashRecipient,
+} from "@/lib/server/idempotency-core";
+import { resolveCanonicalCaseContact } from "@/lib/server/recipient-resolution-service";
+import { ApiError } from "@/lib/server/http";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-
 
 function resolveApprovedPdfSourceUrl(value: unknown): string {
   if (typeof value === "string") return value.trim();
@@ -38,7 +47,10 @@ function resolveApprovedPdfSourceUrl(value: unknown): string {
   return "";
 }
 
-function resolveMetadataApprovedPdfSource(metadata: unknown, immutablePdfUrl?: string | null): string {
+function resolveMetadataApprovedPdfSource(
+  metadata: unknown,
+  immutablePdfUrl?: string | null,
+): string {
   const direct = resolveApprovedPdfSourceUrl(immutablePdfUrl);
   if (direct) return direct;
 
@@ -70,6 +82,26 @@ function isDryRunEnabled(body: Record<string, unknown>): boolean {
   return envFlag === "true" || envFlag === "1" || envFlag === "yes";
 }
 
+function maskMobile(value: string): string {
+  return value.replace(/\d(?=\d{4})/g, "*");
+}
+
+function maskEmail(value: string): string {
+  return value.replace(/(.{2}).*?(@.*)/, "$1***$2");
+}
+
+function resolveIdempotencyKey(
+  request: NextRequest,
+  body: Record<string, unknown>,
+): string | undefined {
+  const header = request.headers.get("Idempotency-Key")?.trim();
+  const fromBody =
+    typeof body.idempotencyKey === "string" ? body.idempotencyKey.trim() : undefined;
+  const key = header || fromBody;
+  if (key) validateIdempotencyKey(key);
+  return key;
+}
+
 export async function POST(request: NextRequest) {
   const auth = await requireModuleOperationalAccess(request, "informed-consents");
   const tenantId = auth.tenant_id || "";
@@ -80,24 +112,49 @@ export async function POST(request: NextRequest) {
 
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
 
+  let clientRequestKey: string | undefined;
+  try {
+    clientRequestKey = resolveIdempotencyKey(request, body);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+  }
+
   const documentId = String(body.documentId || "");
   const caseId = String(body.caseId || "");
   const patientName = String(body.patientName || "");
-  const mobileNumber = String(body.mobileNumber || "");
-  const recipientEmail = String(body.recipientEmail || "");
   const locale = body.locale === "ar" ? "ar" : "en";
+  const explicitResend = body.explicitResend === true;
 
-  if (!documentId || !caseId || !patientName || !mobileNumber || !recipientEmail) {
+  if (!documentId || !caseId || !patientName) {
     return NextResponse.json(
-      { ok: false, error: "Missing required fields: documentId, caseId, patientName, mobileNumber, recipientEmail" },
+      {
+        ok: false,
+        error: "Missing required fields: documentId, caseId, patientName",
+      },
       { status: 400 },
     );
   }
 
+  // Resolve the canonical contact from the case metadata. Do not trust
+  // request-body patient contact values.
+  const canonicalContacts = await resolveCanonicalCaseContact({
+    tenantId,
+    caseId,
+  });
+  if (!canonicalContacts?.mobile && !canonicalContacts?.email) {
+    return NextResponse.json(
+      { ok: false, error: "Patient contact details missing" },
+      { status: 422 },
+    );
+  }
+  const mobileNumber = canonicalContacts.mobile ?? "";
+  const recipientEmail = canonicalContacts.email ?? "";
+
   if (isDryRunEnabled(body)) {
     if (!isAllowlistedRecipient(mobileNumber, recipientEmail)) {
-      const maskedMobile = mobileNumber.replace(/\d(?=\d{4})/g, "*");
-      const maskedEmail = recipientEmail.replace(/(.{2}).*?(@.*)/, "$1***$2");
+      const maskedMobile = maskMobile(mobileNumber);
+      const maskedEmail = maskEmail(recipientEmail);
       const reason = `Dry-run blocked: recipient not in pilot allowlist (mobile: ${maskedMobile}, email: ${maskedEmail})`;
 
       await writeConsentAudit({
@@ -120,7 +177,12 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json(
-        { ok: false, dryRun: true, error: "Recipient is not approved for pilot send. Contact the platform administrator to add the recipient to the allowlist." },
+        {
+          ok: false,
+          dryRun: true,
+          error:
+            "Recipient is not approved for pilot send. Contact the platform administrator to add the recipient to the allowlist.",
+        },
         { status: 403 },
       );
     }
@@ -136,8 +198,10 @@ export async function POST(request: NextRequest) {
         documentId,
         caseId,
         patientName,
-        mobileNumber,
-        recipientEmail,
+        mobileNumber: maskMobile(mobileNumber),
+        recipientEmail: maskEmail(recipientEmail),
+        mobileHash: hashRecipient(mobileNumber, { tenantId }),
+        emailHash: hashRecipient(recipientEmail, { tenantId }),
         locale,
         dryRun: true,
         skippedDocumentLookup: documentId === "dry-run",
@@ -163,6 +227,7 @@ export async function POST(request: NextRequest) {
       id: true,
       status: true,
       immutablePdfUrl: true,
+      immutablePdfHash: true,
       metadata: true,
       templateId: true,
       templateVersionId: true,
@@ -210,7 +275,7 @@ export async function POST(request: NextRequest) {
 
     logRuntimeIncident({
       module: "informed-consents-send",
-      type: "VALIDATION_FAILURE",
+      type: "UNHANDLED_EXCEPTION",
       operation: "send_blocked_missing_approved_pdf_source",
       tenantId,
       error: new Error(reason),
@@ -233,6 +298,57 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const approvedPdfHash = resolveTrustedPdfHash(consentDocument);
+  if (!approvedPdfHash) {
+    const reason = "Approved PDF hash is missing or untrusted for secure signing";
+    await writeConsentAudit({
+      tenantId,
+      auth,
+      action: "send_blocked_missing_approved_pdf_hash",
+      summary: reason,
+      source: "informed-consents-send",
+      caseId,
+      consentDocumentId: documentId,
+      templateId: consentDocument.templateId,
+      templateVersionId: consentDocument.templateVersionId,
+      metadata: {
+        documentId,
+        caseId,
+      },
+      request,
+    });
+    return NextResponse.json({ ok: false, error: reason }, { status: 422 });
+  }
+
+  const docMetadata = (consentDocument.metadata || {}) as Record<string, unknown>;
+  const approvedConsentFormKey =
+    typeof docMetadata.approvedConsentFormCode === "string"
+      ? docMetadata.approvedConsentFormCode
+      : undefined;
+
+  // Explicit resend requires a distinct client request key; it cannot fall back
+  // to the canonical server-derived root key.
+  if (explicitResend && !clientRequestKey) {
+    return NextResponse.json(
+      { ok: false, error: "Explicit resend requires a request key" },
+      { status: 400 },
+    );
+  }
+
+  const serverRootKey = deriveSendRootOperationKey({
+    tenantId,
+    caseId,
+    documentId,
+    approvedConsentFormKey,
+    approvedTemplateVersionId: consentDocument.templateVersionId || undefined,
+    immutablePdfHash: approvedPdfHash,
+    mobileNumber,
+    recipientEmail,
+    locale: locale as "ar" | "en",
+  });
+
+  const initialKey = clientRequestKey || serverRootKey;
+
   await writeConsentAudit({
     tenantId,
     auth,
@@ -245,16 +361,18 @@ export async function POST(request: NextRequest) {
       documentId,
       caseId,
       patientName,
-      mobileNumber,
-      recipientEmail,
+      mobileNumber: maskMobile(mobileNumber),
+      recipientEmail: maskEmail(recipientEmail),
+      mobileHash: hashRecipient(mobileNumber, { tenantId }),
+      emailHash: hashRecipient(recipientEmail, { tenantId }),
       locale,
     },
     request,
   });
 
   if (!isAllowlistedRecipient(mobileNumber, recipientEmail)) {
-    const maskedMobile = mobileNumber.replace(/\d(?=\d{4})/g, "*");
-    const maskedEmail = recipientEmail.replace(/(.{2}).*?(@.*)/, "$1***$2");
+    const maskedMobile = maskMobile(mobileNumber);
+    const maskedEmail = maskEmail(recipientEmail);
     const reason = `Recipient not in pilot allowlist (mobile: ${maskedMobile}, email: ${maskedEmail})`;
 
     console.warn("[informed-consents-send] blocked non-allowlisted recipient", {
@@ -294,7 +412,11 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { ok: false, error: "Recipient is not approved for pilot send. Contact the platform administrator to add the recipient to the allowlist." },
+      {
+        ok: false,
+        error:
+          "Recipient is not approved for pilot send. Contact the platform administrator to add the recipient to the allowlist.",
+      },
       { status: 403 },
     );
   }
@@ -312,10 +434,16 @@ export async function POST(request: NextRequest) {
       recipientEmail,
       locale,
       baseUrl: request.nextUrl.origin,
+      explicitResend,
+      ...(explicitResend
+        ? { resendRequestKey: clientRequestKey }
+        : { idempotencyKey: initialKey }),
+      approvedConsentFormKey,
+      approvedTemplateVersionId: consentDocument.templateVersionId || undefined,
+      immutablePdfHash: approvedPdfHash,
     });
 
-    // Persist the pilot recipient contact details on the consent document so
-    // downstream OTP/email fallback and audit have a stable source of truth.
+    // Persist only non-sensitive workflow identifiers on the consent document.
     const prisma = getPrisma();
     const existingDoc = await prisma.consentDocument.findFirst({
       where: { id: documentId, tenantId },
@@ -329,9 +457,9 @@ export async function POST(request: NextRequest) {
           ...existingMetadata,
           secureSigningWorkflow: {
             ...(existingMetadata.secureSigningWorkflow as Record<string, unknown> ?? {}),
-            recipientEmail: workflow.recipientEmail,
-            mobileNumber: workflow.recipientMobile,
-            sentAt: new Date().toISOString(),
+            sessionId: workflow.sessionId,
+            dispatchStatuses: workflow.dispatchStatuses,
+            queuedAt: new Date().toISOString(),
           },
         } as unknown as import("@prisma/client").Prisma.InputJsonValue,
       },
@@ -341,7 +469,7 @@ export async function POST(request: NextRequest) {
       tenantId,
       auth,
       action: "signing_link_created",
-      summary: `Secure signing link created for document ${documentId} (session ${workflow.sessionId})`,
+      summary: `Secure signing session created for document ${documentId} (session ${workflow.sessionId})`,
       source: "informed-consents-send",
       caseId,
       consentDocumentId: documentId,
@@ -349,60 +477,21 @@ export async function POST(request: NextRequest) {
         documentId,
         caseId,
         sessionId: workflow.sessionId,
-        tokenHash: workflow.tokenHash,
-        signingUrl: workflow.signingUrl,
-        mobileNumber: workflow.recipientMobile,
-        recipientEmail: workflow.recipientEmail,
-        smsDeliveryStatus: workflow.smsDeliveryStatus,
-        emailDeliveryStatus: workflow.emailDeliveryStatus,
+        mobileHash: hashRecipient(mobileNumber, { tenantId }),
+        emailHash: hashRecipient(recipientEmail, { tenantId }),
+        dispatchStatuses: workflow.dispatchStatuses,
         locale,
       },
       request,
     });
 
-    if (workflow.smsDeliveryStatus === "sent") {
-      await writeConsentAudit({
-        tenantId,
-        auth,
-        action: "patient_sms_sent",
-        summary: `Pilot SMS sent to patient for document ${documentId}`,
-        source: "informed-consents-send",
-        caseId,
-        consentDocumentId: documentId,
-        metadata: {
-          documentId,
-          caseId,
-          sessionId: workflow.sessionId,
-          mobileNumber: workflow.recipientMobile,
-          locale,
-        },
-        request,
-      });
-    }
-
-    if (workflow.emailDeliveryStatus === "sent") {
-      await writeConsentAudit({
-        tenantId,
-        auth,
-        action: "patient_email_sent",
-        summary: `Pilot email sent to patient for document ${documentId}`,
-        source: "informed-consents-send",
-        caseId,
-        consentDocumentId: documentId,
-        metadata: {
-          documentId,
-          caseId,
-          sessionId: workflow.sessionId,
-          recipientEmail: workflow.recipientEmail,
-          locale,
-        },
-        request,
-      });
-    }
-
     return NextResponse.json({ ok: true, workflow });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    const status = error instanceof ApiError ? error.status : 500;
+    return NextResponse.json(
+      { ok: false, error: message, code: status === 409 ? "IDEMPOTENCY_CONFLICT" : undefined },
+      { status },
+    );
   }
 }
