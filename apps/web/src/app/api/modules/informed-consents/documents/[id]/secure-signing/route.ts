@@ -64,14 +64,6 @@ function resolveMetadataApprovedPdfSource(
   return "";
 }
 
-function maskMobile(value: string): string {
-  return value.replace(/\d(?=\d{4})/g, "*");
-}
-
-function maskEmail(value: string): string {
-  return value.replace(/(.{2}).*?(@.*)/, "$1***$2");
-}
-
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -86,7 +78,6 @@ export async function POST(
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const caseId = String(body.caseId || "").trim();
   const patientName = String(body.patientName || "").trim();
-  const physicianName = String((body.physicianName as string) || auth.email || "").trim();
   const locale = body.locale === "en" ? "en" : "ar";
 
   if (!caseId || !patientName) {

@@ -22,7 +22,6 @@ import {
   recordDispatchAccepted,
 } from "@/lib/server/patient-message-outbox-service";
 import { createFakeSmsGateway } from "@/lib/server/fake-sms-gateway";
-import { createFakeEmailGateway } from "@/lib/server/fake-email-gateway";
 import {
   registerTestRecipient,
   clearTestRecipients,

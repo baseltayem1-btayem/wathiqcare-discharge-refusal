@@ -1,11 +1,11 @@
 import crypto from "node:crypto";
-import { Prisma, PrismaClient, type ConsentDocument } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { $Enums, ConsentDocumentStatus, ConsentSectionKind } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
-import { writeConsentAudit, writeConsentAuditInTx } from "@/lib/server/consent-audit-service";
+import { writeConsentAuditInTx } from "@/lib/server/consent-audit-service";
 import {
   computePayloadFingerprint,
   validateIdempotencyKey,

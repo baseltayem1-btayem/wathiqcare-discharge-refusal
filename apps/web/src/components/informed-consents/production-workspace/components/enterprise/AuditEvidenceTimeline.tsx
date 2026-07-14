@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Clock3, FileLock2, Link2, ShieldEllipsis } from "lucide-react";
+import { Clock3, FileLock2, Link2, ShieldEllipsis } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { SecureSigningResult, TimelineEvent } from "../../types";
 import { WorkspaceBadge, WorkspaceCard, WorkspaceCardHeader } from "../WorkspaceAtoms";
