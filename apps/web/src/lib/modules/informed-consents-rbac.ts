@@ -17,6 +17,7 @@ export type InformedConsentPermission =
   | "consent:review"
   | "consent:approve"
   | "consent:send_signature"
+  | "consent:witness_attest"
   | "consent:finalize"
   | "consent:view_evidence"
   | "consent:export"
@@ -113,6 +114,16 @@ const ROLE_PERMISSIONS: Record<string, InformedConsentPermission[]> = {
     "audit:view",
     "consent:view_evidence",
   ],
+  consent_nursing_witness: [
+    "consent:review",
+    "consent:witness_attest",
+    "audit:view",
+  ],
+  consent_patient_experience_witness: [
+    "consent:review",
+    "consent:witness_attest",
+    "audit:view",
+  ],
   tenant_admin: [
     ...BASE_PERMISSIONS,
     "template:create",
@@ -145,6 +156,15 @@ const OPERATIONAL_CONSENT_ROLE_MAP: Record<string, string> = {
   quality:          "consent_viewer",
 };
 
+// Additional witness-attestation grants keyed by canonical operational role.
+// These are unioned with (never replace) the primary consent role mapping so
+// that authorized witness roles receive only the extra witness permission.
+const OPERATIONAL_WITNESS_ROLE_MAP: Record<string, string> = {
+  nursing:         "consent_nursing_witness",
+  nurse:           "consent_nursing_witness",
+  patient_affairs: "consent_patient_experience_witness",
+};
+
 function normalizeRole(role: string | null | undefined): string {
   return (role || "").trim().toLowerCase();
 }
@@ -154,12 +174,14 @@ export function listInformedConsentPermissions(auth: AuthContext): Set<InformedC
 
   const rawRole = normalizeRole(auth.role);
   const resolvedConsentRole = OPERATIONAL_CONSENT_ROLE_MAP[rawRole] ?? rawRole;
+  const witnessGrantRole = OPERATIONAL_WITNESS_ROLE_MAP[rawRole];
 
   const candidates = [
     normalizeRole(auth.platform_role),
     normalizeRole(auth.user_type),
     rawRole,
     resolvedConsentRole,
+    ...(witnessGrantRole ? [witnessGrantRole] : []),
   ];
 
   for (const role of candidates) {

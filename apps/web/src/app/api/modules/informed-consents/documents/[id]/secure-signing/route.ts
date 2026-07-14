@@ -11,6 +11,7 @@ import { ApiError } from "@/lib/server/http";
 import { isAllowlistedRecipient } from "@/lib/server/workspace-consent-helpers";
 import { hashRecipient } from "@/lib/server/idempotency-core";
 import { resolveCanonicalCaseContact } from "@/lib/server/recipient-resolution-service";
+import { enforceWitnessPolicyAtSend } from "@/lib/server/witness-requirement-service";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -58,6 +59,21 @@ export async function POST(
   });
   if (!document) {
     return NextResponse.json({ ok: false, error: "Consent document not found" }, { status: 404 });
+  }
+
+  // Witness-policy gate: evaluate the policy and issue witness requirement
+  // records before the signing link is dispatched (fail closed on invalid
+  // policy configuration).
+  try {
+    await enforceWitnessPolicyAtSend({ auth, documentId, request });
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return NextResponse.json(
+        { ok: false, error: error.message, code: error.code },
+        { status: error.status },
+      );
+    }
+    throw error;
   }
 
   const approvedPdfHash = resolveTrustedPdfHash(document);

@@ -18,6 +18,7 @@ import {
 } from "@/lib/server/idempotency-core";
 import { resolveCanonicalCaseContact } from "@/lib/server/recipient-resolution-service";
 import { ApiError } from "@/lib/server/http";
+import { enforceWitnessPolicyAtSend } from "@/lib/server/witness-requirement-service";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -240,6 +241,21 @@ export async function POST(request: NextRequest) {
 
   if (consentDocument.status === "VOID") {
     return NextResponse.json({ ok: false, error: "Consent document is void" }, { status: 422 });
+  }
+
+  // Witness-policy gate: evaluate the policy and issue witness requirement
+  // records before the signing link is dispatched (fail closed on invalid
+  // policy configuration).
+  try {
+    await enforceWitnessPolicyAtSend({ auth, documentId, request });
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return NextResponse.json(
+        { ok: false, error: error.message, code: error.code },
+        { status: error.status },
+      );
+    }
+    throw error;
   }
 
   const approvedPdfSourceUrl = resolveMetadataApprovedPdfSource(

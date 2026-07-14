@@ -9,7 +9,12 @@ import {
 
 import {
   addConsentSignature,
+  computeFixedClauseChecksum,
 } from "@/lib/server/consent-library-service";
+
+import {
+  buildClinicianAttestationRecord,
+} from "@/lib/server/patient-declarations-service";
 
 import {
   ApiError,
@@ -301,6 +306,15 @@ export async function POST(
             status: true,
             physicianName: true,
             physicianLicense: true,
+            metadata: true,
+            legalTextAr: true,
+            legalTextEn: true,
+            pdplTextAr: true,
+            pdplTextEn: true,
+            witnessDeclAr: true,
+            witnessDeclEn: true,
+            physicianCertAr: true,
+            physicianCertEn: true,
           },
         });
 
@@ -468,6 +482,39 @@ export async function POST(
         },
         request,
       );
+
+    // Separate clinician attestation (never merged with the patient's
+    // declarations): the physician certification signature attests that the
+    // procedure, material risks, complications and alternatives were
+    // explained and questions answered. Bound to the current document
+    // content hash; stale attestations are rejected at finalization.
+    const attestationInput =
+      asMetadataRecord(body.attestation) ?? {};
+    const clinicianAttestation = buildClinicianAttestationRecord({
+      clinicianUserId: actorUserId,
+      documentHash: computeFixedClauseChecksum(
+        consentDocument as unknown as Record<string, unknown>,
+      ),
+      explainedProcedureRisksAlternatives:
+        attestationInput.explainedProcedureRisksAlternatives !== false,
+      answeredQuestions:
+        attestationInput.answeredQuestions !== false,
+    });
+
+    await prisma
+      .consentDocument
+      .update({
+        where: {
+          id: documentId,
+        },
+
+        data: {
+          metadata: {
+            ...(asMetadataRecord(consentDocument.metadata) ?? {}),
+            clinicianAttestation,
+          },
+        },
+      });
 
     const persistedSignature =
       updatedDocument

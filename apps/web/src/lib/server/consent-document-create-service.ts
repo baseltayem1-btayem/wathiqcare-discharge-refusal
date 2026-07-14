@@ -10,6 +10,10 @@ import {
   computePayloadFingerprint,
   validateIdempotencyKey,
 } from "@/lib/server/idempotency-core";
+import {
+  evaluateWitnessPolicy,
+  parseTemplateWitnessPolicy,
+} from "@/lib/server/witness-policy-service";
 
 const prisma = () => getPrisma();
 
@@ -398,6 +402,15 @@ export type CreateConsentDocumentPayload = {
   idempotencyKey?: string;
   idempotencyFingerprint?: string;
   metadata?: Record<string, unknown>;
+  /** Runtime witness-policy trigger facts captured at creation time. */
+  witnessTriggerFacts?: {
+    substituteDecisionMaker?: boolean;
+    lacksCapacity?: boolean;
+    cannotReadOrUseJourney?: boolean;
+    communicationBarrier?: boolean;
+    disputedOrObjected?: boolean;
+    refusalOrAma?: boolean;
+  };
 };
 
 export function buildConsentDocumentFingerprint(
@@ -502,12 +515,23 @@ export async function createConsentDocument(
     throw new ApiError(404, "Template not found");
   }
 
-  if (template.requiresWitness || template.requiresInterpreter) {
+  // Interpreter signing workflows remain outside the current scope.
+  // Witness requirements are no longer a creation blocker: the typed,
+  // versioned witness policy is evaluated at runtime and enforced at the
+  // send/signature/finalization transitions instead.
+  if (template.requiresInterpreter) {
     throw new ApiError(
       422,
-      "This consent template requires a witness or interpreter, which is not yet supported in the pilot scope.",
+      "This consent template requires an interpreter, which is not yet supported in the pilot scope.",
     );
   }
+
+  const witnessPolicyDecision = evaluateWitnessPolicy({
+    templateRequiresWitness: template.requiresWitness,
+    templateRiskLevel: template.riskLevel,
+    templatePolicy: parseTemplateWitnessPolicy(template.metadata),
+    triggers: payload.witnessTriggerFacts,
+  });
 
   const templateVersionId = payload.templateVersionId?.trim() || template.currentVersionId || undefined;
   if (!templateVersionId) {
@@ -620,6 +644,7 @@ export async function createConsentDocument(
               plannedProcedure: typeof emrMeta.plannedProcedure === "string" ? emrMeta.plannedProcedure : null,
             },
             source: "modules.informed-consents",
+            witnessPolicyDecision: witnessPolicyDecision as unknown as Prisma.InputJsonValue,
             governance: {
               fieldPolicy: DYNAMIC_FIELD_GOVERNANCE,
               prohibitedAiFields: Array.from(PROHIBITED_AI_FIELDS),
@@ -678,6 +703,22 @@ export async function createConsentDocument(
           })),
         });
       }
+
+      await writeConsentAuditInTx(tx, {
+        tenantId,
+        actorUserId: auth.sub,
+        actorRole: auth.role || null,
+        action: "WITNESS_POLICY_EVALUATED",
+        summary: `Witness policy evaluated for ${consentDocument.consentReference}: ${witnessPolicyDecision.witnessMode} (required witnesses: ${witnessPolicyDecision.requiredWitnessCount})`,
+        source: "policy",
+        consentDocumentId: consentDocument.id,
+        templateId,
+        templateVersionId: version.id,
+        caseId,
+        metadata: {
+          decision: witnessPolicyDecision as unknown as Prisma.InputJsonValue,
+        },
+      });
 
       await writeConsentAuditInTx(tx, {
         tenantId,

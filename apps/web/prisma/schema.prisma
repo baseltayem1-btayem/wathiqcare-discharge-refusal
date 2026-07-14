@@ -435,6 +435,8 @@ model Tenant {
   consentDocuments                    ConsentDocument[]
   consentDocumentSections             ConsentDocumentSection[]
   consentDocumentSignatures           ConsentDocumentSignature[]
+  consentWitnessRequirements          ConsentWitnessRequirement[]
+  consentWitnessSignatures            ConsentWitnessSignature[]
   consentAuditEvents                  ConsentAuditEvent[]
   consentPromptRegistry               ConsentPromptRegistry[]
   consentWordingRepository            ConsentWordingRepository[]
@@ -1864,6 +1866,8 @@ model ConsentDocument {
   evidenceV2Timelines EvidenceTimeline[]
   emrMappings         ConsentEmrMapping[]
   sourceSnapshots     ConsentSourceSnapshot[]
+  witnessRequirements ConsentWitnessRequirement[]
+  witnessSignatures   ConsentWitnessSignature[]
 
   @@unique([tenantId, consentReference], map: "uq_consent_documents_tenant_reference")
   @@unique([tenantId, idempotencyKey], map: "uq_consent_documents_tenant_idempotency_key")
@@ -1915,6 +1919,60 @@ model ConsentDocumentSignature {
   consentDocument ConsentDocument @relation(fields: [consentDocumentId], references: [id], onDelete: Cascade)
 
   @@map("consent_document_signatures")
+}
+
+model ConsentWitnessRequirement {
+  id                String    @id @default(uuid())
+  tenantId          String    @map("tenant_id")
+  consentDocumentId String    @map("consent_document_id")
+  witnessIndex      Int       @map("witness_index")
+  requiredRole      String    @map("required_role")
+  status            String    @default("PENDING")
+  policyVersion     String    @map("policy_version")
+  assignedUserId    String?   @map("assigned_user_id")
+  assignedAt        DateTime? @map("assigned_at")
+  idempotencyKey    String?   @map("idempotency_key")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  tenant          Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  consentDocument ConsentDocument           @relation(fields: [consentDocumentId], references: [id], onDelete: Cascade)
+  signatures      ConsentWitnessSignature[]
+
+  @@unique([tenantId, consentDocumentId, witnessIndex], map: "uq_consent_witness_requirements_doc_index")
+  @@index([tenantId, consentDocumentId, status], map: "idx_consent_witness_requirements_doc")
+  @@map("consent_witness_requirements")
+}
+
+model ConsentWitnessSignature {
+  id                      String   @id @default(uuid())
+  tenantId                String   @map("tenant_id")
+  consentDocumentId       String   @map("consent_document_id")
+  witnessRequirementId    String   @map("witness_requirement_id")
+  witnessUserId           String   @map("witness_user_id")
+  employeeId              String?  @map("employee_id")
+  witnessRole             String   @map("witness_role")
+  department              String?
+  attestationVersion      String   @map("attestation_version")
+  signatureId             String   @map("signature_id")
+  authenticationReference String   @map("authentication_reference")
+  signedAt                DateTime @map("signed_at")
+  signedAtKsa             String   @map("signed_at_ksa")
+  documentHash            String   @map("document_hash")
+  ipHash                  String?  @map("ip_hash")
+  userAgentHash           String?  @map("user_agent_hash")
+  auditEventId            String?  @map("audit_event_id")
+  idempotencyKey          String   @map("idempotency_key")
+  createdAt               DateTime @default(now()) @map("created_at")
+
+  tenant             Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  consentDocument    ConsentDocument           @relation(fields: [consentDocumentId], references: [id], onDelete: Cascade)
+  witnessRequirement ConsentWitnessRequirement @relation(fields: [witnessRequirementId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, idempotencyKey], map: "uq_consent_witness_signatures_tenant_idempotency")
+  @@unique([witnessRequirementId], map: "uq_consent_witness_signatures_requirement")
+  @@index([tenantId, consentDocumentId], map: "idx_consent_witness_signatures_doc")
+  @@map("consent_witness_signatures")
 }
 
 model ConsentAuditEvent {

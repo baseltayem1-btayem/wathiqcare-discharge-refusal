@@ -196,6 +196,47 @@ function getDurationSeconds(startedAt: number | null): number {
   return Math.max(0, Math.round((Date.now() - startedAt) / 1000));
 }
 
+// Patient declarations required for the routine electronic path (no human
+// witness). Keys must stay in sync with PATIENT_DECLARATION_KEYS in
+// src/lib/server/patient-declarations-service.ts.
+const PATIENT_DECLARATION_ITEMS: Array<{ key: string; labelEn: string; labelAr: string }> = [
+  {
+    key: "IDENTITY_AND_CAPACITY",
+    labelEn: "I confirm that my identity and signing capacity or authority are correct.",
+    labelAr: "أقرّ بصحة هويتي وأهليتي أو صفة التوقيع.",
+  },
+  {
+    key: "INFORMATION_REVIEWED",
+    labelEn: "I have reviewed the information provided to me.",
+    labelAr: "لقد راجعت المعلومات المقدمة لي.",
+  },
+  {
+    key: "PROCEDURE_RISKS_ALTERNATIVES_UNDERSTOOD",
+    labelEn: "I understood the nature of the procedure, its material risks, complications, and alternatives.",
+    labelAr: "فهمت طبيعة الإجراء ومخاطره الجوهرية ومضاعفاته وبدائله.",
+  },
+  {
+    key: "QUESTIONS_OPPORTUNITY",
+    labelEn: "I was given an adequate opportunity to ask questions.",
+    labelAr: "أُتيحت لي فرصة كافية لطرح الأسئلة.",
+  },
+  {
+    key: "ANSWERS_RECEIVED",
+    labelEn: "I received answers and clarifications to my questions.",
+    labelAr: "تلقيت الإجابات والتوضيحات عن أسئلتي.",
+  },
+  {
+    key: "VOLUNTARY_NO_COERCION",
+    labelEn: "My decision is voluntary and without coercion.",
+    labelAr: "قراري طوعي ودون أي إكراه.",
+  },
+  {
+    key: "ELECTRONIC_SIGNATURE_ACCEPTED",
+    labelEn: "I accept my electronic signature as my signature and expression of intent.",
+    labelAr: "أوافق على اعتماد توقيعي الإلكتروني كتوقيع لي وتعبير عن إرادتي.",
+  },
+];
+
 export default function PublicSigningWorkflow({ token }: { token: string }) {
   const [documentData, setDocumentData] = useState<PublicSigningDocumentPayload | null>(null);
   const [bootstrap, setBootstrap] = useState<PreOtpBootstrap | null>(null);
@@ -210,6 +251,7 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
   const [educationSubmitting, setEducationSubmitting] = useState(false);
   const [decisionSubmitting, setDecisionSubmitting] = useState(false);
   const [acknowledgementChecked, setAcknowledgementChecked] = useState(false);
+  const [acceptedDeclarations, setAcceptedDeclarations] = useState<string[]>([]);
   const [refusalAcknowledgementChecked, setRefusalAcknowledgementChecked] = useState(false);
   const [sectionViewed, setSectionViewed] = useState<Record<EducationSectionKey, boolean>>({
     summary: false,
@@ -237,6 +279,8 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
   const educationRequired = Boolean(documentData?.education.required);
   const educationAcknowledged = Boolean(documentData?.education.acknowledgement || documentData?.education.patientAcknowledged);
   const isRefusalPath = documentData?.decision.status === "CONSENT_REFUSED";
+  const allDeclarationsAccepted =
+    PATIENT_DECLARATION_ITEMS.every((item) => acceptedDeclarations.includes(item.key));
   const faqTargets = documentData?.education.faq || [];
 
   const allEducationRequirementsMet = useMemo(() => {
@@ -495,6 +539,10 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
       setError("Signer name is required");
       return;
     }
+    if (!isRefusalPath && !allDeclarationsAccepted) {
+      setError("All patient declarations are required before signing");
+      return;
+    }
 
     setSubmitting(true);
     setError("");
@@ -510,6 +558,7 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
         body: JSON.stringify({
           signerName: signerName.trim(),
           signatureDataUrl,
+          declarations: isRefusalPath ? [] : acceptedDeclarations,
         }),
       });
       const payload = await readJsonSafe<PublicSignatureResult>(response);
@@ -1134,6 +1183,45 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
                     : "OTP has been verified. Submit the signer name and signature capture to persist the patient signature."}
         </p>
         <div className="mt-4 space-y-4">
+          {!isRefusalPath ? (
+            <fieldset className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <legend className="px-1 text-sm font-semibold text-slate-800">
+                Patient Declarations / إقرارات المريض
+              </legend>
+              <p className="mb-2 text-xs text-slate-500">
+                All declarations are required for electronic signing. / جميع الإقرارات مطلوبة للتوقيع الإلكتروني.
+              </p>
+              <div className="space-y-2">
+                {PATIENT_DECLARATION_ITEMS.map((item) => {
+                  const checked = acceptedDeclarations.includes(item.key);
+                  return (
+                    <label
+                      key={item.key}
+                      className="flex items-start gap-2 text-sm text-slate-700"
+                    >
+                      <input
+                        type="checkbox"
+                        className="mt-1"
+                        checked={checked}
+                        disabled={documentData.signatureCaptured || submitting}
+                        onChange={(event) =>
+                          setAcceptedDeclarations((current) =>
+                            event.target.checked
+                              ? [...current, item.key]
+                              : current.filter((key) => key !== item.key),
+                          )
+                        }
+                      />
+                      <span>
+                        <span className="block">{item.labelEn}</span>
+                        <span className="block text-slate-500" dir="rtl">{item.labelAr}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+          ) : null}
           <label className="block text-sm font-medium text-slate-700" htmlFor="publicSignerName">Signer Name</label>
           <input
             id="publicSignerName"
@@ -1163,6 +1251,7 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
               || (documentData.education.required && !educationAcknowledged)
               || documentData.decision.status === "UNDECIDED"
               || (isRefusalPath && !documentData.decision.refusalAcknowledged)
+              || (!isRefusalPath && !allDeclarationsAccepted)
               || !otpVerified
             }
             className="inline-flex rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"

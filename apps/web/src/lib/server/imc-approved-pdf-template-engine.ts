@@ -1,4 +1,4 @@
-﻿import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
 import chromium from "@sparticuz/chromium";
@@ -10,6 +10,22 @@ import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 import { getConsentFieldMappingByFormId } from "@/lib/server/consent-field-mappings";
 import { resolveConsentSignaturePresentation } from "@/lib/signature/signature-display";
+import {
+  IMC_MR_1168_PAGE2_CALIBRATION,
+  assertLabelContentSafe,
+  assertLabelFits,
+  assertLabelRectsValid,
+  autoFitLabelText,
+  buildElectronicAuthenticationLabel,
+  buildHumanWitnessLabel,
+  buildWitnessAuthLabelRects,
+  ENGLISH_HUMAN_WITNESS_TITLE,
+  labelToTextLines,
+  type AuthenticationLabel,
+  type LabelTextLine,
+} from "@/lib/server/witness-auth-label";
+import { extractStoredPolicyDecision } from "@/lib/server/witness-policy-service";
+import { formatSaudiArabiaTimestamp } from "@/lib/server/witness-requirement-service";
 
 type ImcManifestItem = {
   id: string;
@@ -1758,6 +1774,391 @@ async function drawProductionMappedSignature(args: {
 }
 
 
+// ---------------------------------------------------------------------------
+// Bilingual signature-authentication labels (IMC MR 1168, page 2 overlay)
+// ---------------------------------------------------------------------------
+
+type WitnessAuthSignatureRecord = {
+  id: string;
+  role: string;
+  signerName: string;
+  signedAt: Date;
+  signatureHash: string | null;
+  metadata: unknown;
+};
+
+function throwWitnessAuthEvidenceIncomplete(detail: string): never {
+  throw new ApiError(
+    409,
+    `Final PDF generation blocked: signature authentication label evidence is incomplete (${detail}).`,
+    { code: "WITNESS_AUTH_LABEL_EVIDENCE_INCOMPLETE" },
+  );
+}
+
+/**
+ * Resolve the genuine masked mobile evidence captured during OTP delivery.
+ * Evidence tables may not exist in every runtime schema, so query failures
+ * degrade to "not found" and the caller fails closed instead of fabricating.
+ */
+async function resolveMaskedMobileEvidence(
+  prisma: ReturnType<typeof getPrisma>,
+  tenantId: string,
+  documentId: string,
+): Promise<string | null> {
+  try {
+    const event = await prisma.evidenceEvent.findFirst({
+      where: {
+        tenantId,
+        consentDocumentId: documentId,
+        maskedMobileNumber: { not: null },
+      },
+      orderBy: { eventTimestamp: "desc" },
+      select: { maskedMobileNumber: true },
+    });
+
+    const fromEvent = event?.maskedMobileNumber?.trim() || "";
+    if (fromEvent && fromEvent.includes("*")) {
+      return fromEvent;
+    }
+
+    const pkg = await prisma.evidencePackage.findFirst({
+      where: {
+        tenantId,
+        consentDocumentId: documentId,
+        maskedMobileNumber: { not: null },
+      },
+      orderBy: { createdAt: "desc" },
+      select: { maskedMobileNumber: true },
+    });
+
+    const fromPackage = pkg?.maskedMobileNumber?.trim() || "";
+    if (fromPackage && fromPackage.includes("*")) {
+      return fromPackage;
+    }
+  } catch {
+    // fail closed below
+  }
+
+  return null;
+}
+
+/**
+ * Build the authentication labels for the approved Adeno-Tonsillectomy
+ * consent. Human-witness decisions render one label per genuine witness
+ * signature record; routine no-witness decisions render exactly one
+ * electronic authentication label built from the patient/guardian
+ * signature's genuine OTP evidence. Missing genuine evidence fails closed.
+ */
+async function buildWitnessAuthOverlayLabels(args: {
+  prisma: ReturnType<typeof getPrisma>;
+  doc: {
+    id: string;
+    tenantId: string;
+    metadata: unknown;
+    signatures: WitnessAuthSignatureRecord[];
+  };
+  patientOrGuardianSignature: WitnessAuthSignatureRecord | null;
+}): Promise<AuthenticationLabel[]> {
+  const decision = extractStoredPolicyDecision(args.doc.metadata);
+  const requiredWitnessCount = decision?.requiredWitnessCount ?? 0;
+
+  if (requiredWitnessCount > 0) {
+    const witnessSignatures = await args.prisma.consentWitnessSignature.findMany({
+      where: {
+        tenantId: args.doc.tenantId,
+        consentDocumentId: args.doc.id,
+      },
+      orderBy: { signedAt: "asc" },
+    });
+
+    // Only genuinely captured witness signatures become labels; the
+    // finalization gate blocks PDF generation when any are still missing.
+    return witnessSignatures.map((record) => {
+      const signatureRecord = args.doc.signatures.find(
+        (signature) => signature.id === record.signatureId,
+      );
+
+      return buildHumanWitnessLabel({
+        witnessRole: record.witnessRole,
+        witnessDisplayName:
+          compactWhitespace(signatureRecord?.signerName) || record.witnessRole,
+        employeeId: record.employeeId,
+        department: record.department,
+        signatureId: record.signatureId,
+        signedAtKsa: record.signedAtKsa,
+        authenticationReference: record.authenticationReference,
+        documentHash: record.documentHash,
+      });
+    });
+  }
+
+  const signature = args.patientOrGuardianSignature;
+  if (!signature) {
+    throwWitnessAuthEvidenceIncomplete("patient or guardian signature record is missing");
+  }
+
+  const signatureMetadata = asRecord(signature.metadata);
+
+  const verificationReference = compactWhitespace(
+    asString(signatureMetadata.challengeId),
+  );
+  if (!verificationReference) {
+    throwWitnessAuthEvidenceIncomplete("OTP verification reference (challengeId) is missing");
+  }
+
+  const authenticationReference =
+    compactWhitespace(signature.signatureHash)
+    || compactWhitespace(asString(signatureMetadata.signatureHash));
+  if (!authenticationReference) {
+    throwWitnessAuthEvidenceIncomplete("signature hash is missing");
+  }
+
+  const maskedMobile = await resolveMaskedMobileEvidence(
+    args.prisma,
+    args.doc.tenantId,
+    args.doc.id,
+  );
+  if (!maskedMobile) {
+    throwWitnessAuthEvidenceIncomplete("masked mobile OTP delivery evidence is missing");
+  }
+
+  return [
+    buildElectronicAuthenticationLabel({
+      verificationReference,
+      maskedMobile,
+      signatureId: signature.id,
+      signedAtKsa: formatSaudiArabiaTimestamp(signature.signedAt),
+      authenticationReference,
+      // The verification QR is omitted: the calibrated label region does not
+      // safely fit an additional QR image alongside the mandatory fields.
+      verificationUrl: null,
+    }),
+  ];
+}
+
+function normalizeWitnessAuthLabelLines(
+  lines: LabelTextLine[],
+  lang: "ar" | "en",
+): LabelTextLine[] {
+  return lines.map((line) => {
+    const text = normalizeProductionUnicodeText(line.text);
+
+    assertProductionUnicodeIntegrity({
+      fieldKey: `witness-auth-label-${lang}`,
+      value: text,
+    });
+
+    return { ...line, text };
+  });
+}
+
+/**
+ * Content-safety gate applied to every label before rendering.
+ * `assertLabelContentSafe` enforces the رمز التحقق terminology rule, which
+ * only holds for the routine electronic-authentication label (the
+ * human-witness label carries no verification-code reference — see the
+ * module's own test suite, which intentionally skips the terminology
+ * assertion for witness labels). Every other safety rule — no Latin "OTP"
+ * in Arabic text and no bare verification-code leak — must hold for both
+ * label kinds and is still enforced here.
+ */
+function assertWitnessAuthLabelContentSafe(label: AuthenticationLabel): void {
+  try {
+    assertLabelContentSafe(label);
+  } catch (error) {
+    const code = (error as { code?: string } | null)?.code;
+
+    if (
+      code !== "LABEL_ARABIC_TERMINOLOGY_MISSING"
+      || label.titleEn !== ENGLISH_HUMAN_WITNESS_TITLE
+    ) {
+      throw error;
+    }
+
+    /*
+     * The terminology rule fires before the secret-leak scan inside
+     * assertLabelContentSafe, so re-run that universal guard here: no
+     * human-witness field may ever leak a bare verification code.
+     */
+    for (const field of label.fields) {
+      if (/^\d{6}$/.test(field.value.trim())) {
+        throw new ApiError(
+          409,
+          `Label field ${field.labelEn} leaks a verification code`,
+          { code: "LABEL_SECRET_VALUE_REJECTED" },
+        );
+      }
+    }
+  }
+}
+
+function buildWitnessAuthLabelsOverlayHtml(args: {
+  labels: AuthenticationLabel[];
+}): string | null {
+  const labelMarkup: string[] = [];
+
+  args.labels.forEach((label, slot) => {
+    assertWitnessAuthLabelContentSafe(label);
+
+    const rects = buildWitnessAuthLabelRects(IMC_MR_1168_PAGE2_CALIBRATION, slot);
+
+    assertLabelRectsValid(rects, IMC_MR_1168_PAGE2_CALIBRATION);
+
+    for (const lang of ["en", "ar"] as const) {
+      const rect = lang === "en" ? rects.english : rects.arabic;
+      const isArabic = lang === "ar";
+
+      const lines = normalizeWitnessAuthLabelLines(
+        labelToTextLines(label, lang),
+        lang,
+      );
+
+      const fit = autoFitLabelText(lines, rect, OVERLAY_VIEWPORT, {
+        minFontSizePt: IMC_MR_1168_PAGE2_CALIBRATION.minFontSizePt,
+        maxFontSizePt: IMC_MR_1168_PAGE2_CALIBRATION.maxFontSizePt,
+      });
+
+      assertLabelFits(fit);
+
+      const linesMarkup = lines
+        .map(
+          (line) =>
+            `<div class="wc-auth-line wc-auth-${line.weight === "title"
+              ? "title"
+              : line.weight === "body"
+                ? "body"
+                : "field"}">${escapeHtml(line.text)}</div>`,
+        )
+        .join("");
+
+      labelMarkup.push(
+        `<div
+          class="wc-auth-label"
+          dir="${isArabic ? "rtl" : "ltr"}"
+          data-label-slot="${slot}"
+          data-label-lang="${lang}"
+          style="
+            left:${(rect.x * 100).toFixed(4)}%;
+            top:${(rect.y * 100).toFixed(4)}%;
+            width:${(rect.width * 100).toFixed(4)}%;
+            height:${(rect.height * 100).toFixed(4)}%;
+            font-size:${fit.fontSizePt.toFixed(2)}px;
+            text-align:${isArabic ? "right" : "left"};
+            font-family:${isArabic
+              ? '"WathiqOverlayArabic","WathiqOverlaySans",Tahoma,Arial,sans-serif'
+              : '"WathiqOverlaySans","WathiqOverlayArabic",Arial,sans-serif'};
+          "
+        >${linesMarkup}</div>`,
+      );
+    }
+  });
+
+  if (labelMarkup.length === 0) {
+    return null;
+  }
+
+  return buildOverlayShell({
+    transparent: true,
+    body: `
+      <style>
+        html,
+        body {
+          width: ${OVERLAY_VIEWPORT.width}px !important;
+          height: ${OVERLAY_VIEWPORT.height}px !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: hidden !important;
+          background: transparent !important;
+        }
+
+        .page.wc-auth-labels-page {
+          position: relative !important;
+          width: ${OVERLAY_VIEWPORT.width}px !important;
+          height: ${OVERLAY_VIEWPORT.height}px !important;
+          min-height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: hidden !important;
+          background: transparent !important;
+          box-sizing: border-box !important;
+        }
+
+        .wc-auth-label {
+          position: absolute;
+          box-sizing: border-box;
+          overflow: hidden;
+          padding: 4px 6px;
+          color: #10253f;
+          font-weight: 400;
+          line-height: 1.25;
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
+          word-break: normal;
+          unicode-bidi: plaintext;
+          background: transparent;
+        }
+
+        .wc-auth-line {
+          margin: 0;
+        }
+
+        .wc-auth-title {
+          font-weight: 700;
+          color: #0d2c57;
+        }
+      </style>
+
+      <div class="page wc-auth-labels-page">
+        ${labelMarkup.join("")}
+      </div>
+    `,
+  });
+}
+
+async function drawWitnessAuthLabelsOverlay(args: {
+  browser: Browser;
+  pdfDoc: PDFDocument;
+  labels: AuthenticationLabel[];
+}) {
+  if (args.labels.length === 0) {
+    return 0;
+  }
+
+  const pages = args.pdfDoc.getPages();
+  const page = pages[IMC_MR_1168_PAGE2_CALIBRATION.page - 1];
+
+  if (!page) {
+    throw new ApiError(
+      409,
+      "Final PDF generation blocked: the approved form does not contain the calibrated authentication label page.",
+      { code: "PDF_CALIBRATION_VIOLATION" },
+    );
+  }
+
+  const html = buildWitnessAuthLabelsOverlayHtml({ labels: args.labels });
+
+  if (!html) {
+    return 0;
+  }
+
+  const overlayBytes = await renderOverlayPng({
+    browser: args.browser,
+    html,
+  });
+
+  const overlayImage = await args.pdfDoc.embedPng(overlayBytes);
+
+  page.drawImage(overlayImage, {
+    x: 0,
+    y: 0,
+    width: page.getWidth(),
+    height: page.getHeight(),
+  });
+
+  return args.labels.length;
+}
+
+
 export async function renderImcApprovedDoctorDraftPdf(args: {
   pdfBytes: Uint8Array;
   formId: string;
@@ -2088,6 +2489,20 @@ export async function renderImcApprovedConsentPdf(args: {
         )
       : null;
 
+  /*
+   * Bilingual signature-authentication labels (IMC MR 1168, page 2).
+   * Genuine witness/OTP evidence is resolved here so evidence problems
+   * fail closed before any overlay bytes are produced. The approved
+   * source PDF itself is never altered — labels are overlay-only.
+   */
+  const witnessAuthLabels = productionMapping
+    ? await buildWitnessAuthOverlayLabels({
+        prisma,
+        doc,
+        patientOrGuardianSignature,
+      })
+    : [];
+
   const normalizedDoctorCompletionValues =
     normalizeProductionOverlayValues(
       doctorCompletionValues,
@@ -2180,6 +2595,14 @@ export async function renderImcApprovedConsentPdf(args: {
             "guardian_signature",
             "treating_physician_signature",
           ]),
+      });
+    }
+
+    if (witnessAuthLabels.length > 0) {
+      await drawWitnessAuthLabelsOverlay({
+        browser,
+        pdfDoc,
+        labels: witnessAuthLabels,
       });
     }
 
