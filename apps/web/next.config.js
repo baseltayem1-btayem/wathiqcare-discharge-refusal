@@ -1,6 +1,6 @@
-const path = require("node:path");
+const { resolveTracingRoot } = require("./scripts/resolve-tracing-root.cjs");
 
-const monorepoRoot = path.resolve(process.cwd(), "../..");
+const { root: tracingRoot, contractsInclude } = resolveTracingRoot();
 const CANONICAL_ORIGIN = "https://wathiqcare.online";
 
 const CSP = [
@@ -17,9 +17,9 @@ const CSP = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    outputFileTracingRoot: monorepoRoot,
+    outputFileTracingRoot: tracingRoot,
     outputFileTracingIncludes: {
-        "/api/discharge/**": ["./contracts/**"],
+        "/api/discharge/**": [contractsInclude],
     },
     experimental: {
         // Limit parallel build workers to 1 for Codespaces/low-memory stability.
