@@ -304,6 +304,7 @@ export async function POST(
           select: {
             id: true,
             status: true,
+            immutablePdfHash: true,
             physicianName: true,
             physicianLicense: true,
             metadata: true,
@@ -336,6 +337,15 @@ export async function POST(
         .physicianLicense
         ?.trim()
       || "";
+
+    const documentHash =
+      consentDocument.immutablePdfHash
+      || computeFixedClauseChecksum(
+        consentDocument as unknown as Record<string, unknown>,
+      );
+    const documentHashSource = consentDocument.immutablePdfHash
+      ? "immutable_pdf_hash"
+      : "fixed_clause_checksum";
 
     const physicianSignatures =
       await prisma
@@ -478,6 +488,9 @@ export async function POST(
               contextualPhysicianLicense
                 ? "document-context-only"
                 : "unavailable",
+
+            documentHash,
+            documentHashSource,
           },
         },
         request,

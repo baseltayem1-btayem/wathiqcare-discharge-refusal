@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   ProductionPatient,
   ProductionEncounter,
   ProductionAssembly,
@@ -52,6 +52,13 @@ export type ConsentFieldMappingReadiness = {
     labelEn: string;
     type: string;
   }>;
+  persistedVerification?: {
+    status: string;
+    approvedAt: string;
+    approvedByUserId: string | null;
+    mappingHash: string;
+    formVersion?: string;
+  } | null;
 };
 
 export async function fetchConsentFieldMappingReadiness(formId: string): Promise<ConsentFieldMappingReadiness> {
@@ -87,7 +94,41 @@ export async function fetchConsentFieldMappingReadiness(formId: string): Promise
     requiredPatientFields: Array.isArray(payload.requiredPatientFields)
       ? payload.requiredPatientFields as ConsentFieldMappingReadiness["requiredPatientFields"]
       : [],
+    persistedVerification: payload.persistedVerification
+      ? {
+          status: String((payload.persistedVerification as Record<string, unknown>).status || ""),
+          approvedAt: String((payload.persistedVerification as Record<string, unknown>).approvedAt || ""),
+          approvedByUserId:
+            typeof (payload.persistedVerification as Record<string, unknown>).approvedByUserId === "string"
+              ? (String((payload.persistedVerification as Record<string, unknown>).approvedByUserId) as string)
+              : null,
+          mappingHash: String((payload.persistedVerification as Record<string, unknown>).mappingHash || ""),
+          formVersion:
+            typeof (payload.persistedVerification as Record<string, unknown>).formVersion === "string"
+              ? String((payload.persistedVerification as Record<string, unknown>).formVersion)
+              : undefined,
+        }
+      : null,
   };
+}
+
+export async function verifyConsentFieldMapping(formId: string): Promise<ConsentFieldMappingReadiness> {
+  const response = await fetch(
+    `/api/modules/informed-consents/forms/${encodeURIComponent(formId)}/field-mapping`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ action: "verify" }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+
+  if (!response.ok || payload.ok === false) {
+    throw new Error(String(payload.error || "Failed to verify consent field mapping."));
+  }
+
+  return fetchConsentFieldMappingReadiness(formId);
 }
 
 export async function resolveContentMapping(args: {
@@ -314,6 +355,7 @@ export async function createConsentDocument(args: {
   department?: string;
   diagnosis?: string;
   plannedProcedure?: string;
+  initialStatus?: "DRAFT" | "READY_FOR_SIGNATURE";
   metadata?: Record<string, unknown>;
 }): Promise<{ id: string; consentReference: string; status: string; patientName?: string | null; mrn?: string | null }> {
   const response = await fetch("/api/modules/informed-consents/documents", {

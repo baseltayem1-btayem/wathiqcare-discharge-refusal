@@ -1177,6 +1177,9 @@ export async function POST(request: NextRequest) {
       : {};
     const approvedConsentFormId = String(body.approvedConsentFormId || requestMetadata.approvedConsentFormId || templateId || "").trim();
 
+    const rawInitialStatus = String(body.initialStatus || "").trim().toUpperCase();
+    const initialStatus = rawInitialStatus === "READY_FOR_SIGNATURE" ? "READY_FOR_SIGNATURE" : "DRAFT";
+
     if (!approvedConsentFormId) {
       return NextResponse.json({ ok: false, error: NO_APPROVED_CONSENT_MESSAGE }, { status: 409 });
     }
@@ -1382,6 +1385,7 @@ export async function POST(request: NextRequest) {
         typeof body.idempotencyFingerprint === "string"
           ? body.idempotencyFingerprint.trim()
           : undefined,
+      initialStatus,
       metadata: {
         ...requestMetadata,
 

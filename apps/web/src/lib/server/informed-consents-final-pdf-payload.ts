@@ -13,6 +13,10 @@ import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { normalizeArabicForPatientFacingText } from "@/lib/server/arabic-mojibake-guard";
 import { resolveConsentSignaturePresentation } from "@/lib/signature/signature-display";
+import {
+  isSignatureHashStale,
+  resolveTrustedDocumentHash,
+} from "@/lib/server/signature-hash-binding";
 import { logRuntimeEvent, logRuntimeIncident } from "@/lib/server/runtime-observability";
 import { extractStoredPolicyDecision } from "@/lib/server/witness-policy-service";
 
@@ -793,7 +797,20 @@ export async function buildFinalConsentPdfPayload(args: {
 
   const patientSignature = toPresentation(patientSignatureRaw);
   const guardianSignature = toPresentation(guardianSignatureRaw);
-  const physicianSignature = toPresentation(physicianSignatureRaw);
+  const physicianSignatureStale =
+    physicianSignatureRaw !== null && isSignatureHashStale(physicianSignatureRaw, document);
+  const physicianSignature = physicianSignatureStale
+    ? null
+    : toPresentation(physicianSignatureRaw);
+
+  if (physicianSignatureStale) {
+    throw new ApiError(
+      409,
+      "Final PDF generation blocked: the treating physician signature is bound to an outdated document version.",
+      { code: "PHYSICIAN_SIGNATURE_STALE" },
+    );
+  }
+
   const interpreterSignature = toPresentation(interpreterSignatureRaw);
   const witnessSignature = toPresentation(witnessSignatureRaw);
 
@@ -816,9 +833,7 @@ export async function buildFinalConsentPdfPayload(args: {
 
   const qrVerificationUrl = `${PRODUCTION_VERIFY_BASE_URL}/verify/consent/${document.id}`;
 
-  const effectiveHash = normalizeText(
-    document.auditChecksum || document.immutablePdfHash || computeFixedClauseChecksum(document),
-  );
+  const effectiveHash = normalizeText(resolveTrustedDocumentHash(document));
 
   const qrPayload =
     document.qrPayload ||

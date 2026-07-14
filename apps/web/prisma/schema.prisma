@@ -2969,6 +2969,7 @@ model ConsentForm {
   expiryDate          DateTime?                        @map("expiry_date")
   governanceSnapshot  Json?                            @map("governance_snapshot")
   pdfTemplateUrl      String?                          @map("pdf_template_url")
+  metadata            Json?                            @map("metadata")
   requiresWitness     Boolean                          @default(false) @map("requires_witness")
   requiresInterpreter Boolean                          @default(false) @map("requires_interpreter")
   createdByUserId     String                           @map("created_by_user_id")

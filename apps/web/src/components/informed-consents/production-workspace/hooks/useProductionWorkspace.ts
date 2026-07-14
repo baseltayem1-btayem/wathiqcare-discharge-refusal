@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { isAssemblyApprovedPdfSourceVerified } from "../utils/approvedPdfSource";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -24,6 +24,7 @@ import {
   checkSendEligibility,
   fetchProcedures,
   fetchConsentFieldMappingReadiness,
+  verifyConsentFieldMapping,
 } from "../lib/api";
 import type { ConsentFieldMappingReadiness } from "../lib/api";
 import { analyzeDoctorReadiness, type DoctorReadinessReport } from "../doctorReadiness";
@@ -403,6 +404,25 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     setState((s) => ({ ...s, draftApproved: true }));
   }, []);
 
+  const verifyFieldMapping = useCallback(async () => {
+    if (!state.fieldMappingReadiness?.formId) {
+      setSendError("Consent field mapping must be loaded before verification.");
+      return;
+    }
+    setSendError("");
+    try {
+      const readiness = await verifyConsentFieldMapping(state.fieldMappingReadiness.formId);
+      setState((s) => ({
+        ...s,
+        fieldMappingReadiness: readiness,
+        draftApproved: false,
+        previewReviewed: false,
+      }));
+    } catch (error) {
+      setSendError(error instanceof Error ? error.message : "Field mapping verification failed.");
+    }
+  }, [state.fieldMappingReadiness?.formId]);
+
   const acknowledgeBlocker = useCallback((key: string) => {
     setState((s) => {
       const next = new Set(s.acknowledgedBlockers);
@@ -524,6 +544,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         department: physician.department || state.encounter.department || undefined,
         diagnosis: state.encounter.diagnosis || undefined,
         plannedProcedure: state.selectedProcedureTitle,
+        initialStatus: "READY_FOR_SIGNATURE",
         metadata: {
           selectedProcedureId: state.selectedProcedureId,
           selectedProcedureTitle: state.selectedProcedureTitle,
@@ -847,6 +868,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     setDoctorCompletionValue,
     setPhysicianSignatureDataUrl,
     approveDraft,
+    verifyFieldMapping,
     acknowledgeBlocker,
     acknowledgeAlert,
     send,

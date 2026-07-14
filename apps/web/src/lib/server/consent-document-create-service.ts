@@ -400,6 +400,8 @@ export type CreateConsentDocumentPayload = {
   idempotencyKey?: string;
   idempotencyFingerprint?: string;
   metadata?: Record<string, unknown>;
+  /** Initial lifecycle status. Defaults to DRAFT. Production workspace may use READY_FOR_SIGNATURE. */
+  initialStatus?: ConsentDocumentStatus;
   /** Runtime witness-policy trigger facts captured at creation time. */
   witnessTriggerFacts?: {
     substituteDecisionMaker?: boolean;
@@ -618,7 +620,7 @@ export async function createConsentDocument(
           templateId,
           templateVersionId: version.id,
           consentReference: generateReference("IC"),
-          status: ConsentDocumentStatus.DRAFT,
+          status: payload.initialStatus ?? ConsentDocumentStatus.DRAFT,
           language: payload.language || "bilingual",
           idempotencyKey: idempotencyKey ?? null,
           idempotencyFingerprint: idempotencyFingerprint ?? null,

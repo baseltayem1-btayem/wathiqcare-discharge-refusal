@@ -9,6 +9,7 @@ import QRCode from "qrcode";
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 import { getConsentFieldMappingByFormId } from "@/lib/server/consent-field-mappings";
+import { isSignatureHashStale } from "@/lib/server/signature-hash-binding";
 import { resolveConsentSignaturePresentation } from "@/lib/signature/signature-display";
 import {
   IMC_MR_1168_PAGE2_CALIBRATION,
@@ -2734,6 +2735,14 @@ export async function renderImcApprovedConsentPdf(args: {
       patientOrGuardianSignature?.role === "GUARDIAN"
         ? "guardian_signature"
         : "patient_signature";
+
+    if (physicianSignature && isSignatureHashStale(physicianSignature, doc)) {
+      throw new ApiError(
+        409,
+        "Final PDF generation blocked: the treating physician signature is bound to an outdated document version.",
+        { code: "PHYSICIAN_SIGNATURE_STALE" },
+      );
+    }
 
     if (
       !physicianSignaturePresentation
