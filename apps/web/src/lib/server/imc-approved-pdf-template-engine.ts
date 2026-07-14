@@ -4,13 +4,15 @@ import { readFile } from "node:fs/promises";
 import chromium from "@sparticuz/chromium";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import puppeteer from "puppeteer";
-import type { Browser, LaunchOptions, Page } from "puppeteer";
+import type { Browser, LaunchOptions } from "puppeteer";
 import QRCode from "qrcode";
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 import { getConsentFieldMappingByFormId } from "@/lib/server/consent-field-mappings";
+import type { ConsentFieldDefinition, ConsentFieldMapping } from "@/lib/consents/field-mapping/types";
 import { isSignatureHashStale } from "@/lib/server/signature-hash-binding";
 import { resolveConsentSignaturePresentation } from "@/lib/signature/signature-display";
+
 import {
   IMC_MR_1168_PAGE2_CALIBRATION,
   assertLabelContentSafe,
@@ -260,25 +262,6 @@ function renderWatermarkMarkup(): string {
   `).join("");
 }
 
-function buildMainPageStickerRows(context: OverlayDocumentContext): Array<{ label: string; value: string | null }> {
-  return [
-    { label: "Patient Name / اسم المريض", value: context.patientName },
-    { label: "MRN / رقم الملف الطبي", value: context.patientMrn },
-    { label: "DOB / تاريخ الميلاد", value: context.patientDob },
-    { label: "Age / العمر", value: context.patientAge },
-    { label: "Gender / الجنس", value: context.gender },
-    { label: "Encounter ID / رقم الزيارة", value: context.encounterId },
-    { label: "Case ID / رقم الحالة", value: context.caseId },
-    { label: "Visit ID / رقم الزيارة البديل", value: context.visitId },
-    { label: "Facility / المنشأة", value: context.facilityName },
-    { label: "Location / الموقع", value: context.location || context.wardBed },
-    { label: "Procedure / الإجراء", value: context.procedure },
-    { label: "Document ID / رقم المستند", value: context.documentId },
-    { label: "Signature ID / رقم التوقيع", value: context.signatureId },
-    { label: "Consent Reference / مرجع الموافقة", value: context.consentReference },
-    { label: "Signed At / تاريخ ووقت التوقيع", value: context.signedAtEn },
-  ];
-}
 
 function buildAppendixRows(context: OverlayDocumentContext): Array<{ label: string; value: string | null }> {
   return [
@@ -731,22 +714,6 @@ function buildSharedMetaItems(context: OverlayDocumentContext): string {
     .join("");
 }
 
-function buildCompactIdentityItems(context: OverlayDocumentContext): string {
-  const rows = [
-    { label: "Procedure / الإجراء", value: context.procedure },
-    { label: "Verify / التحقق", value: truncateForHeader(context.verificationUrl, 26) },
-  ];
-
-  return rows
-    .filter((row) => Boolean(compactWhitespace(row.value)))
-    .map((row) => `
-      <div class="wc-meta-item">
-        <div class="wc-meta-label">${escapeHtml(row.label)}</div>
-        <div class="wc-meta-value">${escapeHtml(compactWhitespace(row.value) || "")}</div>
-      </div>
-    `)
-    .join("");
-}
 
 function buildOverlayPageHtml(args: {
   context: OverlayDocumentContext;
@@ -755,9 +722,6 @@ function buildOverlayPageHtml(args: {
   totalPages: number;
 }): string {
   const { context, compact } = args;
-  const logo = context.wathiqLogoDataUrl
-    ? `<img class="wc-logo" src="${context.wathiqLogoDataUrl}" alt="WathiqCare" />`
-    : `<strong>WathiqCare</strong>`;
 
   return buildOverlayShell({
     body: `
@@ -784,9 +748,6 @@ function buildOverlayPageHtml(args: {
 }
 
 function buildAppendixHtml(context: OverlayDocumentContext): string {
-  const logo = context.wathiqLogoDataUrl
-    ? `<img class="wc-logo" src="${context.wathiqLogoDataUrl}" alt="WathiqCare" />`
-    : `<strong>WathiqCare</strong>`;
 
   return buildOverlayShell({
     transparent: false,
@@ -799,7 +760,7 @@ function buildAppendixHtml(context: OverlayDocumentContext): string {
             <div class="wc-appendix-subtitle">تم التوقيع إلكترونياً · Electronically Signed</div>
             <div class="wc-appendix-badge">Patient Information Label / ملصق بيانات المريض</div>
           </div>
-          <div>${logo}</div>
+          <div>${context.wathiqLogoDataUrl ? `<img class="wc-logo" src="${context.wathiqLogoDataUrl}" alt="WathiqCare" />` : `<strong>WathiqCare</strong>`}</div>
         </header>
 
         <div class="wc-appendix-layout">
@@ -946,11 +907,6 @@ export async function renderPdfPageToPng(args: {
   }
 }
 
-function buildOverlayContext(args: {
-  doc: Awaited<ReturnType<ReturnType<typeof getPrisma>["consentDocument"]["findFirst"]>> extends infer _T ? never : never;
-}) {
-  void args;
-}
 
 function slugify(value: string): string {
   return String(value || "")
@@ -1287,6 +1243,55 @@ function normalizeProductionOverlayValues(
   return normalized;
 }
 
+function resolveProductionMappingAutoValues(
+  mapping: ConsentFieldMapping | null,
+  metadata: Record<string, unknown> | null,
+): Record<string, string> {
+  const autoValues: Record<string, string> = {};
+  if (!mapping || !metadata) return autoValues;
+
+  const physicianSignatureMeta = asRecord(metadata.physicianSignature);
+
+  for (const field of mapping.fields) {
+    if (!field.sourcePath) continue;
+
+    let resolved: unknown = undefined;
+    const path = field.sourcePath.split(".");
+    let current: unknown = metadata;
+    for (const segment of path) {
+      const record = asRecord(current);
+      current = record?.[segment];
+    }
+    resolved = current;
+
+    if (resolved === undefined || resolved === null) continue;
+
+    if (field.sourcePath === "metadata.physicianSignature.signedAtDate" && physicianSignatureMeta?.signedAt) {
+      const signedAt = new Date(String(physicianSignatureMeta.signedAt));
+      if (!Number.isNaN(signedAt.getTime())) {
+        autoValues[field.key] = signedAt.toISOString().slice(0, 10);
+      }
+      continue;
+    }
+
+    if (field.sourcePath === "metadata.physicianSignature.signedAtTime" && physicianSignatureMeta?.signedAt) {
+      const signedAt = new Date(String(physicianSignatureMeta.signedAt));
+      if (!Number.isNaN(signedAt.getTime())) {
+        autoValues[field.key] = signedAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
+      }
+      continue;
+    }
+
+    if (typeof resolved === "string" && resolved.trim()) {
+      autoValues[field.key] = resolved.trim();
+    } else if (typeof resolved === "boolean") {
+      autoValues[field.key] = resolved ? "Yes" : "No";
+    }
+  }
+
+  return autoValues;
+}
+
 function collectProductionMappingFields(
   value: unknown,
 ): Array<Record<string, unknown>> {
@@ -1389,21 +1394,101 @@ function buildProductionMappedTextOverlayHtml(args: {
 
   const fieldMarkup: string[] = [];
 
+  function renderFieldPlacement(
+    field: Record<string, unknown>,
+    rawValue: string,
+    languageVariant: "DEFAULT" | "ARABIC",
+  ): string | null {
+    const placement = getProductionMappingPlacement(field, languageVariant);
+    if (!placement) return null;
+
+    const mappedPageIndex = resolveProductionPageIndex(
+      placement.page ?? placement.pageNumber,
+      Math.max(args.pageIndex + 1, 1),
+    );
+
+    if (mappedPageIndex !== args.pageIndex) return null;
+
+    const xRaw = toFiniteOverlayNumber(placement.x);
+    const yRaw = toFiniteOverlayNumber(placement.y);
+
+    if (xRaw === null || yRaw === null) return null;
+
+    const placementCoordinateMode = asString(placement.coordinateMode).toUpperCase();
+    const normalized =
+      coordinateMode === "NORMALIZED" ||
+      placementCoordinateMode === "NORMALIZED" ||
+      (xRaw >= 0 && xRaw <= 1 && yRaw >= 0 && yRaw <= 1);
+
+    const widthRaw =
+      toFiniteOverlayNumber(placement.width) ??
+      toFiniteOverlayNumber(placement.maxWidth) ??
+      0.35;
+
+    const heightRaw =
+      toFiniteOverlayNumber(placement.height) ??
+      toFiniteOverlayNumber(placement.maxHeight) ??
+      0.06;
+
+    const leftPercent = normalized
+      ? xRaw * 100
+      : (xRaw / A4_PAGE.width) * 100;
+
+    const topPercent = normalized
+      ? yRaw * 100
+      : (1 - yRaw / A4_PAGE.height) * 100;
+
+    const widthPercent =
+      normalized && widthRaw > 0 && widthRaw <= 1
+        ? widthRaw * 100
+        : (widthRaw / A4_PAGE.width) * 100;
+
+    const heightPercent =
+      normalized && heightRaw > 0 && heightRaw <= 1
+        ? heightRaw * 100
+        : (heightRaw / A4_PAGE.height) * 100;
+
+    const fontSize =
+      toFiniteOverlayNumber(placement.fontSize) ??
+      toFiniteOverlayNumber(placement.size) ??
+      8;
+
+    const fontSizePx = Math.max(
+      10,
+      fontSize * (OVERLAY_VIEWPORT.width / A4_PAGE.width),
+    );
+
+    const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(rawValue);
+    const targetIsArabic = languageVariant === "ARABIC";
+
+    return `<div
+      class="production-mapped-text"
+      dir="${isArabic || targetIsArabic ? "rtl" : "ltr"}"
+      data-field-key="${escapeHtml(asString(field.key) || "")}"
+      data-language-variant="${languageVariant}"
+      style="
+        left:${leftPercent.toFixed(4)}%;
+        top:${topPercent.toFixed(4)}%;
+        width:${widthPercent.toFixed(4)}%;
+        height:${heightPercent.toFixed(4)}%;
+        font-size:${fontSizePx.toFixed(2)}px;
+        text-align:${isArabic || targetIsArabic ? "right" : "left"};
+      "
+    >${escapeHtml(rawValue)}</div>`;
+  }
+
   for (const field of fields) {
-    const key =
-      asString(field.key);
+    const key = asString(field.key);
 
     if (
       !key ||
       excludedKeys.has(key) ||
-      asString(field.type).toUpperCase() ===
-        "SIGNATURE"
+      asString(field.type).toUpperCase() === "SIGNATURE"
     ) {
       continue;
     }
 
-    const rawValue =
-      normalizeProductionUnicodeText(
+    const rawValue = normalizeProductionUnicodeText(
       String(args.values[key] || "").trim(),
     );
 
@@ -1416,164 +1501,26 @@ function buildProductionMappedTextOverlayHtml(args: {
       continue;
     }
 
-    const placement =
-      getProductionMappingPlacement(
-        field,
-        /[؀-ۿݐ-ݿࢠ-ࣿ]/.test(
-          rawValue,
-        )
-          ? "ARABIC"
-          : "DEFAULT",
-      );
+    // Render on both the English and Arabic mapped targets when both exist.
+    // This mirrors bilingual forms: the same canonical clinical value is
+    // stamped in both language boxes rather than leaving the Arabic side blank.
+    const hasDefaultCoordinates = Boolean(asRecord(field.coordinates) || asRecord(field.placement) || asRecord(field.position));
+    const hasArabicCoordinates = Boolean(asRecord(field.arabicCoordinates));
 
-    if (!placement) {
-      continue;
+    if (hasDefaultCoordinates) {
+      const html = renderFieldPlacement(field, rawValue, "DEFAULT");
+      if (html) fieldMarkup.push(html);
     }
 
-    const mappedPageIndex =
-      resolveProductionPageIndex(
-        placement.page ??
-          placement.pageNumber,
-        Math.max(
-          args.pageIndex + 1,
-          1,
-        ),
-      );
-
-    if (
-      mappedPageIndex !==
-      args.pageIndex
-    ) {
-      continue;
+    if (hasArabicCoordinates) {
+      const html = renderFieldPlacement(field, rawValue, "ARABIC");
+      if (html) fieldMarkup.push(html);
     }
 
-    const xRaw =
-      toFiniteOverlayNumber(
-        placement.x,
-      );
-
-    const yRaw =
-      toFiniteOverlayNumber(
-        placement.y,
-      );
-
-    if (
-      xRaw === null ||
-      yRaw === null
-    ) {
-      continue;
+    if (!hasDefaultCoordinates && !hasArabicCoordinates) {
+      const html = renderFieldPlacement(field, rawValue, "DEFAULT");
+      if (html) fieldMarkup.push(html);
     }
-
-    const placementCoordinateMode =
-      asString(
-        placement.coordinateMode,
-      ).toUpperCase();
-
-    const normalized =
-      coordinateMode === "NORMALIZED" ||
-      placementCoordinateMode ===
-        "NORMALIZED" ||
-      (
-        xRaw >= 0 &&
-        xRaw <= 1 &&
-        yRaw >= 0 &&
-        yRaw <= 1
-      );
-
-    const widthRaw =
-      toFiniteOverlayNumber(
-        placement.width,
-      ) ??
-      toFiniteOverlayNumber(
-        placement.maxWidth,
-      ) ??
-      0.35;
-
-    const heightRaw =
-      toFiniteOverlayNumber(
-        placement.height,
-      ) ??
-      toFiniteOverlayNumber(
-        placement.maxHeight,
-      ) ??
-      0.06;
-
-    const leftPercent =
-      normalized
-        ? xRaw * 100
-        : (
-            xRaw /
-            A4_PAGE.width
-          ) * 100;
-
-    const topPercent =
-      normalized
-        ? yRaw * 100
-        : (
-            1 -
-            yRaw /
-              A4_PAGE.height
-          ) * 100;
-
-    const widthPercent =
-      normalized &&
-      widthRaw > 0 &&
-      widthRaw <= 1
-        ? widthRaw * 100
-        : (
-            widthRaw /
-            A4_PAGE.width
-          ) * 100;
-
-    const heightPercent =
-      normalized &&
-      heightRaw > 0 &&
-      heightRaw <= 1
-        ? heightRaw * 100
-        : (
-            heightRaw /
-            A4_PAGE.height
-          ) * 100;
-
-    const fontSize =
-      toFiniteOverlayNumber(
-        placement.fontSize,
-      ) ??
-      toFiniteOverlayNumber(
-        placement.size,
-      ) ??
-      8;
-
-    const fontSizePx =
-      Math.max(
-        10,
-        fontSize *
-          (
-            OVERLAY_VIEWPORT.width /
-            A4_PAGE.width
-          ),
-      );
-
-    const isArabic =
-      /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(
-        rawValue,
-      );
-
-    fieldMarkup.push(
-      `<div
-        class="production-mapped-text"
-        dir="${isArabic ? "rtl" : "ltr"}"
-        data-field-key="${escapeHtml(key)}"
-        style="
-          left:${leftPercent.toFixed(4)}%;
-          top:${topPercent.toFixed(4)}%;
-          width:${widthPercent.toFixed(4)}%;
-          height:${heightPercent.toFixed(4)}%;
-          font-size:${fontSizePx.toFixed(2)}px;
-          text-align:${isArabic ? "right" : "left"};
-        "
-      >${escapeHtml(rawValue)}</div>`,
-    );
   }
 
   if (fieldMarkup.length === 0) {
@@ -1744,54 +1691,20 @@ function decodeSignatureImageDataUrl(
   };
 }
 
-async function drawProductionMappedSignature(args: {
+async function drawSignatureInPlacement(args: {
   pdfDoc: PDFDocument;
-  mapping: unknown;
-  fieldKey: string;
-  signatureImageDataUrl: string | null | undefined;
-}) {
-  const decoded = decodeSignatureImageDataUrl(
-    args.signatureImageDataUrl,
-  );
-
-  if (!decoded) {
-    return false;
-  }
-
-  const mappingRecord = asRecord(args.mapping);
-  const nestedMapping =
-    asRecord(mappingRecord.mapping);
-
-  const effectiveMapping =
-    nestedMapping &&
-    Object.keys(nestedMapping).length > 0
-      ? nestedMapping
-      : mappingRecord;
-
-  const coordinateMode = asString(
-    effectiveMapping.coordinateMode,
-  ).toUpperCase();
-
-  const field = collectProductionMappingFields(
-    effectiveMapping,
-  ).find((candidate) => asString(candidate.key) === args.fieldKey);
-
-  if (!field) {
-    return false;
-  }
-
-  const placement = getProductionMappingPlacement(field);
-
-  if (!placement) {
-    return false;
-  }
+  field: Record<string, unknown>;
+  signatureImageDataUrl: string;
+  languageVariant: "DEFAULT" | "ARABIC";
+  coordinateMode: string;
+}): Promise<boolean> {
+  const placement = getProductionMappingPlacement(args.field, args.languageVariant);
+  if (!placement) return false;
 
   const xRaw = toFiniteOverlayNumber(placement.x);
   const yRaw = toFiniteOverlayNumber(placement.y);
 
-  if (xRaw === null || yRaw === null) {
-    return false;
-  }
+  if (xRaw === null || yRaw === null) return false;
 
   const pages = args.pdfDoc.getPages();
   const pageIndex = resolveProductionPageIndex(
@@ -1800,27 +1713,16 @@ async function drawProductionMappedSignature(args: {
   );
 
   const page = pages[pageIndex];
-
-  if (!page) {
-    return false;
-  }
+  if (!page) return false;
 
   const pageWidth = page.getWidth();
   const pageHeight = page.getHeight();
 
-  const placementCoordinateMode = asString(
-    placement.coordinateMode,
-  ).toUpperCase();
-
+  const placementCoordinateMode = asString(placement.coordinateMode).toUpperCase();
   const normalized =
-    coordinateMode === "NORMALIZED" ||
+    args.coordinateMode === "NORMALIZED" ||
     placementCoordinateMode === "NORMALIZED" ||
-    (
-      xRaw >= 0 &&
-      xRaw <= 1 &&
-      yRaw >= 0 &&
-      yRaw <= 1
-    );
+    (xRaw >= 0 && xRaw <= 1 && yRaw >= 0 && yRaw <= 1);
 
   const widthRaw =
     toFiniteOverlayNumber(placement.width) ??
@@ -1842,39 +1744,223 @@ async function drawProductionMappedSignature(args: {
       ? heightRaw * pageHeight
       : heightRaw;
 
+  // Enforce a minimum visible rectangle (≈ 50 pt wide × 20 pt high).
+  const minWidth = Math.min(50, pageWidth * 0.08);
+  const minHeight = Math.min(20, pageHeight * 0.025);
+  const effectiveBoxWidth = Math.max(boxWidth, minWidth);
+  const effectiveBoxHeight = Math.max(boxHeight, minHeight);
+
   const x = normalized ? xRaw * pageWidth : xRaw;
   const y = normalized
-    ? pageHeight * (1 - yRaw) - boxHeight
+    ? pageHeight * (1 - yRaw) - effectiveBoxHeight
     : yRaw;
 
-  const image =
+  const decoded = decodeSignatureImageDataUrl(args.signatureImageDataUrl);
+  if (!decoded) return false;
+
+  const img =
     decoded.mimeType === "image/png"
       ? await args.pdfDoc.embedPng(decoded.bytes)
       : await args.pdfDoc.embedJpg(decoded.bytes);
 
-  const dimensions = image.scale(1);
+  const scaled = img.scale(1);
 
   const scale = Math.min(
-    boxWidth / dimensions.width,
-    boxHeight / dimensions.height,
+    effectiveBoxWidth / scaled.width,
+    effectiveBoxHeight / scaled.height,
   );
 
-  if (!Number.isFinite(scale) || scale <= 0) {
-    return false;
-  }
+  if (!Number.isFinite(scale) || scale <= 0) return false;
 
-  const width = dimensions.width * scale;
-  const height = dimensions.height * scale;
+  const width = scaled.width * scale;
+  const height = scaled.height * scale;
 
-  page.drawImage(image, {
+  page.drawImage(img, {
     x,
-    y: y + Math.max(0, (boxHeight - height) / 2),
+    y: y + Math.max(0, (effectiveBoxHeight - height) / 2),
     width,
     height,
   });
 
   return true;
 }
+
+async function drawProductionMappedSignature(args: {
+  pdfDoc: PDFDocument;
+  mapping: unknown;
+  fieldKey: string;
+  signatureImageDataUrl: string | null | undefined;
+}) {
+  if (!args.signatureImageDataUrl?.trim()) {
+    return false;
+  }
+
+  const mappingRecord = asRecord(args.mapping);
+  const nestedMapping = asRecord(mappingRecord.mapping);
+
+  const effectiveMapping =
+    nestedMapping && Object.keys(nestedMapping).length > 0
+      ? nestedMapping
+      : mappingRecord;
+
+  const coordinateMode = asString(effectiveMapping.coordinateMode).toUpperCase();
+
+  const field = collectProductionMappingFields(effectiveMapping).find(
+    (candidate) => asString(candidate.key) === args.fieldKey,
+  );
+
+  if (!field) {
+    return false;
+  }
+
+  const hasDefaultCoordinates = Boolean(
+    asRecord(field.coordinates) || asRecord(field.placement) || asRecord(field.position),
+  );
+  const hasArabicCoordinates = Boolean(asRecord(field.arabicCoordinates));
+
+  const results: boolean[] = [];
+
+  if (hasDefaultCoordinates) {
+    const drawn = await drawSignatureInPlacement({
+      pdfDoc: args.pdfDoc,
+      field,
+      signatureImageDataUrl: args.signatureImageDataUrl,
+      languageVariant: "DEFAULT",
+      coordinateMode,
+    });
+    results.push(drawn);
+  }
+
+  if (hasArabicCoordinates) {
+    const drawn = await drawSignatureInPlacement({
+      pdfDoc: args.pdfDoc,
+      field,
+      signatureImageDataUrl: args.signatureImageDataUrl,
+      languageVariant: "ARABIC",
+      coordinateMode,
+    });
+    results.push(drawn);
+  }
+
+  if (!hasDefaultCoordinates && !hasArabicCoordinates) {
+    const drawn = await drawSignatureInPlacement({
+      pdfDoc: args.pdfDoc,
+      field,
+      signatureImageDataUrl: args.signatureImageDataUrl,
+      languageVariant: "DEFAULT",
+      coordinateMode,
+    });
+    results.push(drawn);
+  }
+
+  return results.some(Boolean);
+}
+
+
+async function drawNotApplicableMarker(args: {
+  pdfDoc: PDFDocument;
+  mapping: ConsentFieldMapping;
+  fieldKey: string;
+  labelEn: string;
+  labelAr: string;
+}): Promise<void> {
+  const field = args.mapping.fields.find((f: ConsentFieldDefinition) => f.key === args.fieldKey);
+  if (!field) return;
+
+  const font = await args.pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  for (const languageVariant of ["DEFAULT", "ARABIC"] as const) {
+    const placement = getProductionMappingPlacement(field as unknown as Record<string, unknown>, languageVariant);
+    if (!placement) continue;
+
+    const xRaw = toFiniteOverlayNumber(placement.x);
+    const yRaw = toFiniteOverlayNumber(placement.y);
+    if (xRaw === null || yRaw === null) continue;
+
+    const pages = args.pdfDoc.getPages();
+    const pageIndex = resolveProductionPageIndex(placement.page ?? placement.pageNumber, pages.length);
+    const page = pages[pageIndex];
+    if (!page) continue;
+
+    const pageWidth = page.getWidth();
+    const pageHeight = page.getHeight();
+    const coordinateMode = "NORMALIZED";
+    const placementCoordinateMode = asString(placement.coordinateMode).toUpperCase();
+    const normalized =
+      coordinateMode === "NORMALIZED" ||
+      placementCoordinateMode === "NORMALIZED" ||
+      (xRaw >= 0 && xRaw <= 1 && yRaw >= 0 && yRaw <= 1);
+
+    const widthRaw = toFiniteOverlayNumber(placement.width) ?? 0.28;
+    const heightRaw = toFiniteOverlayNumber(placement.height) ?? 0.075;
+
+    const boxWidth = normalized && widthRaw > 0 && widthRaw <= 1 ? widthRaw * pageWidth : widthRaw;
+    const boxHeight = normalized && heightRaw > 0 && heightRaw <= 1 ? heightRaw * pageHeight : heightRaw;
+
+    const x = normalized ? xRaw * pageWidth : xRaw;
+    const y = normalized ? pageHeight * (1 - yRaw) - boxHeight : yRaw;
+
+    const label = languageVariant === "ARABIC" ? args.labelAr : args.labelEn;
+
+    page.drawRectangle({
+      x,
+      y,
+      width: boxWidth,
+      height: boxHeight,
+      color: rgb(0.97, 0.97, 0.97),
+      borderColor: rgb(0.7, 0.7, 0.7),
+      borderWidth: 0.5,
+    });
+
+    page.drawText(label, {
+      x: x + 4,
+      y: y + boxHeight / 2 - 4,
+      size: 7,
+      font,
+      color: rgb(0.4, 0.4, 0.4),
+    });
+  }
+}
+
+async function drawPaginationOverlay(pdfDoc: PDFDocument): Promise<void> {
+  const pages = pdfDoc.getPages();
+  const totalPages = pages.length;
+  if (totalPages === 0) return;
+
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  // Footer mask coordinates for IMC MR 1168 page-number area.
+  // The source PDF bakes in "Page X of 1"; we mask only that strip and
+  // redraw current/total. Coordinates are in PDF points (A4 595.28 × 841.89).
+  const footerY = 18;
+  const footerHeight = 22;
+  const footerLeft = 360;
+  const footerWidth = 220;
+
+  for (let index = 0; index < pages.length; index += 1) {
+    const page = pages[index];
+    const pageNumber = index + 1;
+
+    page.drawRectangle({
+      x: footerLeft,
+      y: footerY,
+      width: footerWidth,
+      height: footerHeight,
+      color: rgb(1, 1, 1),
+    });
+
+    const text = `Page ${pageNumber} of ${totalPages}`;
+    page.drawText(text, {
+      x: footerLeft + 4,
+      y: footerY + 6,
+      size: 8,
+      font,
+      color: rgb(0.2, 0.2, 0.2),
+    });
+  }
+}
+
+
 
 
 // ---------------------------------------------------------------------------
@@ -2348,15 +2434,22 @@ export async function renderImcApprovedDoctorDraftPdf(args: {
     }
   }
 
-  const bytes =
-    await pdfDoc.save();
+  await drawNotApplicableMarker({
+    pdfDoc,
+    mapping,
+    fieldKey: "guardian_signature",
+    labelEn: "N/A",
+    labelAr: "N/A",
+  });
+
+  await drawPaginationOverlay(pdfDoc);
+
+  const bytes = await pdfDoc.save();
 
   return {
-    bytes:
-      Buffer.from(bytes),
+    bytes: Buffer.from(bytes),
     physicianSignatureDrawn,
-    renderingEngine:
-      "approved-imc-overlay",
+    renderingEngine: "approved-imc-overlay",
   };
 }
 
@@ -2614,10 +2707,14 @@ export async function renderImcApprovedConsentPdf(args: {
       })
     : [];
 
-  const normalizedDoctorCompletionValues =
-    normalizeProductionOverlayValues(
-      doctorCompletionValues,
-    );
+  const autoMappedValues = productionMapping
+    ? resolveProductionMappingAutoValues(productionMapping, metadata)
+    : {};
+
+  const normalizedDoctorCompletionValues = {
+    ...normalizeProductionOverlayValues(doctorCompletionValues),
+    ...autoMappedValues,
+  };
 
   const values: Record<string, string> = {
     patientName: doc.patientName || "",
@@ -2797,7 +2894,10 @@ export async function renderImcApprovedConsentPdf(args: {
         "Final PDF generation blocked: patient signature coordinates are missing from the approved form mapping.",
       );
     }
+
   }
+
+  await drawPaginationOverlay(pdfDoc);
 
   const finalBytes = await pdfDoc.save();
 

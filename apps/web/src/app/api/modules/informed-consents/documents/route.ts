@@ -1150,7 +1150,7 @@ export async function POST(request: NextRequest) {
 
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const caseId = String(body.caseId || "").trim();
-  let templateId = String(body.templateId || "").trim();
+  const templateId = String(body.templateId || "").trim();
   const language = body.language === "ar" || body.language === "en" ? (body.language as "ar" | "en") : "bilingual";
 
   if (!caseId) {
@@ -1376,10 +1376,13 @@ export async function POST(request: NextRequest) {
       templateVersionId: template.currentVersionId || undefined,
       language,
       physicianName: typeof body.physicianName === "string" ? body.physicianName.trim() : auth.email || undefined,
+      physicianLicense: typeof body.physicianLicense === "string" ? body.physicianLicense.trim() : undefined,
       physicianSpecialty: typeof body.physicianSpecialty === "string" ? body.physicianSpecialty.trim() : undefined,
       department: typeof body.department === "string" ? body.department.trim() : undefined,
       diagnosis: diagnosis || undefined,
       plannedProcedure: plannedProcedure || undefined,
+      dob: typeof body.dob === "string" ? body.dob.trim() : undefined,
+      gender: typeof body.gender === "string" ? body.gender.trim() : undefined,
       idempotencyKey,
       idempotencyFingerprint:
         typeof body.idempotencyFingerprint === "string"

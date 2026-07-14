@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ListChecks } from "lucide-react";
+import { Check, ListChecks, X, Minus } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { Readiness } from "../../hooks/useProductionWorkspace";
 import { WorkspaceBadge, WorkspaceCard, WorkspaceCardHeader } from "../WorkspaceAtoms";
@@ -28,111 +28,35 @@ function ProgressRing({ percentage }: { percentage: number }) {
   );
 }
 
-const CHECK_ITEMS = [
-  "Patient selected",
-  "Encounter selected",
-  "Procedure selected",
-  "Knowledge package ready",
-  "Consent field mapping verified",
-  "Doctor completion fields completed",
-  "Anesthesia workflow reviewed",
-  "Patient signature mapped",
-  "Education material ready",
-  "Patient preview reviewed",
-  "Patient contact available",
-  "Recipient allowlisted",
-  "Blockers resolved",
-  "Draft approved",
-];
-
-const CHECK_ITEMS_AR = [
-  "\u062a\u0645 \u0627\u062e\u062a\u064a\u0627\u0631 \u0627\u0644\u0645\u0631\u064a\u0636",
-  "\u062a\u0645 \u0631\u0628\u0637 \u0627\u0644\u0632\u064a\u0627\u0631\u0629",
-  "\u062a\u0645 \u0627\u062e\u062a\u064a\u0627\u0631 \u0627\u0644\u0625\u062c\u0631\u0627\u0621",
-  "\u0627\u0644\u062d\u0632\u0645\u0629 \u0627\u0644\u0645\u0639\u0631\u0641\u064a\u0629 \u062c\u0627\u0647\u0632\u0629",
-  "\u062a\u0645 \u0627\u0644\u062a\u062d\u0642\u0642 \u0645\u0646 \u062e\u0631\u064a\u0637\u0629 \u0627\u0644\u062d\u0642\u0648\u0644",
-  "\u062a\u0645 \u0625\u0643\u0645\u0627\u0644 \u062d\u0642\u0648\u0644 \u0627\u0644\u0637\u0628\u064a\u0628",
-  "\u062a\u0645\u062a \u0645\u0631\u0627\u062c\u0639\u0629 \u0645\u0633\u0627\u0631 \u0627\u0644\u062a\u062e\u062f\u064a\u0631",
-  "\u062a\u0645 \u0631\u0628\u0637 \u062d\u0642\u0644 \u062a\u0648\u0642\u064a\u0639 \u0627\u0644\u0645\u0631\u064a\u0636",
-  "\u0627\u0644\u0645\u0648\u0627\u062f \u0627\u0644\u062a\u0639\u0644\u064a\u0645\u064a\u0629 \u062c\u0627\u0647\u0632\u0629",
-  "\u062a\u0645\u062a \u0645\u0631\u0627\u062c\u0639\u0629 \u0645\u0639\u0627\u064a\u0646\u0629 \u0627\u0644\u0645\u0631\u064a\u0636",
-  "\u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u062a\u0648\u0627\u0635\u0644 \u0645\u062a\u0648\u0641\u0631\u0629",
-  "\u0627\u0644\u0645\u0633\u062a\u0644\u0645 \u0636\u0645\u0646 allowlist",
-  "\u062a\u0645\u062a \u0645\u0639\u0627\u0644\u062c\u0629 \u0627\u0644\u0645\u0648\u0627\u0646\u0639",
-  "\u062a\u0645 \u0627\u0639\u062a\u0645\u0627\u062f \u0627\u0644\u0645\u0633\u0648\u062f\u0629",
-];
+const STATUS_TONE = {
+  COMPLETE: "green" as const,
+  BLOCKED: "red" as const,
+  REQUIRED: "gold" as const,
+  NOT_APPLICABLE: "slate" as const,
+};
 
 export function ReadinessChecklist({ readiness }: { readiness: Readiness }) {
   const { lang } = useI18n();
-  const doctorReport =
-    readiness.doctorReadinessReport;
+  const items = readiness.items;
 
-  const goToNextDoctorField = () => {
-    const field =
-      doctorReport.nextRequiredField;
-
-    if (!field) return;
-
-    const target =
-      document.getElementById(
-        "doctor-field-" + field.key,
-      );
-
-    target?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-
-    window.setTimeout(() => {
-      const focusable =
-        target?.querySelector<
-          HTMLTextAreaElement
-          | HTMLSelectElement
-          | HTMLInputElement
-          | HTMLButtonElement
-        >(
-          "textarea, select, input, button",
-        );
-
-      focusable?.focus();
-    }, 450);
-  };
-  const fieldMapping = readiness.fieldMappingReadiness;
-  const doctorFields = fieldMapping?.requiredDoctorFields ?? [];
-  const anesthesiaFields = fieldMapping?.requiredAnesthesiaFields ?? [];
-  const patientFields = fieldMapping?.requiredPatientFields ?? [];
-  const fieldMappingStatus = fieldMapping?.verificationStatus || "NOT_LOADED";
-
-  const checks = [
-    readiness.patientReady,
-    readiness.encounterReady,
-    readiness.procedureSelected,
-    readiness.assemblyReady,
-    readiness.fieldMappingVerified,
-    readiness.doctorCompletionReady,
-    readiness.anesthesiaMappingReady,
-    readiness.patientSignatureMapped,
-    readiness.educationReady,
-    readiness.previewReviewed,
-    readiness.contactAvailable,
-    readiness.allowlisted,
-    readiness.blockersResolved,
-    readiness.draftApproved,
-  ];
+  const blockerCount = items.filter((i) => i.status === "BLOCKED").length;
+  const requiredCount = items.filter((i) => i.status === "REQUIRED").length;
 
   return (
     <WorkspaceCard className="overflow-hidden">
       <WorkspaceCardHeader
         icon={<ListChecks className="size-5" />}
-        title={lang === "ar" ? "\u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u062c\u0627\u0647\u0632\u064a\u0629" : "Readiness checklist"}
+        title={lang === "ar" ? "قائمة الجاهزية" : "Readiness checklist"}
         description={
           lang === "ar"
-            ? "\u064a\u062c\u0628 \u0627\u0643\u062a\u0645\u0627\u0644 \u0643\u0644 \u0627\u0644\u0628\u0648\u0627\u0628\u0627\u062a \u0642\u0628\u0644 \u0625\u0631\u0633\u0627\u0644 \u062c\u0644\u0633\u0629 \u0627\u0644\u062a\u0648\u0642\u064a\u0639 \u0644\u0644\u0645\u0631\u064a\u0636."
+            ? "يجب اكتمال كل البوابات قبل إرسال جلسة التوقيع للمريض."
             : "Every gate must be complete before secure signing can be sent to the patient."
         }
         action={
-          <WorkspaceBadge tone={readiness.sendReady ? "green" : "gold"}>
-            {readiness.sendReady ? (lang === "ar" ? "\u062c\u0627\u0647\u0632 \u0644\u0644\u0625\u0631\u0633\u0627\u0644" : "Ready") : readiness.missingItems.length + " " + (lang === "ar" ? "\u0645\u062a\u0628\u0642\u064a" : "left")}
+          <WorkspaceBadge tone={readiness.sendReady ? "green" : blockerCount > 0 ? "red" : "gold"}>
+            {readiness.sendReady
+              ? lang === "ar" ? "جاهز للإرسال" : "Ready"
+              : `${blockerCount + requiredCount} ${lang === "ar" ? "متبقي" : "left"}`}
           </WorkspaceBadge>
         }
       />
@@ -150,139 +74,79 @@ export function ReadinessChecklist({ readiness }: { readiness: Readiness }) {
             </p>
             <p className="mt-1 text-sm leading-6 text-slate-500">
               {lang === "ar"
-                ? "\u0627\u0644\u062a\u0642\u062f\u0645 \u0639\u0628\u0631 \u0628\u0648\u0627\u0628\u0627\u062a \u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629 \u0648\u0627\u0644\u062d\u0648\u0643\u0645\u0629 \u0648\u0627\u0644\u0625\u0631\u0633\u0627\u0644."
+                ? "التقدم عبر بوابات المراجعة والحوكمة والإرسال."
                 : "Progress across review, governance, and dispatch gates."}
             </p>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-slate-900">Doctor completion & mapping readiness</p>
-              <p className="mt-1 text-xs leading-5 text-slate-500">
-                Field mapping must be verified before the patient receives the secure signing link.
+            {readiness.notApplicableCount > 0 ? (
+              <p className="mt-1 text-xs text-slate-400">
+                {lang === "ar"
+                  ? `${readiness.notApplicableCount} غير منطبق`
+                  : `${readiness.notApplicableCount} not applicable`}
               </p>
-            </div>
-            <WorkspaceBadge tone={readiness.fieldMappingVerified ? "green" : "gold"}>{fieldMappingStatus}</WorkspaceBadge>
-          </div>
-
-          <div className="mt-4 grid gap-3">
-            <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  {lang === "ar"
-                    ? "?????? ???? ??????"
-                    : "Physician readiness"}
-                </p>
-                <WorkspaceBadge tone={doctorReport.ready ? "green" : "gold"}>
-                  {doctorReport.completedCount}
-                  {" / "}
-                  {doctorReport.totalCount}
-                </WorkspaceBadge>
-              </div>
-
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
-                <div
-                  className="h-full rounded-full bg-emerald-500 transition-all"
-                  style={{
-                    width:
-                      doctorReport.progressPercentage
-                      + "%",
-                  }}
-                />
-              </div>
-
-              {doctorReport.missingFields.length > 0 ? (
-                <div className="mt-3 space-y-3">
-                  <div>
-                    <p className="text-xs font-semibold text-amber-800">
-                      {lang === "ar"
-                        ? "?????? ????????:"
-                        : "Missing physician fields:"}
-                    </p>
-                    <ul className="mt-2 space-y-1 text-xs leading-5 text-slate-700">
-                      {doctorReport.missingFields.map(
-                        (field) => (
-                          <li key={field.key}>
-                            ?{" "}
-                            {field.section
-                              ? field.section + " ? "
-                              : ""}
-                            {field.labelEn}
-                          </li>
-                        ),
-                      )}
-                    </ul>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={goToNextDoctorField}
-                    className="inline-flex h-9 items-center justify-center rounded-xl bg-blue-700 px-3 text-xs font-semibold text-white transition hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {lang === "ar"
-                      ? "???????? ??? ????? ??????"
-                      : "Go to next required field"}
-                  </button>
-                </div>
-              ) : (
-                <p className="mt-3 text-xs leading-5 text-emerald-700">
-                  {lang === "ar"
-                    ? "?? ??????? ???? ?????? ???????? ??????."
-                    : "All physician-required fields are complete."}
-                </p>
-              )}
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Anesthesia workflow</p>
-                  <WorkspaceBadge tone={readiness.anesthesiaMappingReady ? "green" : "gold"}>
-                    {readiness.anesthesiaMappingReady ? "OK" : anesthesiaFields.length + " pending"}
-                  </WorkspaceBadge>
-                </div>
-                <p className="mt-2 text-xs leading-5 text-slate-500">
-                  {anesthesiaFields.length > 0 ? "Anesthesia review is required when applicable." : "No anesthesia mapping blocker is pending."}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Patient signature</p>
-                  <WorkspaceBadge tone={readiness.patientSignatureMapped ? "green" : "gold"}>
-                    {readiness.patientSignatureMapped ? "Mapped" : "Missing"}
-                  </WorkspaceBadge>
-                </div>
-                <p className="mt-2 text-xs leading-5 text-slate-500">
-                  {patientFields.length > 0 ? patientFields.length + " patient signature field(s) mapped." : "Patient signature field is not mapped yet."}
-                </p>
-              </div>
-            </div>
-
-            {fieldMapping?.blockers?.length ? (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs leading-5 text-amber-800">
-                <p className="font-semibold">Mapping blockers</p>
-                <ul className="mt-1 space-y-1">
-                  {fieldMapping.blockers.map((blocker, index) => (
-                    <li key={blocker + "-" + index}>- {blocker}</li>
-                  ))}
-                </ul>
-              </div>
             ) : null}
           </div>
         </div>
 
+        {readiness.sendReady ? null : (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {lang === "ar"
+              ? "لا يمكن الإرسال حتى تتم معالجة جميع البوابات المحظورة أو المطلوبة."
+              : "Send is blocked until all blocked or required gates are resolved."}
+          </div>
+        )}
+
         <div className="space-y-2">
-          {checks.map((done, index) => (
-            <div key={index} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 px-3 py-2.5 text-sm">
-              <span className={done ? "flex size-5 items-center justify-center rounded-full bg-emerald-500 text-white" : "flex size-5 items-center justify-center rounded-full border-2 border-slate-200 bg-white text-slate-300"}>
-                {done ? <Check className="size-3" /> : null}
-              </span>
-              <span className={done ? "text-slate-800" : "text-slate-500"}>{lang === "ar" ? CHECK_ITEMS_AR[index] : CHECK_ITEMS[index]}</span>
-            </div>
-          ))}
+          {items.map((item) => {
+            const icon =
+              item.status === "COMPLETE" ? (
+                <Check className="size-3" />
+              ) : item.status === "BLOCKED" ? (
+                <X className="size-3" />
+              ) : item.status === "NOT_APPLICABLE" ? (
+                <Minus className="size-3" />
+              ) : null;
+
+            const statusClass =
+              item.status === "COMPLETE"
+                ? "bg-emerald-500 text-white"
+                : item.status === "BLOCKED"
+                  ? "bg-red-500 text-white"
+                  : item.status === "NOT_APPLICABLE"
+                    ? "border-slate-300 bg-slate-100 text-slate-400"
+                    : "border-2 border-slate-200 bg-white text-slate-300";
+
+            return (
+              <div
+                key={item.key}
+                className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 px-3 py-2.5 text-sm"
+              >
+                <span
+                  className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full ${statusClass}`}
+                >
+                  {icon}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className={item.status === "COMPLETE" || item.status === "NOT_APPLICABLE" ? "text-slate-800" : "text-slate-500"}>
+                      {lang === "ar" ? item.labelAr : item.labelEn}
+                    </span>
+                    <WorkspaceBadge tone={STATUS_TONE[item.status]}>
+                      {item.status === "NOT_APPLICABLE"
+                        ? lang === "ar" ? "غير منطبق" : "N/A"
+                        : item.status === "COMPLETE"
+                          ? lang === "ar" ? "مكتمل" : "Complete"
+                          : item.status === "BLOCKED"
+                            ? lang === "ar" ? "محظور" : "Blocked"
+                            : lang === "ar" ? "مطلوب" : "Required"}
+                    </WorkspaceBadge>
+                  </div>
+                  {item.detail ? (
+                    <p className="mt-0.5 text-xs leading-5 text-slate-500">{item.detail}</p>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </WorkspaceCard>

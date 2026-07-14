@@ -351,10 +351,13 @@ export async function createConsentDocument(args: {
   approvedConsentFormId?: string;
   language?: "ar" | "en" | "bilingual";
   physicianName?: string;
+  physicianLicense?: string;
   physicianSpecialty?: string;
   department?: string;
   diagnosis?: string;
   plannedProcedure?: string;
+  dob?: string;
+  gender?: string;
   initialStatus?: "DRAFT" | "READY_FOR_SIGNATURE";
   metadata?: Record<string, unknown>;
 }): Promise<{ id: string; consentReference: string; status: string; patientName?: string | null; mrn?: string | null }> {

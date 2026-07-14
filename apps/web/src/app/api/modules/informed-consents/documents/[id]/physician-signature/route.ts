@@ -514,6 +514,16 @@ export async function POST(
         attestationInput.answeredQuestions !== false,
     });
 
+    const persistedSignature =
+      updatedDocument
+        .signatures
+        ?.filter(
+          (signature) =>
+            signature.role ===
+            "PHYSICIAN",
+        )
+        .at(-1);
+
     await prisma
       .consentDocument
       .update({
@@ -525,19 +535,15 @@ export async function POST(
           metadata: {
             ...(asMetadataRecord(consentDocument.metadata) ?? {}),
             clinicianAttestation,
+            physicianSignature: {
+              signedAt: persistedSignature?.signedAt?.toISOString() || new Date().toISOString(),
+              signatureId: persistedSignature?.id || "",
+              signerName: authenticatedSignerName,
+              signerLicense: contextualPhysicianLicense || null,
+            },
           },
         },
       });
-
-    const persistedSignature =
-      updatedDocument
-        .signatures
-        ?.filter(
-          (signature) =>
-            signature.role ===
-            "PHYSICIAN",
-        )
-        .at(-1);
 
     return NextResponse.json({
       ok: true,

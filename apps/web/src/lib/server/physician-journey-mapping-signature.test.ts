@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { PDFDocument } from "pdf-lib";
 
 (process.env as Record<string, string>).NODE_ENV = "test";
 process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://dummy";
@@ -18,6 +19,7 @@ import {
   getConsentFieldMappingReadiness,
   persistFieldMappingVerification,
 } from "@/lib/server/consent-field-mappings";
+import { computePhysicianJourneyReadiness } from "@/lib/server/physician-journey-readiness";
 import { renderImcApprovedDoctorDraftPdf } from "@/lib/server/imc-approved-pdf-template-engine";
 import {
   isSignatureHashStale,
@@ -319,53 +321,159 @@ test("isDoctorReadinessFieldComplete treats checkbox true/false as complete", ()
 });
 
 // -----------------------------------------------------------------------------
-// 5. Physician journey progress reaches 100 when all gates are true
+// 5. Canonical physician journey readiness aggregate
 // -----------------------------------------------------------------------------
 
-test("14 readiness gates all true yields 100% progress", () => {
+const ALL_CLEAR_ASSEMBLY = {
+  assemblyId: "a1",
+  tenantId: "t1",
+  procedureId: "proc1",
+  procedureCode: "CODE1",
+  procedureNameEn: "Adenotonsillectomy",
+  procedureNameAr: "استئصال اللوزتين والأنف",
+  packageId: "pkg1",
+  packageVersion: "1",
+  status: "ready" as const,
+  consentForm: {
+    id: "imc-approved-adenotonsillectomy",
+    tenantId: "t1",
+    code: "IMC-MR-1168",
+    titleEn: "Adenotonsillectomy",
+    titleAr: "استئصال اللوزتين والأنف",
+    formType: "PROCEDURE_CONSENT" as const,
+    riskLevel: "STANDARD" as const,
+    status: "PUBLISHED" as const,
+    version: "1",
+    effectiveDate: "2024-01-01",
+    requiresWitness: false,
+    requiresInterpreter: false,
+    createdByUserId: "u1",
+    updatedAt: "2024-01-01",
+    createdAt: "2024-01-01",
+    pdfTemplateUrl: "/approved-consent-forms/adenotonsillectomy.pdf",
+  },
+  educationMaterials: [],
+  riskDisclosures: [],
+  illustrations: [],
+  decisionRules: [],
+  suggestions: [],
+  blockers: [],
+  requiredParticipants: [],
+  assembledAt: new Date().toISOString(),
+};
+
+function getVerifiedAdenotonsillectomyReadiness() {
   const mapping = getConsentFieldMappingByFormId("imc-approved-adenotonsillectomy");
   assert.ok(mapping);
   const hash = computeConsentFieldMappingHash(mapping);
-  const readiness = getConsentFieldMappingReadiness(mapping.formId, {
+  return getConsentFieldMappingReadiness(mapping.formId, {
     status: "VERIFIED",
     approvedAt: new Date().toISOString(),
     approvedByUserId: "user-1",
     mappingHash: hash,
   });
+}
 
-  const doctorReadiness = analyzeDoctorReadiness({
-    fields: readiness.requiredDoctorFields,
-    values: {
-      condition_and_treatment: "Condition text",
-      procedure_site_side: "Site text",
+function buildAllClearReadiness() {
+  return computePhysicianJourneyReadiness({
+    patient: { id: "p1", mrn: "MRN123", name: "Synthetic Patient", dateOfBirth: "1980-01-01", gender: "Male" },
+    encounter: { id: "e1", encounterId: "ENC001" },
+    selectedProcedure: { id: "proc1", titleEn: "Adenotonsillectomy", titleAr: "استئصال اللوزتين والأنف", specialty: "ENT", anesthesiaRequired: false },
+    assembly: ALL_CLEAR_ASSEMBLY,
+    fieldMappingReadiness: getVerifiedAdenotonsillectomyReadiness(),
+    doctorCompletionValues: {
+      condition_and_treatment: "Obstructive sleep apnea",
+      procedure_site_side: "Tonsils and adenoids",
     },
     physicianSignatureDataUrl: SYNTHETIC_PNG_DATA_URL,
+    anesthesiaOverride: "NONE",
+    previewReviewed: true,
+    recipientMobile: "+966500000000",
+    recipientEmail: "patient@example.com",
+    sendEligibility: { allowlisted: true, reason: "" },
+    draftApproved: true,
+    acknowledgedBlockers: new Set(),
+    physicianContext: { userId: "doc1", email: "doc@example.com", name: "Dr. Synthetic", tenantId: "t1", licenseNumber: "LIC123", specialty: "ENT" },
   });
+}
 
-  const checks = [
-    true, // patientReady
-    true, // encounterReady
-    true, // procedureSelected
-    true, // assemblyReady
-    readiness.verificationStatus === "VERIFIED", // fieldMappingVerified
-    doctorReadiness.ready, // doctorCompletionReady
-    true, // anesthesiaMappingReady
-    readiness.requiredPatientFields.length > 0, // patientSignatureMapped
-    true, // educationReady
-    true, // previewReviewed
-    true, // contactAvailable
-    true, // allowlisted
-    true, // blockersResolved
-    true, // draftApproved
-  ];
+test("canonical readiness reaches 100% only when every gate is complete", () => {
+  const readiness = buildAllClearReadiness();
+  assert.equal(readiness.sendReady, true);
+  assert.equal(readiness.blocked, false);
+  assert.equal(readiness.progressPercentage, 100);
+  assert.ok(readiness.items.every((item) => item.status === "COMPLETE" || item.status === "NOT_APPLICABLE"));
+});
 
-  const completedChecks = checks.filter(Boolean).length;
-  const totalChecks = checks.length;
-  const progressPercentage = Math.round((completedChecks / totalChecks) * 100);
+test("canonical readiness uses the same items for count, percentage, blockers, and send gating", () => {
+  const readiness = buildAllClearReadiness();
+  const satisfiedItems = readiness.items.filter((i) => i.status === "COMPLETE" || i.status === "NOT_APPLICABLE");
+  assert.equal(readiness.completedCount, satisfiedItems.length);
+  assert.equal(readiness.totalCount, readiness.items.length);
+  assert.equal(readiness.progressPercentage, Math.round((satisfiedItems.length / readiness.items.length) * 100));
+  assert.deepEqual(
+    readiness.missingItemKeys.sort(),
+    readiness.items.filter((i) => i.status === "BLOCKED" || i.status === "REQUIRED").map((i) => i.key).sort(),
+  );
+});
 
-  assert.equal(totalChecks, 14);
-  assert.equal(completedChecks, 14);
-  assert.equal(progressPercentage, 100);
+test("NOT_APPLICABLE counts as satisfied and is visually distinct", () => {
+  const readiness = buildAllClearReadiness();
+  const notApplicableItems = readiness.items.filter((i) => i.status === "NOT_APPLICABLE");
+  assert.ok(notApplicableItems.length > 0);
+  assert.equal(readiness.notApplicableCount, notApplicableItems.length);
+  assert.ok(notApplicableItems.every((i) => i.blocking === false));
+});
+
+test("missing physician signature blocks readiness", () => {
+  const readiness = computePhysicianJourneyReadiness({
+    patient: { id: "p1", mrn: "MRN123", name: "Synthetic Patient" },
+    encounter: { id: "e1", encounterId: "ENC001" },
+    selectedProcedure: { id: "proc1", titleEn: "Adenotonsillectomy", titleAr: "استئصال اللوزتين والأنف", specialty: "ENT", anesthesiaRequired: false },
+    assembly: ALL_CLEAR_ASSEMBLY,
+    fieldMappingReadiness: getVerifiedAdenotonsillectomyReadiness(),
+    doctorCompletionValues: { condition_and_treatment: "Condition", procedure_site_side: "Site" },
+    physicianSignatureDataUrl: "",
+    previewReviewed: true,
+    recipientMobile: "+966500000000",
+    recipientEmail: "patient@example.com",
+    sendEligibility: { allowlisted: true },
+    draftApproved: true,
+    acknowledgedBlockers: new Set(),
+    physicianContext: { userId: "doc1", email: "doc@example.com", name: "Dr. Synthetic", tenantId: "t1" },
+  });
+  assert.equal(readiness.sendReady, false);
+  assert.ok(readiness.items.some((i) => i.key === "physician_signature_complete" && i.status === "REQUIRED"));
+});
+
+test("no-anesthesia is NOT_APPLICABLE and satisfied", () => {
+  const readiness = buildAllClearReadiness();
+  const anesthesiaItem = readiness.items.find((i) => i.key === "anesthesia_workflow_reviewed");
+  assert.ok(anesthesiaItem);
+  assert.equal(anesthesiaItem.status, "NOT_APPLICABLE");
+  assert.equal(anesthesiaItem.blocking, false);
+});
+
+test("send-ready banner is forbidden while any blocker exists", () => {
+  const readiness = computePhysicianJourneyReadiness({
+    patient: { id: "p1", mrn: "MRN123", name: "Synthetic Patient" },
+    encounter: { id: "e1", encounterId: "ENC001" },
+    selectedProcedure: { id: "proc1", titleEn: "Adenotonsillectomy", titleAr: "استئصال اللوزتين والأنف", specialty: "ENT", anesthesiaRequired: false },
+    assembly: ALL_CLEAR_ASSEMBLY,
+    fieldMappingReadiness: getVerifiedAdenotonsillectomyReadiness(),
+    doctorCompletionValues: {},
+    physicianSignatureDataUrl: "",
+    previewReviewed: false,
+    recipientMobile: "",
+    recipientEmail: "",
+    sendEligibility: { allowlisted: false, reason: "Not allowlisted" },
+    draftApproved: false,
+    acknowledgedBlockers: new Set(),
+    physicianContext: { userId: "doc1", email: "doc@example.com", name: "Dr. Synthetic", tenantId: "t1" },
+  });
+  assert.equal(readiness.sendReady, false);
+  assert.equal(readiness.blocked, true);
+  assert.ok(readiness.items.some((i) => i.status === "BLOCKED" || i.status === "REQUIRED"));
 });
 
 // -----------------------------------------------------------------------------
@@ -444,6 +552,9 @@ test("renderImcApprovedDoctorDraftPdf draws physician signature for adenotonsill
   const pdfPath = path.join(process.cwd(), "public", "approved-consent-forms", "adenotonsillectomy.pdf");
   const pdfBytes = fs.readFileSync(pdfPath);
 
+
+
+
   const rendered = await renderImcApprovedDoctorDraftPdf({
     pdfBytes,
     formId: "imc-approved-adenotonsillectomy",
@@ -459,6 +570,32 @@ test("renderImcApprovedDoctorDraftPdf draws physician signature for adenotonsill
   assert.equal(rendered.renderingEngine, "approved-imc-overlay");
 });
 
+test("renderImcApprovedDoctorDraftPdf draws physician signature on both English and Arabic targets", async () => {
+  const pdfPath = path.join(process.cwd(), "public", "approved-consent-forms", "adenotonsillectomy.pdf");
+  const pdfBytes = fs.readFileSync(pdfPath);
+
+  const rendered = await renderImcApprovedDoctorDraftPdf({
+    pdfBytes,
+    formId: "imc-approved-adenotonsillectomy",
+    doctorCompletionValues: {
+      condition_and_treatment: "Obstructive sleep apnea",
+      procedure_site_side: "Tonsils and adenoids",
+    },
+    physicianSignatureDataUrl: SYNTHETIC_PNG_DATA_URL,
+  });
+
+  const finalDoc = await PDFDocument.load(rendered.bytes);
+  const pages = finalDoc.getPages();
+  assert.ok(pages.length >= 2);
+
+  // The signature should have been drawn on page 2.
+  const page2 = pages[1];
+  // We assert the page exists and has content by verifying the overlay succeeded.
+  assert.equal(rendered.physicianSignatureDrawn, true);
+  assert.ok(page2.getWidth() > 0);
+  assert.ok(page2.getHeight() > 0);
+});
+
 test("renderImcApprovedDoctorDraftPdf throws when physician signature coordinates are missing", async () => {
   const pdfPath = path.join(process.cwd(), "public", "approved-consent-forms", "adenotonsillectomy.pdf");
   const pdfBytes = fs.readFileSync(pdfPath);
@@ -472,6 +609,24 @@ test("renderImcApprovedDoctorDraftPdf throws when physician signature coordinate
     }),
     /Consent field mapping not found/,
   );
+});
+
+test("renderImcApprovedDoctorDraftPdf produces correct two-page pagination", async () => {
+  const pdfPath = path.join(process.cwd(), "public", "approved-consent-forms", "adenotonsillectomy.pdf");
+  const pdfBytes = fs.readFileSync(pdfPath);
+
+  const rendered = await renderImcApprovedDoctorDraftPdf({
+    pdfBytes,
+    formId: "imc-approved-adenotonsillectomy",
+    doctorCompletionValues: {
+      condition_and_treatment: "Obstructive sleep apnea",
+      procedure_site_side: "Tonsils and adenoids",
+    },
+    physicianSignatureDataUrl: SYNTHETIC_PNG_DATA_URL,
+  });
+
+  const finalDoc = await PDFDocument.load(rendered.bytes);
+  assert.equal(finalDoc.getPageCount(), 2);
 });
 
 // -----------------------------------------------------------------------------

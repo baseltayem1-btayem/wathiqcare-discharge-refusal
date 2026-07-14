@@ -393,6 +393,8 @@ export type CreateConsentDocumentPayload = {
   department?: string;
   diagnosis?: string;
   plannedProcedure?: string;
+  dob?: string;
+  gender?: string;
   admissionDetails?: string;
   procedureDetails?: string;
   physicianNotesAr?: string;
@@ -627,8 +629,8 @@ export async function createConsentDocument(
           immutablePdfHash,
           patientName: caseRecord.patientName || "Unknown Patient",
           mrn: caseRecord.medicalRecordNo || null,
-          dob: typeof emrMeta.dob === "string" ? emrMeta.dob : null,
-          gender: typeof emrMeta.gender === "string" ? emrMeta.gender : null,
+          dob: payload.dob?.trim() || (typeof emrMeta.dob === "string" ? emrMeta.dob : null),
+          gender: payload.gender?.trim() || (typeof emrMeta.gender === "string" ? emrMeta.gender : null),
           physicianName: payload.physicianName?.trim() || auth.email || "Assigned Physician",
           physicianLicense: payload.physicianLicense?.trim() || null,
           physicianSpecialty: payload.physicianSpecialty?.trim() || template.specialty,
@@ -658,6 +660,20 @@ export async function createConsentDocument(
               mrn: caseRecord.medicalRecordNo || null,
               diagnosis: typeof emrMeta.diagnosis === "string" ? emrMeta.diagnosis : null,
               plannedProcedure: typeof emrMeta.plannedProcedure === "string" ? emrMeta.plannedProcedure : null,
+            },
+            patientIdentity: {
+              name: caseRecord.patientName || null,
+              mrn: caseRecord.medicalRecordNo || null,
+            },
+            demographics: {
+              dob: payload.dob?.trim() || (typeof emrMeta.dob === "string" ? emrMeta.dob : null),
+              gender: payload.gender?.trim() || (typeof emrMeta.gender === "string" ? emrMeta.gender : null),
+            },
+            physicianIdentity: {
+              name: payload.physicianName?.trim() || auth.email || "Assigned Physician",
+              license: payload.physicianLicense?.trim() || null,
+              specialty: payload.physicianSpecialty?.trim() || template.specialty,
+              department: payload.department?.trim() || template.department || null,
             },
             source: "modules.informed-consents",
             immutablePdfHash,

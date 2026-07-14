@@ -107,23 +107,24 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     const approvedPdfUrl = resolveAssemblyApprovedPdfUrl(state.assembly);
     const values = state.doctorCompletionValues || {};
     const hasDoctorValues = Object.values(values).some((value) => String(value || "").trim().length > 0);
-    const hasPhysicianSignature =
-      Boolean(
-        state.physicianSignatureDataUrl
-          .trim(),
-      );
+    const hasPhysicianSignature = Boolean(state.physicianSignatureDataUrl.trim());
 
     if (!formId || !approvedPdfUrl || (!hasDoctorValues && !hasPhysicianSignature)) {
-      setDraftPdfLoading(false);
-      setDraftPdfError(undefined);
-      setDraftPdfUrl((previous) => {
-        if (previous) URL.revokeObjectURL(previous);
-        return undefined;
-      });
-      return;
+      const resetTimer = window.setTimeout(() => {
+        setDraftPdfLoading(false);
+        setDraftPdfError(undefined);
+        setDraftPdfUrl((previous) => {
+          if (previous) URL.revokeObjectURL(previous);
+          return undefined;
+        });
+      }, 0);
+      return () => {
+        window.clearTimeout(resetTimer);
+      };
     }
 
     const controller = new AbortController();
+    let disposed = false;
     const timer = window.setTimeout(() => {
       setDraftPdfLoading(true);
       setDraftPdfError(undefined);
@@ -133,19 +134,22 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
           formId,
           approvedPdfUrl,
           doctorCompletionValues: values,
-          physicianSignatureDataUrl:
-            state.physicianSignatureDataUrl,
+          physicianSignatureDataUrl: state.physicianSignatureDataUrl,
         },
         controller.signal,
       )
         .then((url) => {
+          if (disposed || controller.signal.aborted) {
+            URL.revokeObjectURL(url);
+            return;
+          }
           setDraftPdfUrl((previous) => {
             if (previous) URL.revokeObjectURL(previous);
             return url;
           });
         })
         .catch((error) => {
-          if (controller.signal.aborted) return;
+          if (disposed || controller.signal.aborted) return;
           setDraftPdfError(
             error instanceof Error
               ? error.message
@@ -153,13 +157,14 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
           );
         })
         .finally(() => {
-          if (!controller.signal.aborted) {
+          if (!disposed && !controller.signal.aborted) {
             setDraftPdfLoading(false);
           }
         });
     }, 650);
 
     return () => {
+      disposed = true;
       window.clearTimeout(timer);
       controller.abort();
     };
