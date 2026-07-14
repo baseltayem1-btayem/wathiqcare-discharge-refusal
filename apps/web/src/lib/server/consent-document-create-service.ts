@@ -10,10 +10,8 @@ import {
   computePayloadFingerprint,
   validateIdempotencyKey,
 } from "@/lib/server/idempotency-core";
-import {
-  evaluateWitnessPolicy,
-  parseTemplateWitnessPolicy,
-} from "@/lib/server/witness-policy-service";
+import { evaluateWitnessPolicy } from "@/lib/server/witness-policy-service";
+import { resolveTemplateWitnessPolicy } from "@/lib/server/witness-policy-profiles";
 
 const prisma = () => getPrisma();
 
@@ -526,13 +524,6 @@ export async function createConsentDocument(
     );
   }
 
-  const witnessPolicyDecision = evaluateWitnessPolicy({
-    templateRequiresWitness: template.requiresWitness,
-    templateRiskLevel: template.riskLevel,
-    templatePolicy: parseTemplateWitnessPolicy(template.metadata),
-    triggers: payload.witnessTriggerFacts,
-  });
-
   const templateVersionId = payload.templateVersionId?.trim() || template.currentVersionId || undefined;
   if (!templateVersionId) {
     throw new ApiError(400, "Template has no active version");
@@ -549,6 +540,22 @@ export async function createConsentDocument(
   if (!version) {
     throw new ApiError(404, "Template version not found");
   }
+
+  // Resolve the effective witness policy: explicit template metadata policy
+  // wins; otherwise a governed code-controlled registry profile may apply
+  // (exact templateCode + version gate, fail closed on mismatch).
+  const resolvedWitnessPolicy = resolveTemplateWitnessPolicy({
+    metadata: template.metadata,
+    templateCode: template.templateCode,
+    templateVersionLabel: version.versionLabel,
+  });
+  const witnessPolicyDecision = evaluateWitnessPolicy({
+    templateRequiresWitness: template.requiresWitness,
+    templateRiskLevel: template.riskLevel,
+    templatePolicy: resolvedWitnessPolicy.policy,
+    templatePolicySource: resolvedWitnessPolicy.policySource ?? undefined,
+    triggers: payload.witnessTriggerFacts,
+  });
 
   let idempotencyKey: string | undefined;
   let idempotencyFingerprint: string | undefined;

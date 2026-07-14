@@ -90,6 +90,12 @@ export type WitnessPolicyInput = {
   templateRequiresWitness: boolean;
   templateRiskLevel?: string | null;
   templatePolicy?: TemplateWitnessPolicyConfig | null;
+  /**
+   * Provenance of templatePolicy when it did not come from template metadata
+   * (e.g. a governed code-controlled registry profile). Defaults to
+   * TEMPLATE_METADATA whenever a policy config is present.
+   */
+  templatePolicySource?: WitnessPolicySource;
   triggers?: WitnessTriggerFacts;
   evidence?: Partial<ElectronicEvidenceFacts>;
   /** Injectable clock for deterministic evaluation; defaults to now. */
@@ -98,6 +104,7 @@ export type WitnessPolicyInput = {
 
 export type WitnessPolicySource =
   | "TEMPLATE_METADATA"
+  | "GOVERNED_CODE_PROFILE"
   | "LEGACY_TEMPLATE_FLAG"
   | "DEFAULT_ROUTINE";
 
@@ -255,6 +262,7 @@ export function evaluateWitnessPolicy(input: WitnessPolicyInput): WitnessPolicyD
   const evidenceCompleteness = evaluateEvidenceCompleteness(input.evidence);
 
   const allowSamePersonMultipleRoles = config?.allowSamePersonMultipleRoles === true;
+  const configSource: WitnessPolicySource = input.templatePolicySource ?? "TEMPLATE_METADATA";
 
   const resolveRoles = (count: number): WitnessRole[] => {
     const configured = config?.requiredWitnessRoles;
@@ -276,7 +284,7 @@ export function evaluateWitnessPolicy(input: WitnessPolicyInput): WitnessPolicyD
   if (triggerCodes.length > 0) {
     const count = resolveCount();
     const policySource: WitnessPolicySource = config
-      ? "TEMPLATE_METADATA"
+      ? configSource
       : "DEFAULT_ROUTINE";
     return {
       witnessMode: "REQUIRED",
@@ -301,7 +309,7 @@ export function evaluateWitnessPolicy(input: WitnessPolicyInput): WitnessPolicyD
       requiredWitnessRoles: resolveRoles(count),
       triggerCodes: ["TEMPLATE_POLICY_REQUIRED"],
       policyVersion: config.policyVersion ?? WITNESS_POLICY_VERSION,
-      policySource: "TEMPLATE_METADATA",
+      policySource: configSource,
       evaluatedAt,
       evidenceCompleteness,
       decisionReason:
@@ -317,7 +325,7 @@ export function evaluateWitnessPolicy(input: WitnessPolicyInput): WitnessPolicyD
       requiredWitnessRoles: [],
       triggerCodes: [],
       policyVersion: config.policyVersion ?? WITNESS_POLICY_VERSION,
-      policySource: "TEMPLATE_METADATA",
+      policySource: configSource,
       evaluatedAt,
       evidenceCompleteness,
       decisionReason:
@@ -354,7 +362,7 @@ export function evaluateWitnessPolicy(input: WitnessPolicyInput): WitnessPolicyD
       requiredWitnessRoles: [],
       triggerCodes: [],
       policyVersion: config.policyVersion ?? WITNESS_POLICY_VERSION,
-      policySource: "TEMPLATE_METADATA",
+      policySource: configSource,
       evaluatedAt,
       evidenceCompleteness,
       decisionReason:

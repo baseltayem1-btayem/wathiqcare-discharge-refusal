@@ -28,9 +28,9 @@ import {
   evaluateWitnessPolicy,
   extractStoredPolicyDecision,
   extractWitnessTriggerFacts,
-  parseTemplateWitnessPolicy,
   type CompletedWitness,
 } from "@/lib/server/witness-policy-service";
+import { resolveTemplateWitnessPolicy } from "@/lib/server/witness-policy-profiles";
 import {
   validateClinicianAttestation,
   validatePatientDeclarations,
@@ -1391,13 +1391,6 @@ export async function createConsentDocument(
     );
   }
 
-  const witnessPolicyDecision = evaluateWitnessPolicy({
-    templateRequiresWitness: template.requiresWitness,
-    templateRiskLevel: template.riskLevel,
-    templatePolicy: parseTemplateWitnessPolicy(template.metadata),
-    triggers: (payload as { witnessTriggerFacts?: Parameters<typeof evaluateWitnessPolicy>[0]["triggers"] }).witnessTriggerFacts,
-  });
-
   const templateVersionId = payload.templateVersionId?.trim() || template.currentVersionId || undefined;
   if (!templateVersionId) {
     throw new ApiError(400, "Template has no active version");
@@ -1414,6 +1407,22 @@ export async function createConsentDocument(
   if (!version) {
     throw new ApiError(404, "Template version not found");
   }
+
+  // Resolve the effective witness policy: explicit template metadata policy
+  // wins; otherwise a governed code-controlled registry profile may apply
+  // (exact templateCode + version gate, fail closed on mismatch).
+  const resolvedWitnessPolicy = resolveTemplateWitnessPolicy({
+    metadata: template.metadata,
+    templateCode: template.templateCode,
+    templateVersionLabel: version.versionLabel,
+  });
+  const witnessPolicyDecision = evaluateWitnessPolicy({
+    templateRequiresWitness: template.requiresWitness,
+    templateRiskLevel: template.riskLevel,
+    templatePolicy: resolvedWitnessPolicy.policy,
+    templatePolicySource: resolvedWitnessPolicy.policySource ?? undefined,
+    triggers: (payload as { witnessTriggerFacts?: Parameters<typeof evaluateWitnessPolicy>[0]["triggers"] }).witnessTriggerFacts,
+  });
 
   const creationSyncIssues = validateBilingualSync({
     record: version as unknown as Record<string, unknown>,
@@ -2090,10 +2099,16 @@ export async function finalizeConsentDocument(
   // refusal or dispute can fire after the creation-time snapshot); the
   // stored snapshot preserves creation-time policy provenance. Enforcement
   // always uses the stricter outcome (fail closed).
+  const reevaluatedPolicy = resolveTemplateWitnessPolicy({
+    metadata: doc.template.metadata,
+    templateCode: doc.template.templateCode,
+    templateVersionLabel: doc.templateVersion?.versionLabel,
+  });
   const reevaluatedDecision = evaluateWitnessPolicy({
     templateRequiresWitness: doc.template.requiresWitness,
     templateRiskLevel: doc.template.riskLevel,
-    templatePolicy: parseTemplateWitnessPolicy(doc.template.metadata),
+    templatePolicy: reevaluatedPolicy.policy,
+    templatePolicySource: reevaluatedPolicy.policySource ?? undefined,
     triggers: extractWitnessTriggerFacts({
       metadata,
       hasGuardianSignature: hasGuardian,

@@ -27,6 +27,31 @@ import {
 import { extractStoredPolicyDecision } from "@/lib/server/witness-policy-service";
 import { formatSaudiArabiaTimestamp } from "@/lib/server/witness-requirement-service";
 
+type PdfjsLibApi = {
+  getDocument: (args: { data: Uint8Array }) => { promise: Promise<PdfjsDocument> };
+  GlobalWorkerOptions: { workerSrc: string };
+};
+
+type PdfjsDocument = {
+  getPage: (pageNumber: number) => Promise<PdfjsPage>;
+};
+
+type PdfjsPage = {
+  getViewport: (args: { scale: number }) => PdfjsViewport;
+  render: (args: { canvasContext: CanvasRenderingContext2D; viewport: PdfjsViewport }) => { promise: Promise<void> };
+};
+
+type PdfjsViewport = {
+  width: number;
+  height: number;
+};
+
+declare global {
+  interface Window {
+    pdfjsLib?: PdfjsLibApi;
+  }
+}
+
 type ImcManifestItem = {
   id: string;
   titleEn: string;
@@ -325,7 +350,7 @@ function buildInlinePdfFontFaceCss(): string {
   return faces.join("\n");
 }
 
-async function launchOverlayBrowser(): Promise<Browser> {
+export async function launchOverlayBrowser(): Promise<Browser> {
   const defaultArgs = [
     "--no-sandbox",
     "--disable-setuid-sandbox",
@@ -816,7 +841,7 @@ function buildAppendixHtml(context: OverlayDocumentContext): string {
   });
 }
 
-async function renderOverlayPng(args: { browser: Browser; html: string }): Promise<Buffer> {
+export async function renderOverlayPng(args: { browser: Browser; html: string }): Promise<Buffer> {
   const page = await args.browser.newPage();
 
   try {
@@ -840,6 +865,83 @@ async function renderOverlayPng(args: { browser: Browser; html: string }): Promi
     );
   } finally {
     await page.close();
+  }
+}
+
+function resolvePdfjsDistPaths(): { main: string; worker: string } {
+  const candidates = [
+    path.join(process.cwd(), "node_modules", "pdfjs-dist"),
+    path.join(process.cwd(), "..", "..", "node_modules", "pdfjs-dist"),
+  ];
+  for (const base of candidates) {
+    const main = path.join(base, "build", "pdf.mjs");
+    const worker = path.join(base, "build", "pdf.worker.mjs");
+    if (existsSync(main) && existsSync(worker)) {
+      return { main, worker };
+    }
+  }
+  throw new ApiError(500, "pdfjs-dist build files not found; cannot rasterize PDF page");
+}
+
+/**
+ * Rasterize a single PDF page to a PNG buffer using the locally installed
+ * pdfjs-dist + Playwright Chromium renderer. This produces a genuine composed
+ * raster of the final PDF page, not a transparency-only overlay.
+ */
+export async function renderPdfPageToPng(args: {
+  pdfBytes: Uint8Array;
+  pageIndex: number;
+  scale: number;
+}): Promise<Buffer> {
+  const { main: pdfJsPath, worker: workerPath } = resolvePdfjsDistPaths();
+  const workerCode = readFileSync(workerPath, "utf8");
+  const pdfBase64 = Buffer.from(args.pdfBytes).toString("base64");
+
+  const { chromium } = await import("playwright");
+
+  const browser = await chromium.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH?.trim() || undefined,
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.setViewportSize({
+      width: Math.ceil(612 * args.scale) + 40,
+      height: Math.ceil(792 * args.scale) + 40,
+    });
+
+    await page.addScriptTag({ path: pdfJsPath, type: "module" });
+    await page.waitForFunction(() => typeof window.pdfjsLib !== "undefined", { timeout: 5000 });
+
+    const dataUrl = await page.evaluate(
+      async ({ b64, workerCode, pageIndex, scale }) => {
+        const pdfjsLib = window.pdfjsLib as PdfjsLibApi;
+        const blob = new Blob([workerCode], { type: "text/javascript" });
+        pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
+        const pdf = await pdfjsLib.getDocument({
+          data: Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)),
+        }).promise;
+        const pdfPage = await pdf.getPage(pageIndex + 1);
+        const viewport = pdfPage.getViewport({ scale });
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        document.body.appendChild(canvas);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          throw new Error("Unable to obtain 2D canvas context");
+        }
+        await pdfPage.render({ canvasContext: ctx, viewport }).promise;
+        return canvas.toDataURL("image/png");
+      },
+      { b64: pdfBase64, workerCode, pageIndex: args.pageIndex, scale: args.scale },
+    );
+
+    return Buffer.from(dataUrl.split(",")[1], "base64");
+  } finally {
+    await browser.close();
   }
 }
 
@@ -1992,7 +2094,7 @@ function assertWitnessAuthLabelContentSafe(label: AuthenticationLabel): void {
   }
 }
 
-function buildWitnessAuthLabelsOverlayHtml(args: {
+export function buildWitnessAuthLabelsOverlayHtml(args: {
   labels: AuthenticationLabel[];
 }): string | null {
   const labelMarkup: string[] = [];
@@ -2115,7 +2217,7 @@ function buildWitnessAuthLabelsOverlayHtml(args: {
   });
 }
 
-async function drawWitnessAuthLabelsOverlay(args: {
+export async function drawWitnessAuthLabelsOverlay(args: {
   browser: Browser;
   pdfDoc: PDFDocument;
   labels: AuthenticationLabel[];
@@ -2148,11 +2250,19 @@ async function drawWitnessAuthLabelsOverlay(args: {
 
   const overlayImage = await args.pdfDoc.embedPng(overlayBytes);
 
+  const pageWidth = page.getWidth();
+  const pageHeight = page.getHeight();
+  const scaleX = pageWidth / OVERLAY_VIEWPORT.width;
+  const scaleY = pageHeight / OVERLAY_VIEWPORT.height;
+  const scale = Math.min(scaleX, scaleY);
+  const drawWidth = OVERLAY_VIEWPORT.width * scale;
+  const drawHeight = OVERLAY_VIEWPORT.height * scale;
+
   page.drawImage(overlayImage, {
-    x: 0,
-    y: 0,
-    width: page.getWidth(),
-    height: page.getHeight(),
+    x: (pageWidth - drawWidth) / 2,
+    y: (pageHeight - drawHeight) / 2,
+    width: drawWidth,
+    height: drawHeight,
   });
 
   return args.labels.length;
