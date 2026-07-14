@@ -603,6 +603,12 @@ export async function createConsentDocument(
 
   const emrMeta = (caseRecord.metadata || {}) as Record<string, unknown>;
 
+  const fixedClausePayload: Record<string, string> = {};
+  for (const field of FIXED_CLAUSE_FIELDS) {
+    fixedClausePayload[field] = normalizeText((version as unknown as Record<string, string>)[field]);
+  }
+  const immutablePdfHash = computeFixedClauseChecksum(fixedClausePayload);
+
   try {
     const created = await db.$transaction(async (tx) => {
       const consentDocument = await tx.consentDocument.create({
@@ -616,6 +622,7 @@ export async function createConsentDocument(
           language: payload.language || "bilingual",
           idempotencyKey: idempotencyKey ?? null,
           idempotencyFingerprint: idempotencyFingerprint ?? null,
+          immutablePdfHash,
           patientName: caseRecord.patientName || "Unknown Patient",
           mrn: caseRecord.medicalRecordNo || null,
           dob: typeof emrMeta.dob === "string" ? emrMeta.dob : null,
@@ -651,6 +658,7 @@ export async function createConsentDocument(
               plannedProcedure: typeof emrMeta.plannedProcedure === "string" ? emrMeta.plannedProcedure : null,
             },
             source: "modules.informed-consents",
+            immutablePdfHash,
             witnessPolicyDecision: witnessPolicyDecision as unknown as Prisma.InputJsonValue,
             governance: {
               fieldPolicy: DYNAMIC_FIELD_GOVERNANCE,

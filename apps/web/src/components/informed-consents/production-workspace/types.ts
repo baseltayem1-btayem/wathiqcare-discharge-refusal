@@ -68,14 +68,24 @@ export type PhysicianContext = {
 };
 
 export type SecureSigningResult = {
-  ok: true;
   sessionId: string;
   documentId: string;
-  signingUrl: string;
-  recipientMobile: string;
-  recipientEmail?: string;
-  smsDeliveryStatus: "sent" | "failed";
-  emailDeliveryStatus?: "sent" | "failed";
+  dispatchStatuses: {
+    sms: string;
+    email: string;
+  };
+  status: {
+    linkCreated: boolean;
+    smsSent: boolean;
+    opened: boolean;
+    otpRequested: boolean;
+    otpVerified: boolean;
+    signed: boolean;
+    expired: boolean;
+    revoked: boolean;
+    failed: boolean;
+    failedAttempts: number;
+  };
   createdAt: string;
   expiresAt?: string;
 };

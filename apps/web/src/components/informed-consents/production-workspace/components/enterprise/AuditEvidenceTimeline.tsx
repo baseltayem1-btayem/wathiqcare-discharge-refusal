@@ -36,12 +36,12 @@ export function AuditEvidenceTimeline({ timeline, signingResult }: AuditEvidence
               <p className="mt-2 break-all text-xs font-medium text-slate-800">{signingResult.sessionId}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{lang === "ar" ? "رابط التوقيع" : "Signing URL"}</p>
-              <p className="mt-2 break-all text-xs font-medium text-slate-800">{signingResult.signingUrl}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{lang === "ar" ? "حالة التسليم" : "Delivery status"}</p>
+              <p className="mt-2 text-xs font-medium text-slate-800">SMS: {signingResult.dispatchStatuses.sms} · Email: {signingResult.dispatchStatuses.email}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{lang === "ar" ? "التسليم" : "Delivery"}</p>
-              <p className="mt-2 text-xs font-medium text-slate-800">SMS: {signingResult.smsDeliveryStatus} • Email: {signingResult.emailDeliveryStatus || "n/a"}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{lang === "ar" ? "انتهاء الصلاحية" : "Expires"}</p>
+              <p className="mt-2 text-xs font-medium text-slate-800">{signingResult.expiresAt ? new Date(signingResult.expiresAt).toLocaleString() : "—"}</p>
             </div>
           </div>
         ) : null}

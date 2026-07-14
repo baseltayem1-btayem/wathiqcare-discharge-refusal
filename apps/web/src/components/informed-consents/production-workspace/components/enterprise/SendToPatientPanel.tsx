@@ -111,10 +111,10 @@ export function SendToPatientPanel({
         ) : null}
 
         <div className="flex flex-col gap-3">
-          <Button variant={draftApproved ? "outline" : "brand"} size="sm" uppercase={false} className="h-11 rounded-2xl" disabled={draftApproved} onClick={onApproveDraft}>
+          <Button variant={draftApproved ? "outline" : "default"} size="sm" className="h-11 rounded-2xl" disabled={draftApproved} onClick={onApproveDraft}>
             {draftApproved ? (lang === "ar" ? "تم اعتماد المسودة" : "Draft Approved") : (lang === "ar" ? "اعتماد المسودة" : "Approve Draft")}
           </Button>
-          <Button variant="brand" size="sm" uppercase={false} className="h-11 rounded-2xl" disabled={sendDisabled} onClick={onSend}>
+          <Button variant="default" size="sm" className="h-11 rounded-2xl" disabled={sendDisabled} onClick={onSend}>
             <Send className="mr-1 size-4" />
             {sendLoading ? (lang === "ar" ? "جاري الإرسال…" : "Sending…") : (lang === "ar" ? "إرسال إلى المريض" : "Send to Patient")}
           </Button>
@@ -127,7 +127,13 @@ export function SendToPatientPanel({
               <BadgeCheck className="size-4" />
               <span>{lang === "ar" ? "تم إنشاء جلسة التوقيع" : "Secure signing session created"}</span>
             </div>
-            <p className="mt-2 break-all text-xs text-emerald-900">{signingResult.signingUrl}</p>
+            <p className="mt-2 text-xs text-emerald-900">
+              {lang === "ar" ? "معرّف الجلسة:" : "Session ID:"} {signingResult.sessionId}
+            </p>
+            <p className="text-xs text-emerald-900">
+              {lang === "ar" ? "حالة الرسائل:" : "Dispatch status:"}{" "}
+              SMS {signingResult.dispatchStatuses.sms} · Email {signingResult.dispatchStatuses.email}
+            </p>
           </div>
         ) : null}
       </div>

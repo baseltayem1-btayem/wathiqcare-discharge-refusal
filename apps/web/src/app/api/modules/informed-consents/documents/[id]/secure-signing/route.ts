@@ -12,9 +12,57 @@ import { isAllowlistedRecipient } from "@/lib/server/workspace-consent-helpers";
 import { hashRecipient } from "@/lib/server/idempotency-core";
 import { resolveCanonicalCaseContact } from "@/lib/server/recipient-resolution-service";
 import { enforceWitnessPolicyAtSend } from "@/lib/server/witness-requirement-service";
+import { verifyPublicAssetSource } from "@/lib/server/clinical-knowledge/services/source-verification";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+function resolveApprovedPdfSourceUrl(value: unknown): string {
+  if (typeof value === "string") return value.trim();
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const candidates = [
+      record.url,
+      record.href,
+      record.pdfUrl,
+      record.pdfTemplateUrl,
+      record.approvedPdfUrl,
+      record.sourcePdfUrl,
+      record.immutablePdfUrl,
+    ];
+    for (const candidate of candidates) {
+      if (typeof candidate === "string" && candidate.trim()) {
+        return candidate.trim();
+      }
+    }
+  }
+  return "";
+}
+
+function resolveMetadataApprovedPdfSource(
+  metadata: unknown,
+  immutablePdfUrl?: string | null,
+): string {
+  const direct = resolveApprovedPdfSourceUrl(immutablePdfUrl);
+  if (direct) return direct;
+  if (!metadata || typeof metadata !== "object") return "";
+  const record = metadata as Record<string, unknown>;
+  const candidates = [
+    record.approvedPdfUrl,
+    record.sourcePdfUrl,
+    record.pdfTemplateUrl,
+    record.immutablePdfUrl,
+    record.approvedLink,
+    record.approvedConsentSource,
+    record.consentForm,
+    record.package,
+  ];
+  for (const candidate of candidates) {
+    const resolved = resolveApprovedPdfSourceUrl(candidate);
+    if (resolved) return resolved;
+  }
+  return "";
+}
 
 function maskMobile(value: string): string {
   return value.replace(/\d(?=\d{4})/g, "*");
@@ -54,11 +102,46 @@ export async function POST(
       status: true,
       templateVersionId: true,
       immutablePdfHash: true,
+      immutablePdfUrl: true,
       metadata: true,
     },
   });
   if (!document) {
     return NextResponse.json({ ok: false, error: "Consent document not found" }, { status: 404 });
+  }
+
+  if (document.status === "VOID" || document.status === "FINALIZED" || document.status === "SIGNED") {
+    return NextResponse.json(
+      { ok: false, error: `Consent document is ${document.status.toLowerCase()}` },
+      { status: 422 },
+    );
+  }
+
+  const approvedPdfSourceUrl = resolveMetadataApprovedPdfSource(document.metadata, document.immutablePdfUrl);
+  const approvedPdfVerification = verifyPublicAssetSource(approvedPdfSourceUrl);
+  if (!approvedPdfVerification.sourceVerified) {
+    const reason = "Approved consent PDF source is missing or inaccessible.";
+    await writeConsentAudit({
+      tenantId,
+      auth,
+      action: "send_blocked_missing_approved_pdf_source",
+      summary: reason,
+      source: "informed-consents-documents-secure-signing",
+      caseId,
+      consentDocumentId: documentId,
+      templateId: typeof document.templateVersionId === "string" ? undefined : undefined,
+      metadata: {
+        documentId,
+        caseId,
+        approvedPdfSourceUrl,
+        sourceVerification: approvedPdfVerification,
+      },
+      request,
+    });
+    return NextResponse.json(
+      { ok: false, error: reason, sourceVerification: approvedPdfVerification },
+      { status: 422 },
+    );
   }
 
   // Witness-policy gate: evaluate the policy and issue witness requirement
