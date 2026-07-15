@@ -701,8 +701,23 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     const doctorCompletionReady = Boolean(fieldMappingReadiness && doctorReadinessReport.ready);
     const requiredAnesthesiaFields = fieldMappingReadiness?.requiredAnesthesiaFields ?? [];
     const anesthesiaDecision = state.doctorCompletionValues.anesthesia_applies;
+    const effectiveAnesthesiaFields = requiredAnesthesiaFields.filter((field) => {
+      if (!field.requiredWhen) return true;
+      const match = field.requiredWhen.trim().match(/^([a-zA-Z0-9_]+)\s*===\s*(true|false)$/);
+      if (!match) return true;
+      const [, key, expected] = match;
+      const actual = state.doctorCompletionValues[key];
+      return expected === "true" ? actual === "true" : actual === "false";
+    });
+    const anesthesiaDecisionAnswered = anesthesiaDecision === "true" || anesthesiaDecision === "false" || state.anesthesiaOverride !== undefined;
+    const anesthesiaApplies = anesthesiaDecision === "true" || (state.anesthesiaOverride !== undefined && state.anesthesiaOverride !== "NONE");
     const anesthesiaMappingReady = Boolean(
-      fieldMappingReadiness && (requiredAnesthesiaFields.length === 0 || anesthesiaDecision === "false"),
+      fieldMappingReadiness &&
+        (effectiveAnesthesiaFields.length === 0 ||
+          (anesthesiaDecisionAnswered && (!anesthesiaApplies || effectiveAnesthesiaFields.every((field) => {
+            const value = state.doctorCompletionValues[field.key];
+            return value !== undefined && String(value).trim().length > 0;
+          })))),
     );
     const patientSignatureMapped = Boolean((fieldMappingReadiness?.requiredPatientFields.length || 0) > 0);
 

@@ -14,9 +14,13 @@ export type ReadinessItemStatus = "COMPLETE" | "BLOCKED" | "REQUIRED" | "NOT_APP
 type FieldMappingReadinessInput = {
   hasMapping?: boolean;
   verificationStatus?: string;
+  formId?: string;
   requiredDoctorFields?: Array<{ key: string; labelEn: string; labelAr?: string; type: string; section?: string; required?: boolean }>;
-  requiredAnesthesiaFields?: Array<{ key: string; labelEn: string; labelAr?: string; type: string; section?: string; required?: boolean }>;
+  requiredAnesthesiaFields?: Array<{ key: string; labelEn: string; labelAr?: string; type: string; section?: string; required?: boolean; requiredWhen?: string }>;
   requiredPatientFields?: Array<{ key: string; labelEn?: string; labelAr?: string; type?: string; required?: boolean }>;
+  interpreterApplicable?: boolean;
+  substituteDecisionMakerApplicable?: boolean;
+  witnessApplicable?: boolean;
 };
 
 export type ReadinessItem = {
@@ -53,6 +57,36 @@ function normalizeMobile(value: string): string {
 
 function hasContact(mobile: string, email: string): boolean {
   return Boolean(normalizeMobile(mobile) || email.trim());
+}
+
+function isValueTrue(value: string | undefined): boolean {
+  return value === "true";
+}
+
+function isValueFalse(value: string | undefined): boolean {
+  return value === "false";
+}
+
+function isValueAnswered(value: string | undefined): boolean {
+  return value === "true" || value === "false";
+}
+
+/**
+ * Evaluate a simple requiredWhen expression against the current completion values.
+ * Supported patterns:
+ * - "anesthesia_applies === true"
+ * - "anesthesia_applies === false"
+ */
+function evaluateRequiredWhen(expression: string | undefined, values: Record<string, string>): boolean {
+  if (!expression) return true;
+  const normalized = expression.trim();
+  const match = normalized.match(/^([a-zA-Z0-9_]+)\s*===\s*(true|false)$/);
+  if (!match) return true;
+  const [, key, expected] = match;
+  const actual = values[key];
+  if (expected === "true") return isValueTrue(actual);
+  if (expected === "false") return isValueFalse(actual);
+  return true;
 }
 
 function item(
@@ -246,7 +280,15 @@ export function computePhysicianJourneyReadiness(args: {
   const signatureField = requiredDoctorFields.find((f) => f.type === "SIGNATURE");
   const textFieldsMissing = doctorReadinessReport.missingFields.filter((f) => f.type !== "SIGNATURE");
 
-  if (requiredDoctorFields.length === 0) {
+  // Interpreter decision is a conditional gate for AcroForm templates that expose it.
+  const interpreterApplicable = Boolean(fieldMappingReadiness?.interpreterApplicable);
+  const interpreterRequiredAnswered = !interpreterApplicable || isValueAnswered(doctorCompletionValues.interpreter_required);
+  const interpreterPresentAnswered = !interpreterApplicable || !isValueTrue(doctorCompletionValues.interpreter_required) || isValueAnswered(doctorCompletionValues.interpreter_present);
+  const interpreterDecisionMissing = interpreterApplicable && (!interpreterRequiredAnswered || !interpreterPresentAnswered);
+
+  const blockingPhysicianFieldsMissing = textFieldsMissing.length > 0 || interpreterDecisionMissing;
+
+  if (requiredDoctorFields.length === 0 && !interpreterApplicable) {
     items.push(
       item(
         "physician_fields_complete",
@@ -257,7 +299,11 @@ export function computePhysicianJourneyReadiness(args: {
         "No physician-completed fields are required for this form.",
       ),
     );
-  } else if (textFieldsMissing.length > 0) {
+  } else if (blockingPhysicianFieldsMissing) {
+    const missingLabels = textFieldsMissing.map((f) => f.labelEn);
+    if (interpreterDecisionMissing) {
+      missingLabels.push("Interpreter decision");
+    }
     items.push(
       item(
         "physician_fields_complete",
@@ -265,7 +311,7 @@ export function computePhysicianJourneyReadiness(args: {
         "تم إكمال حقول الطبيب",
         "BLOCKED",
         "physician",
-        `Missing: ${textFieldsMissing.map((f) => f.labelEn).join(", ")}`,
+        `Missing: ${missingLabels.join(", ")}`,
       ),
     );
   } else {
@@ -304,7 +350,7 @@ export function computePhysicianJourneyReadiness(args: {
         "Physician signature has not been captured.",
       ),
     );
-  } else if (textFieldsMissing.length > 0) {
+  } else if (blockingPhysicianFieldsMissing) {
     items.push(
       item(
         "physician_signature_complete",
@@ -329,8 +375,12 @@ export function computePhysicianJourneyReadiness(args: {
 
   // Anesthesia applicability
   const requiredAnesthesiaFields = fieldMappingReadiness?.requiredAnesthesiaFields ?? [];
-  const anesthesiaApplies = doctorCompletionValues.anesthesia_applies === "true" || anesthesiaOverride === "GENERAL" || anesthesiaOverride === "REGIONAL" || anesthesiaOverride === "SEDATION" || anesthesiaOverride === "LOCAL";
-  const anesthesiaNotApplicable = requiredAnesthesiaFields.length === 0 && !anesthesiaApplies;
+  const effectiveAnesthesiaFields = requiredAnesthesiaFields.filter((field) =>
+    evaluateRequiredWhen(field.requiredWhen, doctorCompletionValues),
+  );
+  const anesthesiaApplies = isValueTrue(doctorCompletionValues.anesthesia_applies) || anesthesiaOverride === "GENERAL" || anesthesiaOverride === "REGIONAL" || anesthesiaOverride === "SEDATION" || anesthesiaOverride === "LOCAL";
+  const anesthesiaDecisionAnswered = isValueAnswered(doctorCompletionValues.anesthesia_applies) || anesthesiaOverride !== undefined;
+  const anesthesiaNotApplicable = effectiveAnesthesiaFields.length === 0 && !anesthesiaApplies;
 
   if (anesthesiaNotApplicable) {
     items.push(
@@ -343,7 +393,7 @@ export function computePhysicianJourneyReadiness(args: {
         "Anesthesia is not required for this procedure.",
       ),
     );
-  } else if (requiredAnesthesiaFields.length > 0 && !anesthesiaApplies) {
+  } else if (!anesthesiaDecisionAnswered) {
     items.push(
       item(
         "anesthesia_workflow_reviewed",
@@ -351,9 +401,37 @@ export function computePhysicianJourneyReadiness(args: {
         "تمت مراجعة مسار التخدير",
         "REQUIRED",
         "anesthesia",
-        "Anesthesia review is required when applicable.",
+        "Anesthesia applicability must be selected before dispatch.",
       ),
     );
+  } else if (effectiveAnesthesiaFields.length > 0 && anesthesiaApplies) {
+    const anesthesiaReadinessReport = analyzeDoctorReadiness({
+      fields: effectiveAnesthesiaFields,
+      values: doctorCompletionValues,
+      physicianSignatureDataUrl,
+    });
+    if (anesthesiaReadinessReport.missingCount > 0) {
+      items.push(
+        item(
+          "anesthesia_workflow_reviewed",
+          "Anesthesia workflow reviewed",
+          "تمت مراجعة مسار التخدير",
+          "BLOCKED",
+          "anesthesia",
+          `Missing: ${anesthesiaReadinessReport.missingFields.map((f) => f.labelEn).join(", ")}`,
+        ),
+      );
+    } else {
+      items.push(
+        item(
+          "anesthesia_workflow_reviewed",
+          "Anesthesia workflow reviewed",
+          "تمت مراجعة مسار التخدير",
+          "COMPLETE",
+          "anesthesia",
+        ),
+      );
+    }
   } else {
     items.push(
       item(

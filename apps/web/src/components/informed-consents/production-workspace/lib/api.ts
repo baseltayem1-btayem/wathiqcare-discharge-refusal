@@ -59,6 +59,54 @@ export type ConsentFieldMappingReadiness = {
     mappingHash: string;
     formVersion?: string;
   } | null;
+  /** AcroForm-specific canonical identity and manifest state. */
+  interpreterApplicable?: boolean;
+  substituteDecisionMakerApplicable?: boolean;
+  witnessApplicable?: boolean;
+  acroForm?: {
+    canonicalTemplateIdentity: {
+      formId: string;
+      slug: string;
+      titleEn: string;
+      titleAr?: string;
+      templateCode?: string;
+      layoutFamily: string;
+    };
+    manifestState: {
+      present: boolean;
+      hashMatches: boolean;
+      hash: string | null;
+      status: "READY" | "NOT_READY";
+      blockers: string[];
+    };
+    semanticPhysicianFields: Array<{
+      key: string;
+      labelEn: string;
+      labelAr?: string;
+      section?: string;
+      type: string;
+      required: boolean;
+      requiredWhen?: string;
+      role: string;
+    }>;
+    patientSignatureTargets: Array<{
+      key: string;
+      labelEn: string;
+      labelAr?: string;
+      role: string;
+    }>;
+    physicianSignatureTargets: Array<{
+      key: string;
+      labelEn: string;
+      labelAr?: string;
+      role: string;
+    }>;
+    interpreterApplicable: boolean;
+    anesthesiaApplicable: boolean;
+    educationRequired: boolean;
+    substituteDecisionMakerApplicable: boolean;
+    witnessApplicable: boolean;
+  } | null;
 };
 
 export async function fetchConsentFieldMappingReadiness(formId: string): Promise<ConsentFieldMappingReadiness> {
@@ -261,7 +309,7 @@ export async function resolveContentMapping(args: {
       suggestions: [],
       blockers: [],
       requiredParticipants: [],
-    } as ProductionAssembly;
+    } as unknown as ProductionAssembly;
 
     return {
       ok: true,
@@ -534,7 +582,8 @@ export async function fetchProcedures(tenantId: string): Promise<
       department: String(record.department || specialty),
       riskLevel: String(record.riskLevel || "medium"),
       source: String(record.source || "imc_library"),
-    } as ProductionProcedure;
+      anesthesiaRequired: Boolean(record.anesthesiaRequired || false),
+    } as unknown as ProductionProcedure;
   }).filter((procedure) => Boolean(procedure.id));
 }
 

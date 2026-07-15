@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import type { PrismaClient } from "@prisma/client";
 import type { ConsentFieldMapping, ConsentFieldDefinition } from "@/lib/consents/field-mapping/types";
 import { ApiError } from "@/lib/server/http";
+import { resolveCanonicalAcroFormTemplateId } from "@/lib/server/acroform/acroform-template-identity";
 import { ADENOTONSILLECTOMY_FIELD_MAPPING } from "./adenotonsillectomy.mapping";
 import { ARTHROGRAM_FIELD_MAPPING } from "./arthrogram.mapping";
 import { AMPUTATION_FIELD_MAPPING } from "./amputation.mapping";
@@ -287,6 +288,17 @@ export function getConsentFieldMappingByFormId(formId: string): ConsentFieldMapp
   const specificMapping = CONSENT_FIELD_MAPPINGS.find((mapping) => mapping.formId === formId || mapping.slug === formId);
   if (specificMapping) return specificMapping;
 
+  // AcroForm-backed templates may be addressed by aliases (template code,
+  // manifest slug, or linked database id). Resolve to canonical mapping.
+  const acroFormCanonical = resolveCanonicalAcroFormTemplateId(formId);
+  if (acroFormCanonical) {
+    const canonicalMapping = CONSENT_FIELD_MAPPINGS.find(
+      (mapping) =>
+        mapping.formId === acroFormCanonical.canonicalFormId || mapping.slug === acroFormCanonical.slug,
+    );
+    if (canonicalMapping) return canonicalMapping;
+  }
+
   return createGenericImcApprovedFieldMapping(formId);
 }
 
@@ -314,7 +326,11 @@ export function getConsentFieldMappingReadiness(
     };
   }
 
-  const requiredDoctorFields = mapping.fields.filter((field) => field.role === "PHYSICIAN_REQUIRED" && field.required);
+  const requiredDoctorFields = mapping.fields.filter(
+    (field) =>
+      (field.role === "PHYSICIAN_REQUIRED" && field.required) ||
+      field.role === "INTERPRETER_CONDITIONAL",
+  );
   const requiredAnesthesiaFields = mapping.fields.filter((field) => field.role === "ANESTHESIA_REQUIRED");
   const requiredPatientFields = mapping.fields.filter((field) => field.role === "PATIENT_REQUIRED" && field.required);
 

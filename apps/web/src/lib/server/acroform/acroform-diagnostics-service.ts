@@ -1,5 +1,6 @@
 import { computeAcroFormManifestHash, type AcroFormTemplateManifest } from "@/lib/server/acroform/field-addressed-template-manifest";
 import amputationManifest from "@/lib/server/acroform/manifests/imc-mr-1135-amputation.manifest.json";
+import { resolveCanonicalAcroFormTemplateId } from "./acroform-template-identity";
 
 const ACROFORM_MANIFESTS: Record<string, AcroFormTemplateManifest> = {
   "imc-approved-amputation": amputationManifest as AcroFormTemplateManifest,
@@ -39,7 +40,9 @@ export type AcroFormTemplateDiagnostics = {
  * use only.
  */
 export function getAcroFormTemplateDiagnostics(formId: string): AcroFormTemplateDiagnostics {
-  const manifest = ACROFORM_MANIFESTS[formId];
+  const canonical = resolveCanonicalAcroFormTemplateId(formId);
+  const canonicalFormId = canonical?.canonicalFormId ?? formId;
+  const manifest = ACROFORM_MANIFESTS[canonicalFormId];
   const blockers: string[] = [];
 
   if (!manifest) {
