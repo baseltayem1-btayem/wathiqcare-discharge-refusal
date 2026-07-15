@@ -4,10 +4,12 @@ import type { ConsentFieldMapping, ConsentFieldDefinition } from "@/lib/consents
 import { ApiError } from "@/lib/server/http";
 import { ADENOTONSILLECTOMY_FIELD_MAPPING } from "./adenotonsillectomy.mapping";
 import { ARTHROGRAM_FIELD_MAPPING } from "./arthrogram.mapping";
+import { AMPUTATION_FIELD_MAPPING } from "./amputation.mapping";
 
 const CONSENT_FIELD_MAPPINGS: ConsentFieldMapping[] = [
   ADENOTONSILLECTOMY_FIELD_MAPPING,
   ARTHROGRAM_FIELD_MAPPING,
+  AMPUTATION_FIELD_MAPPING,
 ];
 
 const IMC_APPROVED_FORM_ID_PREFIX = "imc-approved-";

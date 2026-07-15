@@ -6,6 +6,7 @@ import {
   getConsentFieldMappingReadiness,
   persistFieldMappingVerification,
 } from "@/lib/server/consent-field-mappings";
+import { getAcroFormTemplateDiagnostics } from "@/lib/server/acroform/acroform-diagnostics-service";
 
 type RouteContext = {
   params: Promise<{
@@ -38,10 +39,16 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const persistedVerification = extractFieldMappingVerification(form?.metadata);
     const readiness = getConsentFieldMappingReadiness(decodeURIComponent(formId), persistedVerification);
 
+    const acroFormDiagnostics =
+      readiness.mapping?.layoutFamily === "IMC_MR_1135_ACROFORM"
+        ? getAcroFormTemplateDiagnostics(decodeURIComponent(formId))
+        : null;
+
     return NextResponse.json({
       ok: true,
       source: "consent-field-mapping-foundation",
       ...readiness,
+      acroForm: acroFormDiagnostics,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load field mapping readiness";

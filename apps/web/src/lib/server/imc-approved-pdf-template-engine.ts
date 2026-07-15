@@ -11,6 +11,10 @@ import { ApiError } from "@/lib/server/http";
 import { getConsentFieldMappingByFormId } from "@/lib/server/consent-field-mappings";
 import type { ConsentFieldDefinition, ConsentFieldMapping } from "@/lib/consents/field-mapping/types";
 import { isSignatureHashStale } from "@/lib/server/signature-hash-binding";
+import { renderFieldAddressedOverlays } from "@/lib/server/acroform/field-addressed-pdf-renderer";
+import type { AcroFormTemplateManifest } from "@/lib/server/acroform/field-addressed-template-manifest";
+import amputationManifest from "@/lib/server/acroform/manifests/imc-mr-1135-amputation.manifest.json";
+import { buildAmputationFieldAddressedValues } from "@/lib/server/acroform/field-mapping/amputation-field-mapping";
 import { resolveConsentSignaturePresentation } from "@/lib/signature/signature-display";
 
 import {
@@ -2685,6 +2689,9 @@ export async function renderImcApprovedConsentPdf(args: {
     wathiqLogoDataUrl,
   };
 
+  const isFieldAddressedAmputation =
+    overlayContext.approvedConsentFormId === "imc-approved-amputation";
+
   const productionMapping =
     overlayContext.approvedConsentFormId ===
     "imc-approved-adenotonsillectomy"
@@ -2788,6 +2795,27 @@ export async function renderImcApprovedConsentPdf(args: {
         void footerOverlay;
       }
     });
+
+    if (isFieldAddressedAmputation) {
+      const amputationValues = buildAmputationFieldAddressedValues({
+        doctorCompletionValues,
+        physicianSignatureDataUrl: physicianSignaturePresentation?.signatureImageDataUrl,
+        patientSignatureDataUrl: signaturePresentation?.signatureImageDataUrl,
+        physicianName: doc.physicianName,
+        physicianSpecialty: doc.physicianSpecialty || doc.template.specialty,
+        patientName: doc.patientName,
+        mrn: doc.mrn,
+        dob: doc.dob,
+        signedAt,
+      });
+
+      await renderFieldAddressedOverlays({
+        pdfDoc,
+        manifest: amputationManifest as AcroFormTemplateManifest,
+        values: amputationValues,
+        browser,
+      });
+    }
 
     if (productionMapping) {
       await drawProductionMappedText({
