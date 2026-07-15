@@ -59,6 +59,11 @@ export type ConsentFieldMappingReadiness = {
     mappingHash: string;
     formVersion?: string;
   } | null;
+  /** Safe diagnostic about the optional ConsentForm persistence table. */
+  persistence?: {
+    available: boolean;
+    reason?: string;
+  };
   /** AcroForm-specific canonical identity and manifest state. */
   interpreterApplicable?: boolean;
   substituteDecisionMakerApplicable?: boolean;

@@ -188,7 +188,11 @@ export function mergeAcroFormReadinessIntoFieldMappingReadiness(
 
   const requiredDoctorFields = effectiveMapping
     ? effectiveMapping.fields
-        .filter((field) => field.role === "PHYSICIAN_REQUIRED" && field.required)
+        .filter(
+          (field) =>
+            (field.role === "PHYSICIAN_REQUIRED" && field.required) ||
+            field.role === "INTERPRETER_CONDITIONAL",
+        )
         .map((field) => ({
           key: field.key,
           labelEn: field.labelEn,
