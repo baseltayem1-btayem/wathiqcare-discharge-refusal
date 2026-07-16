@@ -13,6 +13,11 @@ import {
   hashRecipient,
   validateIdempotencyKey,
 } from "@/lib/server/idempotency-core";
+import {
+  generateGovernedPatientCopy,
+  isAcroFormBackedPatientCopy,
+  type ConsentDocumentForPatientCopy,
+} from "@/lib/server/acroform/patient-copy-dispatch-service";
 
 const prisma = () => getPrisma();
 
@@ -493,13 +498,67 @@ export async function sendModuleSecureSigningLink(
     );
   }
 
-  const pdfBytes = buildPdfBuffer("WathiqCare Secure Signing", [
-    `Module: ${args.moduleKey}`,
-    `Case: ${args.caseId}`,
-    `Document: ${args.documentId}`,
-    `Patient: ${args.patientName}`,
-    `Generated At: ${new Date().toISOString()}`,
-  ]);
+  let pdfBytes: Buffer;
+  let sessionMetadataOverride: Record<string, unknown> | undefined;
+
+  if (args.moduleType === "informed_consent") {
+    const consentDocument = await prisma().consentDocument.findFirst({
+      where: { id: args.documentId, tenantId: args.tenantId },
+      select: {
+        id: true,
+        patientName: true,
+        mrn: true,
+        dob: true,
+        physicianName: true,
+        physicianSpecialty: true,
+        metadata: true,
+      },
+    });
+
+    const acroFormDocument: ConsentDocumentForPatientCopy | null = consentDocument
+      ? {
+          id: consentDocument.id,
+          patientName: consentDocument.patientName,
+          mrn: consentDocument.mrn,
+          dob: consentDocument.dob,
+          physicianName: consentDocument.physicianName,
+          physicianSpecialty: consentDocument.physicianSpecialty,
+          metadata: consentDocument.metadata,
+        }
+      : null;
+
+    if (acroFormDocument && isAcroFormBackedPatientCopy(acroFormDocument)) {
+      const governed = await generateGovernedPatientCopy({ document: acroFormDocument });
+      pdfBytes = Buffer.from(governed.bytes);
+      sessionMetadataOverride = {
+        governedPatientCopy: {
+          pdfHash: governed.pdfHash,
+          pdfBytesBase64: pdfBytes.toString("base64"),
+          fingerprint: governed.fingerprint,
+          formId: governed.formId,
+          approvedPdfUrl: governed.approvedPdfUrl,
+          manifestHash: governed.manifestHash,
+          generatedAt: governed.generatedAt,
+        },
+      };
+    } else {
+      pdfBytes = buildPdfBuffer("WathiqCare Secure Signing", [
+        `Module: ${args.moduleKey}`,
+        `Case: ${args.caseId}`,
+        `Document: ${args.documentId}`,
+        `Patient: ${args.patientName}`,
+        `Generated At: ${new Date().toISOString()}`,
+      ]);
+    }
+  } else {
+    pdfBytes = buildPdfBuffer("WathiqCare Secure Signing", [
+      `Module: ${args.moduleKey}`,
+      `Case: ${args.caseId}`,
+      `Document: ${args.documentId}`,
+      `Patient: ${args.patientName}`,
+      `Generated At: ${new Date().toISOString()}`,
+    ]);
+  }
 
   const session = await createSigningSessionIdempotent({
     input: {
@@ -528,6 +587,7 @@ export async function sendModuleSecureSigningLink(
     explicitResend: args.explicitResend,
     caseId: args.caseId,
     client: args.client,
+    metadata: sessionMetadataOverride,
   });
 
   const smsDispatch = session.dispatches?.find((d) => d.channel === "SMS");

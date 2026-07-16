@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import { Prisma, PrismaClient, PatientMessageStatus } from "@prisma/client";
 import { getPrisma } from "@/lib/server/prisma";
 import {
@@ -54,10 +53,10 @@ type CreateSigningSessionOptions = {
   explicitResend?: boolean;
   caseId?: string;
   client?: PrismaClient;
+  metadata?: Record<string, unknown>;
 };
 
 const ACTIVE_STATUSES = ["PENDING", "SENT", "PARTIALLY_SIGNED"];
-const TERMINAL_STATUSES = ["COMPLETED", "EXPIRED", "REVOKED"];
 const MAX_SERIALIZATION_RETRIES = 3;
 
 function isSerializationFailure(error: unknown): boolean {
@@ -173,6 +172,7 @@ async function createSessionAndTokens(
   idempotencyFingerprint: string | undefined,
   approvedPdfHash: string | undefined,
   caseId: string | undefined,
+  metadata: Record<string, unknown> | undefined,
   tx: Prisma.TransactionClient,
 ): Promise<{ result: SigningSessionResult; tokens: TokenMap; dispatches: Array<{ id: string; channel: string; status: PatientMessageStatus }> }> {
   if (!idempotencyKey) {
@@ -199,6 +199,7 @@ async function createSessionAndTokens(
       metadata: {
         pdfBytesLength: input.pdfBytes?.length ?? 0,
         approvedPdfHash: approvedPdfHash ?? null,
+        ...(metadata || {}),
       },
     },
   });
@@ -250,9 +251,6 @@ async function createSessionAndTokens(
   const rootFingerprint = idempotencyFingerprint ?? computePayloadFingerprint(input);
 
   for (const signer of input.signers) {
-    const token = tokensByRole[signer.role];
-    const tokenHash = computeTokenHash(token);
-
     if (signer.mobile) {
       const dispatch = await createPatientMessageDispatch(
         {
@@ -367,7 +365,7 @@ function mapSessionToResult(
 export async function createSigningSessionIdempotent(
   options: CreateSigningSessionOptions,
 ): Promise<SigningSessionWithTokens> {
-  const { input, idempotencyKey, idempotencyFingerprint, approvedPdfHash, explicitResend, caseId, client } =
+  const { input, idempotencyKey, idempotencyFingerprint, approvedPdfHash, explicitResend, caseId, client, metadata } =
     options;
 
   // Resend idempotency: a stable resend key should return the same replacement session.
@@ -436,6 +434,7 @@ export async function createSigningSessionIdempotent(
             idempotencyFingerprint,
             approvedPdfHash,
             caseId,
+            metadata,
             tx,
           );
 

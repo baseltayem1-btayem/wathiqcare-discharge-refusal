@@ -16,7 +16,6 @@ import { executeUnifiedDisclosureShadowMode } from "@/lib/projection/unified-dis
 import { logRuntimeEvent, logRuntimeIncident } from "@/lib/server/runtime-observability";
 import {
   asRecord,
-  getBoolean,
   getDecisionStatus,
   getEducationStatus,
   getLinkedEducationPackage,
@@ -28,6 +27,30 @@ import {
 import { getSigningTokenContext, type SigningTokenContext } from "@/lib/server/signing-token-context-service";
 
 const prisma = () => getPrisma();
+
+function buildPatientCopyPdfUrl(token: string): string {
+  return `/api/public/informed-consents/signing/${encodeURIComponent(token)}/patient-copy-pdf`;
+}
+
+async function resolveGovernedPatientCopyUrl(args: {
+  token: string;
+  tenantId: string;
+  sessionId: string;
+}): Promise<string | null> {
+  const session = await prisma().signingSession.findFirst({
+    where: { id: args.sessionId, tenantId: args.tenantId },
+    select: { metadata: true },
+  });
+  if (!session) return null;
+
+  const metadata = asRecord(session.metadata) ?? {};
+  const governed = asRecord(metadata.governedPatientCopy);
+  if (!governed || typeof governed.pdfHash !== "string" || !governed.pdfHash) {
+    return null;
+  }
+
+  return buildPatientCopyPdfUrl(args.token);
+}
 
 const SAFE_REFUSAL_LEGAL_TEXT_AR =
   "أقر بأنني أرفض التدخل الجراحي أو الإجراء المقترح بعد أن شرح لي الطبيب حالتي الصحية، والحاجة الطبية للإجراء، والمخاطر والمضاعفات المحتملة، والبدائل العلاجية، ومخاطر الرفض أو التأجيل. وأقر بأنه أتيحت لي الفرصة لطرح الأسئلة وتمت الإجابة عليها بصورة واضحة ومفهومة، وأتحمل النتائج الطبية المحتملة المترتبة على هذا الرفض.";
@@ -192,6 +215,12 @@ async function buildPreOtpBootstrapPayload(
     throw new ApiError(409, NO_CONSENT_CONTENT_ERROR);
   }
 
+  const governedUrl = await resolveGovernedPatientCopyUrl({
+    token,
+    tenantId: context.tenantId,
+    sessionId: context.sessionId,
+  });
+
   const linkedEducationPackage = await getLinkedEducationPackage(
     context.tenantId,
     doc.templateId,
@@ -207,7 +236,7 @@ async function buildPreOtpBootstrapPayload(
       facilityName: doc.tenant?.name ?? "",
       templateTitleAr: authority.titleAr,
       templateTitleEn: authority.titleEn,
-      approvedPdfUrl: authority.approvedPdfUrl,
+      approvedPdfUrl: governedUrl ?? authority.approvedPdfUrl,
       approvedContentAvailable: authority.approvedContentAvailable,
       locale: "ar",
       educationRequired: Boolean(linkedEducationPackage),
@@ -219,12 +248,20 @@ async function buildPreOtpBootstrapPayload(
 
 async function buildPublicSigningDocumentPayload(
   context: SigningTokenContext,
+  token: string,
 ): Promise<PublicSigningDocumentPayload> {
   const doc = await loadPublicDocumentRecord(context.tenantId, context.documentId);
   const authority = getApprovedConsentAuthority(doc);
   if (!authority.approvedContentAvailable) {
     throw new ApiError(409, NO_CONSENT_CONTENT_ERROR);
   }
+
+  const governedUrl = await resolveGovernedPatientCopyUrl({
+    token,
+    tenantId: context.tenantId,
+    sessionId: context.sessionId,
+  });
+
   const linkedEducationPackage = await getLinkedEducationPackage(
     context.tenantId,
     doc.templateId,
@@ -308,7 +345,7 @@ async function buildPublicSigningDocumentPayload(
     plannedProcedure: doc.plannedProcedure || "",
     templateTitleAr: normalizeArabicText(authority.titleAr),
     templateTitleEn: authority.titleEn,
-    approvedPdfUrl: authority.approvedPdfUrl,
+    approvedPdfUrl: governedUrl ?? authority.approvedPdfUrl,
     approvedContentAvailable: authority.approvedContentAvailable,
     versionLabel: authority.versionLabel,
     sections,
@@ -397,5 +434,5 @@ export async function getPublicSigningDocument(args: {
     return buildPreOtpBootstrapPayload(args.token);
   }
   const context = await validatePublicSigningSession(args);
-  return buildPublicSigningDocumentPayload(context);
+  return buildPublicSigningDocumentPayload(context, args.token);
 }

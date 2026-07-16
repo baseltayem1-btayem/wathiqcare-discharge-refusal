@@ -699,8 +699,24 @@ export function useProductionWorkspace(physician: PhysicianContext) {
           approvedConsentFormTitleAr: state.assembly.consentForm?.titleAr,
           approvedConsentFormVersion: state.assembly.consentForm?.version,
           pdfTemplateUrl: state.assembly.consentForm?.pdfTemplateUrl,
+          approvedPdfUrl: state.assembly.consentForm?.pdfTemplateUrl,
           patientLanguagePreference: state.patient.languagePreference,
           doctorCompletionValues: state.doctorCompletionValues,
+          patientDisplay: {
+            name: state.patient.name,
+            mrn: state.patient.mrn,
+            dob: state.patient.dateOfBirth,
+          },
+          physicianContext: {
+            name: physician.name,
+            designation: physician.specialty || state.encounter.physicianSpecialty || undefined,
+          },
+          encounterReference: {
+            id: state.encounter.id,
+            encounterId: state.encounter.encounterId,
+          },
+          filledDraftFingerprint: state.filledDraftFingerprint,
+          filledDraftReviewed: state.filledDraftReviewed,
           fieldMappingReadiness: state.fieldMappingReadiness
             ? {
                 formId: state.fieldMappingReadiness.formId,
@@ -711,6 +727,12 @@ export function useProductionWorkspace(physician: PhysicianContext) {
                 requiredDoctorFields: state.fieldMappingReadiness.requiredDoctorFields,
                 requiredAnesthesiaFields: state.fieldMappingReadiness.requiredAnesthesiaFields,
                 requiredPatientFields: state.fieldMappingReadiness.requiredPatientFields,
+                acroForm: state.fieldMappingReadiness.acroForm
+                  ? {
+                      canonicalTemplateIdentity: state.fieldMappingReadiness.acroForm.canonicalTemplateIdentity,
+                      manifestState: state.fieldMappingReadiness.acroForm.manifestState,
+                    }
+                  : undefined,
               }
             : undefined,
         },

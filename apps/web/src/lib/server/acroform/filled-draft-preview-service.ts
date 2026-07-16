@@ -63,6 +63,20 @@ export type AcroFormFilledDraftResult = {
   };
 };
 
+export type AcroFormPatientCopySignature = {
+  dataUrl: string;
+  signerName: string;
+  signedAt: Date | string;
+};
+
+export type AcroFormPatientCopyRequest = AcroFormFilledDraftRequest & {
+  patientSignature?: AcroFormPatientCopySignature;
+};
+
+export type AcroFormPatientCopyResult = AcroFormFilledDraftResult & {
+  pdfHash: string;
+};
+
 function compactWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
@@ -211,6 +225,90 @@ export async function renderAcroFormFilledDraftPreview(args: {
   return {
     bytes: result.bytes,
     fingerprint,
+    summary: result.summary,
+  };
+}
+
+function buildFieldAddressedPatientCopyValues(args: {
+  doctorCompletionValues: Record<string, unknown>;
+  patientDisplay: DraftPatientDisplay;
+  physicianContext: DraftPhysicianContext;
+  patientSignature?: AcroFormPatientCopySignature;
+}): ReturnType<typeof buildAmputationFieldAddressedValues> {
+  const signedAt = args.patientSignature?.signedAt ?? null;
+  return buildAmputationFieldAddressedValues({
+    doctorCompletionValues: args.doctorCompletionValues,
+    physicianSignatureDataUrl: undefined,
+    patientSignatureDataUrl: args.patientSignature?.dataUrl,
+    physicianName: args.physicianContext.name,
+    physicianSpecialty: args.physicianContext.designation,
+    patientName: args.patientDisplay.name,
+    mrn: args.patientDisplay.mrn,
+    dob: args.patientDisplay.dob,
+    signedAt,
+  });
+}
+
+export async function renderAcroFormPatientCopy(args: {
+  request: AcroFormPatientCopyRequest;
+  browser: Browser;
+  canonicalPdfBytes: Uint8Array;
+  canonicalPdfHash: string;
+}): Promise<AcroFormPatientCopyResult> {
+  const { request, browser, canonicalPdfBytes, canonicalPdfHash } = args;
+
+  const identity = resolveCanonicalAcroFormTemplateId(request.formId);
+  if (!identity) {
+    throw new ApiError(400, "Form identifier is not a supported AcroForm-backed consent template.");
+  }
+
+  const manifest = ACROFORM_MANIFESTS[identity.canonicalFormId];
+  if (!manifest) {
+    throw new ApiError(400, "No verified AcroForm manifest is registered for this form.");
+  }
+
+  const diagnostics = getAcroFormTemplateDiagnostics(identity.canonicalFormId);
+  if (diagnostics.status !== "READY") {
+    throw new ApiError(422, `AcroForm manifest is not ready: ${diagnostics.blockers.join("; ")}`);
+  }
+
+  if (request.manifestHash !== diagnostics.manifestHash) {
+    throw new ApiError(409, "Manifest hash mismatch. Refresh the field mapping and try again.");
+  }
+
+  if (canonicalPdfHash !== diagnostics.canonicalApprovedPdf?.sha256) {
+    throw new ApiError(409, "Canonical approved PDF hash mismatch.");
+  }
+
+  const values = buildFieldAddressedPatientCopyValues({
+    doctorCompletionValues: request.doctorCompletionValues,
+    patientDisplay: request.patientDisplay,
+    physicianContext: request.physicianContext,
+    patientSignature: request.patientSignature,
+  });
+
+  const result = await renderFieldAddressedPdf({
+    canonicalPdfBytes,
+    manifest,
+    input: { values },
+    browser,
+  });
+
+  const fingerprint = computeDraftFingerprint({
+    formId: identity.canonicalFormId,
+    formVersion: manifest.templateVersion,
+    canonicalPdfHash,
+    manifestHash: diagnostics.manifestHash,
+    doctorCompletionValues: request.doctorCompletionValues,
+    patientDisplay: request.patientDisplay,
+    physicianContext: request.physicianContext,
+    encounterReference: request.encounterReference,
+  });
+
+  return {
+    bytes: result.bytes,
+    fingerprint,
+    pdfHash: sha256Hex(result.bytes),
     summary: result.summary,
   };
 }

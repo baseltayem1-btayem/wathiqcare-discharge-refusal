@@ -16,6 +16,11 @@ import {
   getSigningTokenContext,
 } from "@/lib/server/signing-token-context-service";
 
+import {
+  generateGovernedPatientCopy,
+  type ConsentDocumentForPatientCopy,
+} from "@/lib/server/acroform/patient-copy-dispatch-service";
+
 export const dynamic =
   "force-dynamic";
 
@@ -80,6 +85,55 @@ function asRecord(
     string,
     unknown
   >;
+}
+
+async function resolvePatientSignatureForAcroForm(args: {
+  documentId: string;
+  tenantId: string;
+}): Promise<
+  | {
+      dataUrl: string;
+      signerName: string;
+      signedAt: Date;
+    }
+  | undefined
+> {
+  const signatures = await getPrisma().consentDocumentSignature.findMany({
+    where: {
+      consentDocumentId: args.documentId,
+      tenantId: args.tenantId,
+      role: { in: ["PATIENT", "GUARDIAN"] },
+    },
+    select: {
+      signedAt: true,
+      signerName: true,
+      metadata: true,
+    },
+    orderBy: { signedAt: "desc" },
+  });
+
+  for (const signature of signatures) {
+    if (!signature.signedAt) continue;
+
+    const metadata = asRecord(signature.metadata);
+    const capture = asRecord(metadata.signatureCapture);
+    const dataUrl =
+      typeof capture.signatureImageDataUrl === "string"
+        ? capture.signatureImageDataUrl
+        : typeof capture.signatureDataUrl === "string"
+          ? capture.signatureDataUrl
+          : undefined;
+
+    if (dataUrl) {
+      return {
+        dataUrl,
+        signerName: typeof signature.signerName === "string" ? signature.signerName : "Patient",
+        signedAt: signature.signedAt,
+      };
+    }
+  }
+
+  return undefined;
 }
 
 function resolveApprovedConsentFormId(
@@ -183,11 +237,59 @@ export async function GET(
           },
         });
 
+    const session = await getPrisma().signingSession.findFirst({
+      where: {
+        id: context.sessionId,
+        tenantId: context.tenantId,
+        documentId: context.documentId,
+      },
+      select: {
+        metadata: true,
+      },
+    });
+
+    const sessionMetadata = asRecord(session?.metadata);
+    const governedPatientCopy = asRecord(sessionMetadata.governedPatientCopy);
+
     const approvedConsentFormId =
       resolveApprovedConsentFormId(
         consentDocument
           ?.metadata,
       );
+
+    const acroFormDocument: ConsentDocumentForPatientCopy | null = consentDocument
+      ? {
+          id: context.documentId,
+          patientName: "",
+          metadata: consentDocument.metadata,
+        }
+      : null;
+
+    if (governedPatientCopy && acroFormDocument) {
+      const patientSignature = await resolvePatientSignatureForAcroForm({
+        documentId: context.documentId,
+        tenantId: context.tenantId,
+      });
+
+      const rendered = await generateGovernedPatientCopy({
+        document: acroFormDocument,
+        patientSignature,
+      });
+
+      return new Response(rendered.bytes as unknown as BodyInit, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `${disposition}; filename="CONSENT-${context.documentId}-${copyType}-${lang}.pdf"`,
+          "Cache-Control": "no-store",
+          "X-Wathiq-Pdf-Engine": "acroform-field-addressed",
+          "X-Wathiq-Pdf-Copy-Type": copyType,
+          "X-Wathiq-Audit-Checksum": rendered.pdfHash,
+          "X-Wathiq-Pdf-Checksum": rendered.pdfHash,
+          "X-Wathiq-Draft-Fingerprint": rendered.fingerprint,
+        },
+      });
+    }
 
     const usesApprovedImcOverlay =
       approvedConsentFormId ===
