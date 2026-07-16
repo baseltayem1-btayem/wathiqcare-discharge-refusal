@@ -6,6 +6,8 @@ const baseArgs = {
   doctorCompletionValues: {},
   physicianSignatureDataUrl: "",
   previewReviewed: false,
+  filledDraftStatus: "idle" as const,
+  filledDraftReviewed: false,
   recipientMobile: "",
   recipientEmail: "",
   sendEligibility: { allowlisted: true, reason: "Pilot allowlisted." },
@@ -47,6 +49,29 @@ const mr1135FieldMapping = {
     { key: "patient_signature", labelEn: "Patient signature", type: "SIGNATURE" },
   ],
   interpreterApplicable: true,
+  acroForm: {
+    canonicalTemplateIdentity: {
+      formId: "imc-approved-amputation",
+      slug: "amputation",
+      titleEn: "Amputation",
+      layoutFamily: "IMC_MR_1135_ACROFORM",
+    },
+    manifestState: {
+      status: "READY",
+      present: true,
+      hashMatches: true,
+      hash: "abc",
+      blockers: [],
+    },
+    semanticPhysicianFields: [],
+    patientSignatureTargets: [],
+    physicianSignatureTargets: [],
+    interpreterApplicable: true,
+    anesthesiaApplicable: true,
+    educationRequired: true,
+    substituteDecisionMakerApplicable: false,
+    witnessApplicable: false,
+  } as unknown as import("@/components/informed-consents/production-workspace/lib/api").ConsentFieldMappingReadiness["acroForm"],
 };
 
 function findItem(readiness: ReturnType<typeof computePhysicianJourneyReadiness>, key: string) {
@@ -169,7 +194,7 @@ test("MR1135 completed synthetic values update the field count correctly", () =>
   assert.equal(physicianFieldsItem?.status, "COMPLETE");
 });
 
-test("MR1135 preview reviewed remains required", () => {
+test("MR1135 preview reviewed remains required when filled draft is current but not reviewed", () => {
   const readiness = computePhysicianJourneyReadiness({
     ...baseArgs,
     fieldMappingReadiness: mr1135FieldMapping,
@@ -190,8 +215,11 @@ test("MR1135 preview reviewed remains required", () => {
     },
     physicianSignatureDataUrl: "data:image/png;base64,AAAA",
     previewReviewed: false,
+    filledDraftStatus: "current",
+    filledDraftReviewed: false,
   });
 
+  assert.equal(findItem(readiness, "filled_draft_current")?.status, "COMPLETE");
   const previewItem = findItem(readiness, "preview_reviewed");
   assert.equal(previewItem?.status, "REQUIRED");
   assert.equal(readiness.sendReady, false);
@@ -300,13 +328,72 @@ test("MR1135 readiness can reach 100 percent only after all current evidence", (
     },
     physicianSignatureDataUrl: "data:image/png;base64,AAAA",
     previewReviewed: true,
+    filledDraftStatus: "current",
+    filledDraftReviewed: true,
     recipientMobile: "+966500000000",
     recipientEmail: "patient@example.com",
     draftApproved: true,
   });
 
+  assert.equal(findItem(readiness, "filled_draft_current")?.status, "COMPLETE");
+  assert.equal(findItem(readiness, "preview_reviewed")?.status, "COMPLETE");
   assert.equal(readiness.sendReady, true);
   assert.equal(readiness.progressPercentage, 100);
+});
+
+test("MR1135 stale filled draft blocks readiness", () => {
+  const readiness = computePhysicianJourneyReadiness({
+    ...baseArgs,
+    fieldMappingReadiness: mr1135FieldMapping,
+    doctorCompletionValues: {
+      condition_description_en: "Diabetic foot infection.",
+      condition_description_ar: "عدوى القدم السكرية.",
+      proposed_procedure_en: "Below-knee amputation, left leg.",
+      proposed_procedure_ar: "بتر تحت الركبة، الساق اليسرى.",
+      significant_risks_options_en: "Infection, bleeding.",
+      significant_risks_options_ar: "عدوى، نزيف.",
+      risks_without_procedure_en: "Sepsis.",
+      risks_without_procedure_ar: "تسمم الدم.",
+      physician_name: "Dr. Ahmed",
+      physician_designation: "Orthopedic Surgery",
+      interpreter_required: "false",
+      interpreter_present: "false",
+      anesthesia_applies: "false",
+    },
+    physicianSignatureDataUrl: "data:image/png;base64,AAAA",
+    filledDraftStatus: "stale",
+    filledDraftReviewed: true,
+  });
+
+  assert.equal(findItem(readiness, "filled_draft_current")?.status, "BLOCKED");
+  assert.equal(findItem(readiness, "preview_reviewed")?.status, "BLOCKED");
+  assert.equal(readiness.sendReady, false);
+});
+
+test("MR1135 missing filled draft is required", () => {
+  const readiness = computePhysicianJourneyReadiness({
+    ...baseArgs,
+    fieldMappingReadiness: mr1135FieldMapping,
+    doctorCompletionValues: {
+      condition_description_en: "Diabetic foot infection.",
+      condition_description_ar: "عدوى القدم السكرية.",
+      proposed_procedure_en: "Below-knee amputation, left leg.",
+      proposed_procedure_ar: "بتر تحت الركبة، الساق اليسرى.",
+      significant_risks_options_en: "Infection, bleeding.",
+      significant_risks_options_ar: "عدوى، نزيف.",
+      risks_without_procedure_en: "Sepsis.",
+      risks_without_procedure_ar: "تسمم الدم.",
+      physician_name: "Dr. Ahmed",
+      physician_designation: "Orthopedic Surgery",
+      interpreter_required: "false",
+      interpreter_present: "false",
+      anesthesia_applies: "false",
+    },
+    physicianSignatureDataUrl: "data:image/png;base64,AAAA",
+  });
+
+  assert.equal(findItem(readiness, "filled_draft_current")?.status, "REQUIRED");
+  assert.equal(readiness.sendReady, false);
 });
 
 test("adenotonsillectomy MR1168 behavior is unchanged without physician fields", () => {
@@ -332,4 +419,6 @@ test("adenotonsillectomy MR1168 behavior is unchanged without physician fields",
   assert.equal(physicianFieldsItem?.status, "BLOCKED");
   const signatureItem = findItem(readiness, "physician_signature_complete");
   assert.equal(signatureItem?.status, "REQUIRED");
+  // Non-AcroForm forms use the single preview_reviewed gate, not filled_draft_current.
+  assert.equal(findItem(readiness, "filled_draft_current"), undefined);
 });

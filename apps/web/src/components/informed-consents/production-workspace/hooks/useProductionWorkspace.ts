@@ -1,7 +1,7 @@
 "use client";
 
 import { isAssemblyApprovedPdfSourceVerified } from "../utils/approvedPdfSource";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type {
   ProductionPatient,
@@ -25,6 +25,7 @@ import {
   fetchProcedures,
   fetchConsentFieldMappingReadiness,
   verifyConsentFieldMapping,
+  createAcroFormFilledDraftPreview,
 } from "../lib/api";
 import type { ConsentFieldMappingReadiness } from "../lib/api";
 import { analyzeDoctorReadiness, type DoctorReadinessReport } from "../doctorReadiness";
@@ -33,6 +34,8 @@ import {
   type PhysicianJourneyReadiness,
   type ReadinessItem,
 } from "@/lib/server/physician-journey-readiness";
+
+export type FilledDraftStatus = "idle" | "loading" | "current" | "stale" | "error";
 
 export type WorkspaceStep = "patient" | "encounter" | "procedure" | "review" | "sent";
 
@@ -57,6 +60,11 @@ export type ProductionWorkspaceState = {
   fieldMappingReadiness?: ConsentFieldMappingReadiness;
   doctorCompletionValues: Record<string, string>;
   physicianSignatureDataUrl: string;
+  filledDraftPdfUrl?: string;
+  filledDraftFingerprint?: string;
+  filledDraftStatus: FilledDraftStatus;
+  filledDraftError?: string;
+  filledDraftReviewed: boolean;
   sentAt?: string;
   signingResult?: SecureSigningResult;
   dryRunSuccess?: boolean;
@@ -125,6 +133,8 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     recipientEmail: "",
     doctorCompletionValues: {},
     physicianSignatureDataUrl: "",
+    filledDraftStatus: "idle",
+    filledDraftReviewed: false,
     timeline: [],
     acknowledgedBlockers: new Set(),
     acknowledgedAlerts: new Set(),
@@ -148,9 +158,31 @@ export function useProductionWorkspace(physician: PhysicianContext) {
 
   const [sendLoading, setSendLoading] = useState(false);
   const [sendError, setSendError] = useState<string>("");
+  const filledDraftAbortControllerRef = useRef<AbortController | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    return () => {
+      if (state.filledDraftPdfUrl) {
+        URL.revokeObjectURL(state.filledDraftPdfUrl);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function staleFilledDraft(previous: ProductionWorkspaceState): Partial<ProductionWorkspaceState> {
+    if (previous.filledDraftPdfUrl) {
+      URL.revokeObjectURL(previous.filledDraftPdfUrl);
+    }
+    return {
+      filledDraftPdfUrl: undefined,
+      filledDraftStatus: "stale",
+      filledDraftReviewed: false,
+      filledDraftError: undefined,
+    };
+  }
 
   const searchForPatients = useCallback(async (query: string) => {
     setPatientsError("");
@@ -231,6 +263,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       const email = patient.email || "";
       setState((s) => ({
         ...s,
+        ...staleFilledDraft(s),
         step: defaultEncounter ? "procedure" : "encounter",
         patient,
         encounter: defaultEncounter,
@@ -260,12 +293,13 @@ export function useProductionWorkspace(physician: PhysicianContext) {
   const selectEncounter = useCallback((encounter: ProductionEncounter) => {
     setState((s) => ({
       ...s,
+      ...staleFilledDraft(s),
       step: "procedure",
       encounter,
       assembly: undefined,
-        fieldMappingReadiness: undefined,
-        doctorCompletionValues: {},
-        physicianSignatureDataUrl: "",
+      fieldMappingReadiness: undefined,
+      doctorCompletionValues: {},
+      physicianSignatureDataUrl: "",
       selectedProcedureId: undefined,
       selectedProcedureTitle: undefined,
       selectedProcedure: undefined,
@@ -286,13 +320,14 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     const selectedProcedure = procedures.find((procedure) => procedure.id === procedureId);
     setState((s) => ({
       ...s,
+      ...staleFilledDraft(s),
       selectedProcedureId: selectedProcedure?.id,
       selectedProcedureTitle: selectedProcedure?.titleEn,
       selectedProcedure,
       assembly: undefined,
-        fieldMappingReadiness: undefined,
-        doctorCompletionValues: {},
-        physicianSignatureDataUrl: "",
+      fieldMappingReadiness: undefined,
+      doctorCompletionValues: {},
+      physicianSignatureDataUrl: "",
       draftApproved: false,
       previewReviewed: false,
     }));
@@ -372,6 +407,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
 
       setState((s) => ({
         ...s,
+        ...staleFilledDraft(s),
         selectedProcedureId: selectedProcedure.id,
         selectedProcedureTitle: selectedProcedure.titleEn,
         assembly: result.clinicalKnowledgeAssembly,
@@ -410,6 +446,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
   const setAnesthesia = useCallback((decision: ProductionWorkspaceState["anesthesiaOverride"]) => {
     setState((s) => ({
       ...s,
+      ...staleFilledDraft(s),
       anesthesiaOverride: decision,
       doctorCompletionValues: {
         ...s.doctorCompletionValues,
@@ -427,6 +464,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
   const setDoctorCompletionValue = useCallback((key: string, value: string) => {
     setState((s) => ({
       ...s,
+      ...staleFilledDraft(s),
       doctorCompletionValues: {
         ...s.doctorCompletionValues,
         [key]: value,
@@ -444,6 +482,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     (physicianSignatureDataUrl: string) => {
       setState((current) => ({
         ...current,
+        ...staleFilledDraft(current),
         physicianSignatureDataUrl,
         draftApproved: false,
         previewReviewed: false,
@@ -459,6 +498,100 @@ export function useProductionWorkspace(physician: PhysicianContext) {
   const approveDraft = useCallback(() => {
     setState((s) => ({ ...s, draftApproved: true }));
   }, []);
+
+  const setFilledDraftReviewed = useCallback((reviewed: boolean) => {
+    setState((s) => ({ ...s, filledDraftReviewed: reviewed }));
+  }, []);
+
+  const generateFilledDraftPreview = useCallback(async () => {
+    if (!state.assembly || !state.patient || !state.encounter) return;
+
+    const formId = state.fieldMappingReadiness?.formId || state.assembly.consentForm?.id;
+    const approvedPdfUrl = state.assembly.consentForm?.pdfTemplateUrl;
+    const manifestHash = state.fieldMappingReadiness?.acroForm?.manifestState?.hash;
+
+    if (!formId || !approvedPdfUrl || !manifestHash) {
+      setState((s) => ({
+        ...s,
+        filledDraftStatus: "error",
+        filledDraftError: "Form mapping or approved PDF source is not ready.",
+      }));
+      return;
+    }
+
+    if (filledDraftAbortControllerRef.current) {
+      filledDraftAbortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    filledDraftAbortControllerRef.current = controller;
+
+    setState((s) => ({
+      ...s,
+      filledDraftStatus: "loading",
+      filledDraftError: undefined,
+    }));
+
+    try {
+      const result = await createAcroFormFilledDraftPreview(
+        {
+          formId,
+          approvedPdfUrl,
+          manifestHash,
+          doctorCompletionValues: state.doctorCompletionValues,
+          patientDisplay: {
+            name: state.patient.name,
+            mrn: state.patient.mrn,
+            dob: state.patient.dateOfBirth,
+          },
+          physicianContext: {
+            name: physician.name,
+            designation: physician.specialty || state.encounter.physicianSpecialty || undefined,
+          },
+          encounterReference: {
+            id: state.encounter.id,
+            encounterId: state.encounter.encounterId,
+          },
+        },
+        controller.signal,
+      );
+
+      if (controller.signal.aborted) {
+        URL.revokeObjectURL(result.url);
+        return;
+      }
+
+      setState((s) => {
+        if (s.filledDraftPdfUrl) URL.revokeObjectURL(s.filledDraftPdfUrl);
+        return {
+          ...s,
+          filledDraftPdfUrl: result.url,
+          filledDraftFingerprint: result.fingerprint,
+          filledDraftStatus: "current",
+          filledDraftReviewed: false,
+          filledDraftError: undefined,
+        };
+      });
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      setState((s) => ({
+        ...s,
+        filledDraftStatus: "error",
+        filledDraftError:
+          error instanceof Error ? error.message : "Failed to generate filled draft preview.",
+      }));
+    } finally {
+      if (filledDraftAbortControllerRef.current === controller) {
+        filledDraftAbortControllerRef.current = null;
+      }
+    }
+  }, [
+    state.assembly,
+    state.patient,
+    state.encounter,
+    state.doctorCompletionValues,
+    state.fieldMappingReadiness,
+    physician,
+  ]);
 
   const verifyFieldMapping = useCallback(async () => {
     if (!state.fieldMappingReadiness?.formId) {
@@ -510,6 +643,8 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       physicianSignatureDataUrl: state.physicianSignatureDataUrl,
       anesthesiaOverride: state.anesthesiaOverride,
       previewReviewed: state.previewReviewed,
+      filledDraftStatus: state.filledDraftStatus,
+      filledDraftReviewed: state.filledDraftReviewed,
       recipientMobile: state.recipientMobile,
       recipientEmail: state.recipientEmail,
       sendEligibility: state.sendEligibility,
@@ -652,23 +787,31 @@ export function useProductionWorkspace(physician: PhysicianContext) {
   }, [physician.tenantId, state.patient, state.encounter, state.assembly, state.recipientMobile, state.recipientEmail]);
 
   const reset = useCallback(() => {
-    setState({
-      step: "patient",
-      procedureQuery: "",
-      educationIncluded: true,
-      physicianNotes: "",
-      draftApproved: false,
-      reviewMode: false,
-      previewReviewed: false,
-      recipientMobile: "",
-      recipientEmail: "",
-      doctorCompletionValues: {},
-      physicianSignatureDataUrl: "",
-      dryRunSuccess: false,
-      dryRunMessage: undefined,
-      timeline: [],
-      acknowledgedBlockers: new Set(),
-      acknowledgedAlerts: new Set(),
+    setState((s) => {
+      if (s.filledDraftPdfUrl) URL.revokeObjectURL(s.filledDraftPdfUrl);
+      return {
+        step: "patient",
+        procedureQuery: "",
+        educationIncluded: true,
+        physicianNotes: "",
+        draftApproved: false,
+        reviewMode: false,
+        previewReviewed: false,
+        recipientMobile: "",
+        recipientEmail: "",
+        doctorCompletionValues: {},
+        physicianSignatureDataUrl: "",
+        filledDraftPdfUrl: undefined,
+        filledDraftFingerprint: undefined,
+        filledDraftStatus: "idle",
+        filledDraftError: undefined,
+        filledDraftReviewed: false,
+        dryRunSuccess: false,
+        dryRunMessage: undefined,
+        timeline: [],
+        acknowledgedBlockers: new Set(),
+        acknowledgedAlerts: new Set(),
+      };
     });
     setPatients([]);
     setEncounters([]);
@@ -731,6 +874,8 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       physicianSignatureDataUrl: state.physicianSignatureDataUrl,
       anesthesiaOverride: state.anesthesiaOverride,
       previewReviewed: state.previewReviewed,
+      filledDraftStatus: state.filledDraftStatus,
+      filledDraftReviewed: state.filledDraftReviewed,
       recipientMobile: state.recipientMobile,
       recipientEmail: state.recipientEmail,
       sendEligibility: state.sendEligibility,
@@ -853,6 +998,8 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     setDoctorCompletionValue,
     setPhysicianSignatureDataUrl,
     approveDraft,
+    generateFilledDraftPreview,
+    setFilledDraftReviewed,
     verifyFieldMapping,
     acknowledgeBlocker,
     acknowledgeAlert,

@@ -1,7 +1,7 @@
 "use client";
 
 import { isAssemblyApprovedPdfSourceVerified, resolveAssemblyApprovedPdfUrl } from "./utils/approvedPdfSource";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/design-system";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { PhysicianContext } from "./types";
@@ -70,6 +70,8 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     setDoctorCompletionValue,
     setPhysicianSignatureDataUrl,
     approveDraft,
+    generateFilledDraftPreview,
+    setFilledDraftReviewed,
     send,
     sendDryRun,
   } = useProductionWorkspace(physician);
@@ -80,6 +82,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
   const [draftPdfUrl, setDraftPdfUrl] = useState<string>();
   const [draftPdfLoading, setDraftPdfLoading] = useState(false);
   const [draftPdfError, setDraftPdfError] = useState<string>();
+  const draftPdfUrlRef = useRef<string | undefined>(undefined);
 
   function handleApprove() {
     approveDraft();
@@ -102,7 +105,16 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
   const hasApprovedPdfSource = isAssemblyApprovedPdfSourceVerified(state.assembly);
 
 
+  const isAcroFormBacked = Boolean(state.fieldMappingReadiness?.acroForm);
+
   useEffect(() => {
+    // AcroForm-backed forms use the explicit Generate Filled Preview action.
+    // The coordinate-based preview state is not used; any existing object URL
+    // is revoked by the transition cleanup effect below.
+    if (isAcroFormBacked) {
+      return;
+    }
+
     const formId = state.fieldMappingReadiness?.formId || state.assembly?.consentForm?.id || "";
     const approvedPdfUrl = resolveAssemblyApprovedPdfUrl(state.assembly);
     const values = state.doctorCompletionValues || {};
@@ -115,6 +127,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
         setDraftPdfError(undefined);
         setDraftPdfUrl((previous) => {
           if (previous) URL.revokeObjectURL(previous);
+          draftPdfUrlRef.current = undefined;
           return undefined;
         });
       }, 0);
@@ -145,6 +158,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
           }
           setDraftPdfUrl((previous) => {
             if (previous) URL.revokeObjectURL(previous);
+            draftPdfUrlRef.current = url;
             return url;
           });
         })
@@ -173,7 +187,24 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     state.fieldMappingReadiness?.formId,
     state.doctorCompletionValues,
     state.physicianSignatureDataUrl,
+    isAcroFormBacked,
   ]);
+
+  // Revoke any coordinate-based preview object URL when switching to an
+  // AcroForm-backed form and on unmount. State is ignored while AcroForm-backed
+  // and will be reset when the coordinate-based effect next runs.
+  useEffect(() => {
+    if (isAcroFormBacked && draftPdfUrlRef.current) {
+      URL.revokeObjectURL(draftPdfUrlRef.current);
+      draftPdfUrlRef.current = undefined;
+    }
+    return () => {
+      if (draftPdfUrlRef.current) {
+        URL.revokeObjectURL(draftPdfUrlRef.current);
+        draftPdfUrlRef.current = undefined;
+      }
+    };
+  }, [isAcroFormBacked]);
 
   const sendReason = (() => {
     if (sendLoading) return "Sending…";
@@ -193,6 +224,10 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     if (!readiness.allowlisted) return "Recipient is not allowlisted";
     if (!readiness.draftApproved) return "Approve the draft first";
     if (!readiness.blockersResolved) return "Resolve blockers first";
+    if (readiness.aggregate.blocked) {
+      const firstBlocked = readiness.aggregate.items.find((i) => i.status === "BLOCKED" || i.status === "REQUIRED");
+      if (firstBlocked) return firstBlocked.detail || firstBlocked.labelEn;
+    }
     return undefined;
   })();
 
@@ -252,12 +287,18 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
           </div>
 
           <ApprovedPdfViewer
+            key={state.assembly?.consentForm?.id ?? "no-assembly"}
             assembly={state.assembly}
             loading={assemblyLoading}
             reviewed={state.previewReviewed}
-                        draftPdfUrl={draftPdfUrl}
-            draftPdfLoading={draftPdfLoading}
-            draftPdfError={draftPdfError}
+            draftPdfUrl={isAcroFormBacked ? state.filledDraftPdfUrl : draftPdfUrl}
+            draftPdfLoading={isAcroFormBacked ? state.filledDraftStatus === "loading" : draftPdfLoading}
+            draftPdfError={isAcroFormBacked ? state.filledDraftError : draftPdfError}
+            isAcroFormBacked={isAcroFormBacked}
+            filledDraftStatus={state.filledDraftStatus}
+            filledDraftReviewed={state.filledDraftReviewed}
+            onGenerateFilledDraft={() => void generateFilledDraftPreview()}
+            onMarkFilledDraftReviewed={() => setFilledDraftReviewed(true)}
             onOpenPreview={() => setPreviewOpen(true)}
             onMarkReviewed={() => setPreviewReviewed(true)}
           />

@@ -628,3 +628,65 @@ export async function createDoctorCompletedDraftPdfPreview(
   const blob = await response.blob();
   return URL.createObjectURL(blob);
 }
+
+export type AcroFormFilledDraftPreviewInput = {
+  formId: string;
+  approvedPdfUrl: string;
+  manifestHash: string;
+  doctorCompletionValues: Record<string, string>;
+  patientDisplay: {
+    name: string;
+    mrn: string;
+    dob?: string | null;
+  };
+  physicianContext: {
+    name: string;
+    designation?: string | null;
+  };
+  encounterReference?: {
+    id?: string;
+    encounterId?: string;
+  };
+  correlationId?: string;
+};
+
+export type AcroFormFilledDraftPreviewResult = {
+  url: string;
+  fingerprint: string;
+};
+
+export async function createAcroFormFilledDraftPreview(
+  args: AcroFormFilledDraftPreviewInput,
+  signal?: AbortSignal,
+): Promise<AcroFormFilledDraftPreviewResult> {
+  const response = await fetch(
+    "/api/modules/informed-consents/forms/" + encodeURIComponent(args.formId) + "/draft-pdf",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/pdf" },
+      cache: "no-store",
+      signal,
+      body: JSON.stringify({
+        approvedPdfUrl: args.approvedPdfUrl,
+        manifestHash: args.manifestHash,
+        doctorCompletionValues: args.doctorCompletionValues,
+        patientDisplay: args.patientDisplay,
+        physicianContext: args.physicianContext,
+        encounterReference: args.encounterReference,
+        correlationId: args.correlationId,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    throw new Error(String(payload.error || "Failed to generate filled draft preview."));
+  }
+
+  const fingerprint = response.headers.get("X-WathiqCare-Draft-Fingerprint") || "";
+  const blob = await response.blob();
+  return {
+    url: URL.createObjectURL(blob),
+    fingerprint,
+  };
+}

@@ -21,6 +21,7 @@ type FieldMappingReadinessInput = {
   interpreterApplicable?: boolean;
   substituteDecisionMakerApplicable?: boolean;
   witnessApplicable?: boolean;
+  acroForm?: unknown;
 };
 
 export type ReadinessItem = {
@@ -118,6 +119,8 @@ export function computePhysicianJourneyReadiness(args: {
   physicianSignatureDataUrl: string;
   anesthesiaOverride?: string | null;
   previewReviewed: boolean;
+  filledDraftStatus?: "idle" | "loading" | "current" | "stale" | "error";
+  filledDraftReviewed?: boolean;
   recipientMobile: string;
   recipientEmail: string;
   sendEligibility?: { allowlisted: boolean; reason?: string };
@@ -135,6 +138,8 @@ export function computePhysicianJourneyReadiness(args: {
     physicianSignatureDataUrl,
     anesthesiaOverride,
     previewReviewed,
+    filledDraftStatus,
+    filledDraftReviewed,
     recipientMobile,
     recipientEmail,
     sendEligibility,
@@ -470,16 +475,72 @@ export function computePhysicianJourneyReadiness(args: {
     ),
   );
 
-  // Preview reviewed
-  items.push(
-    item(
-      "preview_reviewed",
-      "Preview reviewed",
-      "تمت مراجعة المعاينة",
-      previewReviewed ? "COMPLETE" : "REQUIRED",
-      "preview",
-    ),
-  );
+  // Preview / filled-draft review gates
+  const isAcroFormBacked = Boolean(fieldMappingReadiness?.acroForm);
+
+  if (isAcroFormBacked) {
+    let draftCurrentStatus: ReadinessItemStatus;
+    switch (filledDraftStatus) {
+      case "current":
+        draftCurrentStatus = "COMPLETE";
+        break;
+      case "stale":
+      case "error":
+        draftCurrentStatus = "BLOCKED";
+        break;
+      case "loading":
+        draftCurrentStatus = "REQUIRED";
+        break;
+      case "idle":
+      default:
+        draftCurrentStatus = "REQUIRED";
+    }
+
+    items.push(
+      item(
+        "filled_draft_current",
+        "Filled draft current",
+        "مسودة النموذج المعبأة محدثة",
+        draftCurrentStatus,
+        "preview",
+        draftCurrentStatus === "BLOCKED"
+          ? "Regenerate the filled draft preview after changing values."
+          : "Generate the filled draft preview to continue.",
+      ),
+    );
+
+    const previewReviewable = filledDraftStatus === "current";
+    const previewReviewStatus: ReadinessItemStatus = filledDraftReviewed
+      ? previewReviewable
+        ? "COMPLETE"
+        : "BLOCKED"
+      : previewReviewable
+        ? "REQUIRED"
+        : "BLOCKED";
+
+    items.push(
+      item(
+        "preview_reviewed",
+        "Filled preview reviewed",
+        "تمت مراجعة النموذج المعبأ",
+        previewReviewStatus,
+        "preview",
+        previewReviewStatus === "BLOCKED" && !previewReviewable
+          ? "Generate a current filled draft preview before reviewing."
+          : undefined,
+      ),
+    );
+  } else {
+    items.push(
+      item(
+        "preview_reviewed",
+        "Preview reviewed",
+        "تمت مراجعة المعاينة",
+        previewReviewed ? "COMPLETE" : "REQUIRED",
+        "preview",
+      ),
+    );
+  }
 
   // Contact
   items.push(
