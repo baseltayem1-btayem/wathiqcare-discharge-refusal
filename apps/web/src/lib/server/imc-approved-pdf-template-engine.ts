@@ -2,6 +2,12 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
 import chromium from "@sparticuz/chromium";
+import {
+  TAJAWAL_ARABIC_400_WOFF2,
+  TAJAWAL_ARABIC_700_WOFF2,
+  TAJAWAL_LATIN_400_WOFF2,
+  TAJAWAL_LATIN_700_WOFF2,
+} from "@/lib/server/acroform/fonts/bundled-font-data";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import puppeteer from "puppeteer";
 import type { Browser, LaunchOptions } from "puppeteer";
@@ -297,44 +303,12 @@ function buildAppendixRows(context: OverlayDocumentContext): Array<{ label: stri
 }
 
 function buildInlinePdfFontFaceCss(): string {
-  const candidates = [
-    path.join("@fontsource", "ibm-plex-sans-arabic", "files", "ibm-plex-sans-arabic-arabic-400-normal.woff2"),
-    path.join("@fontsource", "ibm-plex-sans-arabic", "files", "ibm-plex-sans-arabic-arabic-700-normal.woff2"),
-    path.join("@fontsource", "tajawal", "files", "tajawal-arabic-400-normal.woff2"),
-    path.join("@fontsource", "tajawal", "files", "tajawal-arabic-700-normal.woff2"),
+  const faces = [
+    `@font-face{font-family:"WathiqOverlaySans";src:url("${TAJAWAL_LATIN_400_WOFF2}") format("woff2");font-weight:400;font-style:normal;}`,
+    `@font-face{font-family:"WathiqOverlaySans";src:url("${TAJAWAL_LATIN_700_WOFF2}") format("woff2");font-weight:700;font-style:normal;}`,
+    `@font-face{font-family:"WathiqOverlayArabic";src:url("${TAJAWAL_ARABIC_400_WOFF2}") format("woff2");font-weight:400;font-style:normal;}`,
+    `@font-face{font-family:"WathiqOverlayArabic";src:url("${TAJAWAL_ARABIC_700_WOFF2}") format("woff2");font-weight:700;font-style:normal;}`,
   ];
-
-  const resolveBase64 = (relativePath: string): string => {
-    const absoluteCandidates = [
-      path.join(process.cwd(), "node_modules", relativePath),
-      path.join(process.cwd(), "..", "..", "node_modules", relativePath),
-    ];
-
-    for (const candidate of absoluteCandidates) {
-      if (existsSync(candidate)) {
-        return readFileSync(candidate).toString("base64");
-      }
-    }
-
-    return "";
-  };
-
-  const [plex400, plex700, tajawal400, tajawal700] = candidates.map(resolveBase64);
-  const faces: string[] = [];
-
-  if (plex400) {
-    faces.push(`@font-face{font-family:"WathiqOverlaySans";src:url("data:font/woff2;base64,${plex400}") format("woff2");font-weight:400;font-style:normal;}`);
-  }
-  if (plex700) {
-    faces.push(`@font-face{font-family:"WathiqOverlaySans";src:url("data:font/woff2;base64,${plex700}") format("woff2");font-weight:700;font-style:normal;}`);
-  }
-  if (tajawal400) {
-    faces.push(`@font-face{font-family:"WathiqOverlayArabic";src:url("data:font/woff2;base64,${tajawal400}") format("woff2");font-weight:400;font-style:normal;}`);
-  }
-  if (tajawal700) {
-    faces.push(`@font-face{font-family:"WathiqOverlayArabic";src:url("data:font/woff2;base64,${tajawal700}") format("woff2");font-weight:700;font-style:normal;}`);
-  }
-
   return faces.join("\n");
 }
 

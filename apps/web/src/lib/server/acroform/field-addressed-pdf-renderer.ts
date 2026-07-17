@@ -172,7 +172,7 @@ function buildTextOverlayHtml(args: {
             text-align: left;
           }
           .field-text-ar {
-            font-family: "WathiqOverlayArabic", "WathiqOverlaySans", Tahoma, Arial, sans-serif;
+            font-family: "WathiqOverlayArabic", "WathiqOverlaySans";
             text-align: right;
             direction: rtl;
             unicode-bidi: plaintext;

@@ -5,8 +5,12 @@
  * text fitting for the AcroForm field-addressed PDF renderer.
  */
 
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
+import {
+  TAJAWAL_ARABIC_400_WOFF2,
+  TAJAWAL_ARABIC_700_WOFF2,
+  TAJAWAL_LATIN_400_WOFF2,
+  TAJAWAL_LATIN_700_WOFF2,
+} from "./fonts/bundled-font-data";
 
 export const ARABIC_FONT_FAMILY = '"WathiqOverlayArabic"';
 export const LATIN_FONT_FAMILY = '"WathiqOverlaySans"';
@@ -78,6 +82,59 @@ export function buildOverlayPrepareScript(args: {
           const latinOk = document.fonts.check(\`\${FONT_WEIGHT} \${FONT_SIZE} \${LATIN_FONT}\`, latinSample);
           if (!latinOk) {
             exposeError("latin-font-coverage-failure");
+          }
+        }
+      }
+
+      // Verify that Arabic glyphs actually paint to the screen buffer. This is
+      // the fail-closed guard that catches the production defect where
+      // document.fonts.check passes but Chromium still falls back to a Latin-only
+      // font and renders Arabic letters as invisible glyphs.
+      function countInkPixels(canvas, text, font) {
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return -1;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#000000";
+        ctx.font = font;
+        ctx.textBaseline = "alphabetic";
+        ctx.fillText(text, 4, 24);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        let count = 0;
+        for (let i = 0; i < imageData.data.length; i += 4) {
+          const r = imageData.data[i];
+          const g = imageData.data[i + 1];
+          const b = imageData.data[i + 2];
+          const a = imageData.data[i + 3];
+          if (a > 30 && (r < 250 || g < 250 || b < 250)) {
+            count += 1;
+          }
+        }
+        return count;
+      }
+
+      const arabicSample = ${JSON.stringify(arabicTest)};
+      const latinSample = ${JSON.stringify(latinTest)};
+      if (arabicSample.length > 0) {
+        const arabicOnly = arabicSample.replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/g, "");
+        if (arabicOnly.length > 0) {
+          const canvas = document.createElement("canvas");
+          canvas.width = 256;
+          canvas.height = 64;
+          const ink = countInkPixels(canvas, arabicOnly, \`\${FONT_WEIGHT} \${FONT_SIZE} \${ARABIC_FONT}\`);
+          if (ink < 50) {
+            exposeError("arabic-glyph-pixel-failure:" + ink);
+          }
+        }
+      }
+      if (latinSample.length > 0) {
+        const latinOnly = latinSample.replace(/[^\u0020-\u007E]/g, "");
+        if (latinOnly.length > 0) {
+          const canvas = document.createElement("canvas");
+          canvas.width = 256;
+          canvas.height = 64;
+          const ink = countInkPixels(canvas, latinOnly, \`\${FONT_WEIGHT} \${FONT_SIZE} \${LATIN_FONT}\`);
+          if (ink < 20) {
+            exposeError("latin-glyph-pixel-failure:" + ink);
           }
         }
       }
@@ -209,51 +266,19 @@ export function extractCoverageTestStrings(values: Record<string, { kind: "text"
 }
 
 /**
- * Build an inline CSS @font-face block that resolves the embedded Arabic and
- * Latin fonts from the monorepo node_modules tree. Tries multiple candidate
- * roots so the renderer works regardless of whether the runtime cwd is the
- * workspace root, apps/web, or a nested process directory.
+ * Build an inline CSS @font-face block from the bundled font bytes.
+ *
+ * The WOFF2 data URLs are generated at build time and compiled into the
+ * serverless bundle, so the renderer never depends on runtime node_modules
+ * resolution, external network fonts, or system-installed Arabic fonts.
  */
 export function buildInlinePdfFontFaceCss(): string {
-  const candidates = [
-    path.join("@fontsource", "ibm-plex-sans-arabic", "files", "ibm-plex-sans-arabic-arabic-400-normal.woff2"),
-    path.join("@fontsource", "ibm-plex-sans-arabic", "files", "ibm-plex-sans-arabic-arabic-700-normal.woff2"),
-    path.join("@fontsource", "tajawal", "files", "tajawal-arabic-400-normal.woff2"),
-    path.join("@fontsource", "tajawal", "files", "tajawal-arabic-700-normal.woff2"),
+  const faces = [
+    `@font-face{font-family:"WathiqOverlaySans";src:url("${TAJAWAL_LATIN_400_WOFF2}") format("woff2");font-weight:400;font-style:normal;}`,
+    `@font-face{font-family:"WathiqOverlaySans";src:url("${TAJAWAL_LATIN_700_WOFF2}") format("woff2");font-weight:700;font-style:normal;}`,
+    `@font-face{font-family:"WathiqOverlayArabic";src:url("${TAJAWAL_ARABIC_400_WOFF2}") format("woff2");font-weight:400;font-style:normal;}`,
+    `@font-face{font-family:"WathiqOverlayArabic";src:url("${TAJAWAL_ARABIC_700_WOFF2}") format("woff2");font-weight:700;font-style:normal;}`,
   ];
-
-  const resolveBase64 = (relativePath: string): string => {
-    const absoluteCandidates = [
-      path.join(process.cwd(), "node_modules", relativePath),
-      path.join(process.cwd(), "..", "..", "node_modules", relativePath),
-      path.join(process.cwd(), "..", "node_modules", relativePath),
-      path.resolve(process.cwd(), "..", "..", "node_modules", relativePath),
-      path.resolve(process.cwd(), "..", "node_modules", relativePath),
-      path.resolve(__dirname, "..", "..", "..", "..", "node_modules", relativePath),
-      path.resolve(__dirname, "..", "..", "..", "node_modules", relativePath),
-    ];
-    for (const candidate of absoluteCandidates) {
-      if (existsSync(candidate)) {
-        return readFileSync(candidate).toString("base64");
-      }
-    }
-    return "";
-  };
-
-  const [plex400, plex700, tajawal400, tajawal700] = candidates.map(resolveBase64);
-  const faces: string[] = [];
-  if (plex400) {
-    faces.push(`@font-face{font-family:"WathiqOverlaySans";src:url("data:font/woff2;base64,${plex400}") format("woff2");font-weight:400;font-style:normal;}`);
-  }
-  if (plex700) {
-    faces.push(`@font-face{font-family:"WathiqOverlaySans";src:url("data:font/woff2;base64,${plex700}") format("woff2");font-weight:700;font-style:normal;}`);
-  }
-  if (tajawal400) {
-    faces.push(`@font-face{font-family:"WathiqOverlayArabic";src:url("data:font/woff2;base64,${tajawal400}") format("woff2");font-weight:400;font-style:normal;}`);
-  }
-  if (tajawal700) {
-    faces.push(`@font-face{font-family:"WathiqOverlayArabic";src:url("data:font/woff2;base64,${tajawal700}") format("woff2");font-weight:700;font-style:normal;}`);
-  }
   return faces.join("\n");
 }
 
