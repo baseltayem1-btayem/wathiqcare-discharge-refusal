@@ -2,8 +2,8 @@ import type { FieldAddressedRenderValue } from "@/lib/server/acroform/field-addr
 
 export type BuildAmputationFieldAddressedValuesInput = {
   doctorCompletionValues: Record<string, unknown>;
-  physicianSignatureDataUrl: string | undefined;
-  patientSignatureDataUrl: string | undefined;
+  physicianSignatureDataUrl: string | null | undefined;
+  patientSignatureDataUrl: string | null | undefined;
   physicianName: string | null | undefined;
   physicianSpecialty: string | null | undefined;
   patientName: string | null | undefined;
@@ -60,8 +60,49 @@ function parseDate(value: Date | string | null | undefined): Date | null {
   return parsed;
 }
 
+/**
+ * Parse normalized date-of-birth representations already used by the app:
+ * Date instance, ISO-8601 string, YYYY-MM-DD, DD/MM/YYYY, or a timestamp.
+ * Returns null only when the value is missing or cannot be interpreted as a
+ * calendar date, so the readiness/governance layer can report a missing DOB.
+ */
+function parseDateOfBirth(value: Date | string | null | undefined): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+
+  const str = String(value).trim();
+  if (!str) return null;
+
+  // ISO-8601 / YYYY-MM-DD
+  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    const parsed = new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]));
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  // DD/MM/YYYY
+  const gbMatch = str.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (gbMatch) {
+    const parsed = new Date(Number(gbMatch[3]), Number(gbMatch[2]) - 1, Number(gbMatch[1]));
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  const parsed = new Date(str);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 function formatDate(value: Date | string | null | undefined): string | null {
   const parsed = parseDate(value);
+  if (!parsed) return null;
+  return parsed.toLocaleDateString("en-GB", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
+
+function formatDateOfBirth(value: Date | string | null | undefined): string | null {
+  const parsed = parseDateOfBirth(value);
   if (!parsed) return null;
   return parsed.toLocaleDateString("en-GB", {
     year: "numeric",
@@ -130,7 +171,7 @@ export function buildAmputationFieldAddressedValues(
   // Header demographics
   setValue(values, "patient_name", text(patientName));
   setValue(values, "mrn", text(mrn));
-  setValue(values, "date_of_birth", text(formatDate(dob)));
+  setValue(values, "date_of_birth", text(formatDateOfBirth(dob)));
 
   // Interpreter
   const interpreterRequired = asBoolean(doctorCompletionValues.interpreter_required);
@@ -212,8 +253,15 @@ export function buildAmputationFieldAddressedValues(
   setValue(values, "substitute_contact", text(asString(doctorCompletionValues.substitute_contact)));
 
   // Physician block
-  setValue(values, "doctor_delegate_name", text(physicianName));
-  setValue(values, "doctor_delegate_designation", text(physicianSpecialty));
+  // The physician-entered professional identity is the primary printable value;
+  // the authenticated session name (which may fall back to email) is only a
+  // fallback so the field is never blank when the doctor has completed it.
+  const printablePhysicianName = asString(doctorCompletionValues.physician_name) ?? physicianName;
+  const printablePhysicianDesignation =
+    asString(doctorCompletionValues.physician_designation) ?? physicianSpecialty;
+
+  setValue(values, "doctor_delegate_name", text(printablePhysicianName));
+  setValue(values, "doctor_delegate_designation", text(printablePhysicianDesignation));
   setValue(values, "doctor_delegate_signature_en", signature(physicianSignatureDataUrl));
   setValue(values, "doctor_delegate_signature_ar", signature(physicianSignatureDataUrl));
   setValue(values, "doctor_delegate_date", text(formatDate(signedAt)));

@@ -11,6 +11,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { Browser } from "puppeteer";
 import { PDFArray, PDFDict, PDFDocument, PDFName, StandardFonts, rgb } from "pdf-lib";
+import { isArabicText, normalizeArabicText } from "@/lib/pdf-engine/core/pdf-rtl";
 import type { AcroFormTemplateManifest } from "./field-addressed-template-manifest";
 import { parseWidgetRect } from "./field-addressed-template-manifest";
 
@@ -63,17 +64,6 @@ function escapeHtml(value: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
-}
-
-function isArabicText(value: string): boolean {
-  return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(value);
-}
-
-function normalizeArabicText(value: string): string {
-  return value
-    .replace(/[\u200E\u200F\u202A-\u202E]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 function buildInlinePdfFontFaceCss(): string {
@@ -146,7 +136,7 @@ function buildTextOverlayHtml(args: {
           </div>
         `);
       } else if (value.kind === "text" && field.type === "/Tx") {
-        const rawText = normalizeArabicText(String(value.value ?? ""));
+        const rawText = normalizeArabicText(value.value);
         if (!rawText) continue;
         const isArabic = isArabicText(rawText) || field.language === "AR";
         const fontSize = Math.max(7, Math.min(11, cssHeight * 0.55));
@@ -179,6 +169,9 @@ function buildTextOverlayHtml(args: {
             width: ${pageWidth}px;
             height: ${pageHeight}px;
             background: transparent;
+            font-family: "WathiqOverlaySans", "WathiqOverlayArabic", Arial, sans-serif;
+            text-rendering: geometricPrecision;
+            -webkit-font-smoothing: antialiased;
           }
           .field-text {
             position: absolute;
@@ -198,6 +191,7 @@ function buildTextOverlayHtml(args: {
           .field-text-ar {
             font-family: "WathiqOverlayArabic", "WathiqOverlaySans", Tahoma, Arial, sans-serif;
             text-align: right;
+            direction: rtl;
             unicode-bidi: plaintext;
           }
           .field-checkbox {
@@ -229,6 +223,11 @@ async function renderOverlayPng(browser: Browser, html: string, width: number, h
     await page.setContent(html, { waitUntil: "load" });
     await page.emulateMediaType("screen");
     await page.evaluate(async () => {
+      // Ensure the embedded Unicode Arabic and Latin fonts are decoded before
+      // the screenshot so mixed Arabic/Latin values render with glyphs, not
+      // fallback boxes or invisible letters.
+      await document.fonts.load('400 16px "WathiqOverlayArabic"');
+      await document.fonts.load('400 16px "WathiqOverlaySans"');
       await document.fonts.ready;
     });
     return Buffer.from(

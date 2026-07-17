@@ -279,7 +279,33 @@ test("renderAcroFormFilledDraftPreview renders demographics and all page fields"
   assert.ok(rendered.has("info_sheet_amputation"), "education checkbox should render");
 });
 
-test("renderAcroFormFilledDraftPreview keeps patient and physician signatures blank", async () => {
+test("renderAcroFormFilledDraftPreview keeps patient signature blank and renders physician signature when provided", async () => {
+  const browser = createMockBrowser();
+  const pdfBytes = loadCanonicalAmputationPdf();
+  const request = buildValidRequest({
+    physicianSignatureDataUrl: `data:image/png;base64,${TINY_PNG_BASE64}`,
+  });
+
+  const result = await renderAcroFormFilledDraftPreview({
+    request,
+    browser,
+    canonicalPdfBytes: pdfBytes,
+    canonicalPdfHash: sha256Hex(pdfBytes),
+  });
+
+  assert.ok(
+    result.summary.signaturesRendered.includes("doctor_delegate_signature_en"),
+    "Physician signature should render in the preview",
+  );
+  assert.ok(
+    result.summary.signaturesRendered.includes("doctor_delegate_signature_ar"),
+    "Physician signature Arabic target should render",
+  );
+  assert.ok(!result.summary.fieldsRendered.includes("patient_signature_en"));
+  assert.ok(!result.summary.fieldsRendered.includes("patient_signature_ar"));
+});
+
+test("renderAcroFormFilledDraftPreview defers physician date and time until finalization", async () => {
   const browser = createMockBrowser();
   const pdfBytes = loadCanonicalAmputationPdf();
   const request = buildValidRequest();
@@ -291,9 +317,9 @@ test("renderAcroFormFilledDraftPreview keeps patient and physician signatures bl
     canonicalPdfHash: sha256Hex(pdfBytes),
   });
 
-  assert.equal(result.summary.signaturesRendered.length, 0, "No signatures should be rendered in pre-signature draft");
-  assert.ok(!result.summary.fieldsRendered.includes("patient_signature_en"));
-  assert.ok(!result.summary.fieldsRendered.includes("doctor_delegate_signature_en"));
+  const rendered = new Set(result.summary.fieldsRendered);
+  assert.ok(!rendered.has("doctor_delegate_date"), "Preview must not fabricate physician date");
+  assert.ok(!rendered.has("doctor_delegate_time"), "Preview must not fabricate physician time");
 });
 
 test("renderAcroFormFilledDraftPreview renders Arabic text without mojibake", async () => {
@@ -329,4 +355,51 @@ test("renderAcroFormFilledDraftPreview does not require the ConsentForm database
   });
 
   assert.equal(result.summary.pages, 5);
+});
+
+
+test("renderAcroFormFilledDraftPreview renders doctor-completed physician name instead of authenticated email", async () => {
+  const browser = createMockBrowser();
+  const pdfBytes = loadCanonicalAmputationPdf();
+  const request = buildValidRequest({
+    doctorCompletionValues: {
+      ...buildValidRequest().doctorCompletionValues,
+      physician_name: "Dr. Khalid Al-Farsi",
+      physician_designation: "Vascular Surgery Consultant",
+    },
+    physicianContext: {
+      name: "physician@example.com",
+      designation: "Fallback Specialty",
+    },
+  });
+
+  const result = await renderAcroFormFilledDraftPreview({
+    request,
+    browser,
+    canonicalPdfBytes: pdfBytes,
+    canonicalPdfHash: sha256Hex(pdfBytes),
+  });
+
+  const rendered = new Set(result.summary.fieldsRendered);
+  assert.ok(rendered.has("doctor_delegate_name"));
+  assert.ok(rendered.has("doctor_delegate_designation"));
+});
+
+test("renderAcroFormFilledDraftPreview renders each field at most once", async () => {
+  const browser = createMockBrowser();
+  const pdfBytes = loadCanonicalAmputationPdf();
+  const request = buildValidRequest();
+
+  const result = await renderAcroFormFilledDraftPreview({
+    request,
+    browser,
+    canonicalPdfBytes: pdfBytes,
+    canonicalPdfHash: sha256Hex(pdfBytes),
+  });
+
+  const seen = new Set<string>();
+  for (const fieldName of result.summary.fieldsRendered) {
+    assert.ok(!seen.has(fieldName), `Field ${fieldName} must not be rendered twice in the summary`);
+    seen.add(fieldName);
+  }
 });

@@ -39,6 +39,8 @@ export function parseAcroFormFilledDraftRequest(
   const physicianName = readString(physicianContextRecord?.name);
   if (physicianContextRecord && !physicianName) missing.push("physicianContext.name");
 
+  const physicianSignatureDataUrl = readOptionalString(body.physicianSignatureDataUrl);
+
   const request: AcroFormFilledDraftRequest = {
     formId,
     approvedPdfUrl,
@@ -61,6 +63,7 @@ export function parseAcroFormFilledDraftRequest(
       : undefined,
     manifestHash,
     correlationId: readOptionalString(body.correlationId),
+    physicianSignatureDataUrl,
   };
 
   return { request, missing };

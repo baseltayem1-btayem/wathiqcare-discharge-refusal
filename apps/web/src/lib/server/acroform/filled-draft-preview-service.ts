@@ -46,6 +46,12 @@ export type AcroFormFilledDraftRequest = {
   encounterReference?: DraftEncounterReference;
   manifestHash: string;
   correlationId?: string;
+  /**
+   * Physician signature image captured in the workspace. Rendered in the preview
+   * for visual review only; the authenticated legal signature evidence is
+   * captured separately at send time and used for the final patient copy.
+   */
+  physicianSignatureDataUrl?: string;
 };
 
 export type AcroFormFilledDraftResult = {
@@ -153,10 +159,15 @@ function buildFieldAddressedDraftValues(args: {
   doctorCompletionValues: Record<string, unknown>;
   patientDisplay: DraftPatientDisplay;
   physicianContext: DraftPhysicianContext;
+  physicianSignatureDataUrl?: string;
 }): ReturnType<typeof buildAmputationFieldAddressedValues> {
+  // Filled draft preview is generated before final patient signing. Physician
+  // date/time are intentionally deferred until finalization, when the server
+  // has the authenticated signature timestamp; the preview only shows the
+  // physician-completed identity fields and the captured signature image.
   return buildAmputationFieldAddressedValues({
     doctorCompletionValues: args.doctorCompletionValues,
-    physicianSignatureDataUrl: undefined,
+    physicianSignatureDataUrl: args.physicianSignatureDataUrl,
     patientSignatureDataUrl: undefined,
     physicianName: args.physicianContext.name,
     physicianSpecialty: args.physicianContext.designation,
@@ -202,6 +213,7 @@ export async function renderAcroFormFilledDraftPreview(args: {
     doctorCompletionValues: request.doctorCompletionValues,
     patientDisplay: request.patientDisplay,
     physicianContext: request.physicianContext,
+    physicianSignatureDataUrl: request.physicianSignatureDataUrl,
   });
 
   const result = await renderFieldAddressedPdf({

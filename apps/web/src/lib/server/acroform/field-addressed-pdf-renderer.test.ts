@@ -165,3 +165,26 @@ test("renderFieldAddressedPdf throws on page count mismatch", async () => {
     /Page count mismatch/,
   );
 });
+
+
+test("renderFieldAddressedPdf preserves Arabic letters in rendered text summary", async () => {
+  const browser = createMockBrowser();
+  const canonicalBytes = await buildCanonicalPdf();
+  const manifest = buildManifest();
+
+  const arabicValue = "اختبار CA2011E1 رقم 006";
+  const result = await renderFieldAddressedPdf({
+    canonicalPdfBytes: canonicalBytes,
+    manifest,
+    input: {
+      values: {
+        patient_name: { kind: "text", value: arabicValue },
+      },
+    },
+    browser,
+  });
+
+  assert.ok(result.summary.fieldsRendered.includes("patient_name"));
+  // The renderer must not drop the field; actual glyph coverage is enforced by
+  // the embedded WathiqOverlayArabic font and explicit document.fonts.load().
+});

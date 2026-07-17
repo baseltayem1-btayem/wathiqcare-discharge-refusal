@@ -752,6 +752,12 @@ export type AcroFormFilledDraftPreviewInput = {
     encounterId?: string;
   };
   correlationId?: string;
+  /**
+   * Physician signature image captured in the workspace. Rendered in the filled
+   * draft preview for visual review only; the authenticated legal evidence is
+   * captured separately at send time.
+   */
+  physicianSignatureDataUrl?: string;
 };
 
 export type AcroFormFilledDraftPreviewResult = {
@@ -778,6 +784,7 @@ export async function createAcroFormFilledDraftPreview(
         physicianContext: args.physicianContext,
         encounterReference: args.encounterReference,
         correlationId: args.correlationId,
+        physicianSignatureDataUrl: args.physicianSignatureDataUrl,
       }),
     },
   );

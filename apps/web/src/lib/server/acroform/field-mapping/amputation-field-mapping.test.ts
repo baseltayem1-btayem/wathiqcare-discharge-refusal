@@ -100,3 +100,159 @@ test("buildAmputationFieldAddressedValues handles substitute and witness fields"
   assert.ok(values.consent_date);
   assert.ok(values.consent_time);
 });
+
+
+test("buildAmputationFieldAddressedValues preserves Arabic letters in mixed values", () => {
+  const values = buildAmputationFieldAddressedValues({
+    doctorCompletionValues: {
+      condition_description_ar: "اختبار CA2011E1 رقم 006",
+    },
+    physicianSignatureDataUrl: undefined,
+    patientSignatureDataUrl: undefined,
+    physicianName: "Dr. Ahmed",
+    physicianSpecialty: "Orthopedic Surgery",
+    patientName: "Najib Al-Rashid",
+    mrn: "IMC-2026-02000",
+    dob: "1985-03-15",
+    signedAt: null,
+  });
+
+  const rendered = (values.condition_description_ar as { kind: "text"; value: string }).value;
+  assert.ok(/[\u0600-\u06FF]/.test(rendered), "Arabic letters must be preserved");
+  assert.ok(rendered.includes("CA2011E1"), "Latin reference must be preserved");
+  assert.ok(rendered.includes("006"), "Digits must be preserved");
+});
+
+test("buildAmputationFieldAddressedValues maps patient DOB from canonical display and normalized formats", () => {
+  for (const dob of ["1985-03-15", "15/03/1985", "1985-03-15T00:00:00.000Z"]) {
+    const values = buildAmputationFieldAddressedValues({
+      doctorCompletionValues: {},
+      physicianSignatureDataUrl: undefined,
+      patientSignatureDataUrl: undefined,
+      physicianName: "Dr. Ahmed",
+      physicianSpecialty: "Orthopedic Surgery",
+      patientName: "Najib Al-Rashid",
+      mrn: "IMC-2026-02000",
+      dob,
+      signedAt: null,
+    });
+
+    const rendered = (values.date_of_birth as { kind: "text"; value: string }).value;
+    assert.ok(rendered.includes("1985"), `DOB ${dob} should include year`);
+    assert.ok(rendered.includes("03") || rendered.includes("3"), `DOB ${dob} should include month`);
+    assert.ok(rendered.includes("15"), `DOB ${dob} should include day`);
+  }
+});
+
+test("buildAmputationFieldAddressedValues leaves DOB blank when genuinely unavailable", () => {
+  const values = buildAmputationFieldAddressedValues({
+    doctorCompletionValues: {},
+    physicianSignatureDataUrl: undefined,
+    patientSignatureDataUrl: undefined,
+    physicianName: "Dr. Ahmed",
+    physicianSpecialty: "Orthopedic Surgery",
+    patientName: "Najib Al-Rashid",
+    mrn: "IMC-2026-02000",
+    dob: undefined,
+    signedAt: null,
+  });
+
+  assert.equal(values.date_of_birth, undefined, "Missing DOB must not be fabricated");
+});
+
+test("buildAmputationFieldAddressedValues prefers doctor-completed physician name and designation", () => {
+  const values = buildAmputationFieldAddressedValues({
+    doctorCompletionValues: {
+      physician_name: "Dr. Khalid Al-Farsi",
+      physician_designation: "Vascular Surgery Consultant",
+    },
+    physicianSignatureDataUrl: undefined,
+    patientSignatureDataUrl: undefined,
+    physicianName: "auth.email@example.com",
+    physicianSpecialty: "Orthopedic Surgery",
+    patientName: "Najib Al-Rashid",
+    mrn: "IMC-2026-02000",
+    dob: "1985-03-15",
+    signedAt: null,
+  });
+
+  assert.equal(
+    (values.doctor_delegate_name as { kind: "text"; value: string }).value,
+    "Dr. Khalid Al-Farsi",
+  );
+  assert.equal(
+    (values.doctor_delegate_designation as { kind: "text"; value: string }).value,
+    "Vascular Surgery Consultant",
+  );
+});
+
+test("buildAmputationFieldAddressedValues falls back to context physician name and designation when doctor fields are blank", () => {
+  const values = buildAmputationFieldAddressedValues({
+    doctorCompletionValues: {
+      physician_name: "   ",
+      physician_designation: "",
+    },
+    physicianSignatureDataUrl: undefined,
+    patientSignatureDataUrl: undefined,
+    physicianName: "Dr. Ahmed",
+    physicianSpecialty: "Orthopedic Surgery",
+    patientName: "Najib Al-Rashid",
+    mrn: "IMC-2026-02000",
+    dob: "1985-03-15",
+    signedAt: null,
+  });
+
+  assert.equal(
+    (values.doctor_delegate_name as { kind: "text"; value: string }).value,
+    "Dr. Ahmed",
+  );
+  assert.equal(
+    (values.doctor_delegate_designation as { kind: "text"; value: string }).value,
+    "Orthopedic Surgery",
+  );
+});
+
+test("buildAmputationFieldAddressedValues passes physician signature to both language targets", () => {
+  const signatureDataUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=";
+  const values = buildAmputationFieldAddressedValues({
+    doctorCompletionValues: {},
+    physicianSignatureDataUrl: signatureDataUrl,
+    patientSignatureDataUrl: undefined,
+    physicianName: "Dr. Ahmed",
+    physicianSpecialty: "Orthopedic Surgery",
+    patientName: "Najib Al-Rashid",
+    mrn: "IMC-2026-02000",
+    dob: "1985-03-15",
+    signedAt: null,
+  });
+
+  assert.equal(values.doctor_delegate_signature_en?.kind, "signature");
+  assert.equal(values.doctor_delegate_signature_ar?.kind, "signature");
+  assert.equal(
+    (values.doctor_delegate_signature_en as { kind: "signature"; imageDataUrl: string }).imageDataUrl,
+    signatureDataUrl,
+  );
+  assert.equal(
+    (values.doctor_delegate_signature_ar as { kind: "signature"; imageDataUrl: string }).imageDataUrl,
+    signatureDataUrl,
+  );
+  assert.equal(values.patient_signature_en, undefined, "Patient signature must remain untouched");
+  assert.equal(values.patient_signature_ar, undefined, "Patient signature must remain untouched");
+});
+
+test("buildAmputationFieldAddressedValues defers physician date/time until finalization", () => {
+  const values = buildAmputationFieldAddressedValues({
+    doctorCompletionValues: {},
+    physicianSignatureDataUrl: undefined,
+    patientSignatureDataUrl: undefined,
+    physicianName: "Dr. Ahmed",
+    physicianSpecialty: "Orthopedic Surgery",
+    patientName: "Najib Al-Rashid",
+    mrn: "IMC-2026-02000",
+    dob: "1985-03-15",
+    signedAt: null,
+  });
+
+  assert.equal(values.doctor_delegate_date, undefined, "Preview must not fabricate physician date");
+  assert.equal(values.doctor_delegate_time, undefined, "Preview must not fabricate physician time");
+});

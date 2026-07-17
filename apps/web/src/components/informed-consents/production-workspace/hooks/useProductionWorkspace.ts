@@ -551,6 +551,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
             id: state.encounter.id,
             encounterId: state.encounter.encounterId,
           },
+          physicianSignatureDataUrl: state.physicianSignatureDataUrl,
         },
         controller.signal,
       );
@@ -590,6 +591,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     state.encounter,
     state.doctorCompletionValues,
     state.fieldMappingReadiness,
+    state.physicianSignatureDataUrl,
     physician,
   ]);
 
