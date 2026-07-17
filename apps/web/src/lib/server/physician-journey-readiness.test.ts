@@ -422,3 +422,301 @@ test("adenotonsillectomy MR1168 behavior is unchanged without physician fields",
   // Non-AcroForm forms use the single preview_reviewed gate, not filled_draft_current.
   assert.equal(findItem(readiness, "filled_draft_current"), undefined);
 });
+
+// ---------------------------------------------------------------------------
+// Explicit Generate Filled Preview action gating
+// ---------------------------------------------------------------------------
+
+function itemStatus(
+  readiness: ReturnType<typeof computePhysicianJourneyReadiness>,
+  key: string,
+): ReadonlyItemStatus {
+  return findItem(readiness, key)?.status ?? "REQUIRED";
+}
+
+type ReadonlyItemStatus = import("@/lib/server/physician-journey-readiness").ReadinessItemStatus;
+
+function isGenerateFilledPreviewEnabled(
+  readiness: ReturnType<typeof computePhysicianJourneyReadiness>,
+  fieldMappingReadiness?: { acroForm?: unknown },
+): boolean {
+  const isAcroFormBacked = Boolean(fieldMappingReadiness?.acroForm);
+  const isComplete = (key: string) => itemStatus(readiness, key) === "COMPLETE";
+  const anesthesiaOk =
+    itemStatus(readiness, "anesthesia_workflow_reviewed") === "COMPLETE" ||
+    itemStatus(readiness, "anesthesia_workflow_reviewed") === "NOT_APPLICABLE";
+  return (
+    isAcroFormBacked &&
+    isComplete("patient_selected") &&
+    isComplete("encounter_selected") &&
+    isComplete("knowledge_package_ready") &&
+    isComplete("field_mapping_verified") &&
+    isComplete("physician_fields_complete") &&
+    isComplete("physician_signature_complete") &&
+    anesthesiaOk &&
+    isComplete("patient_signature_mapped")
+  );
+}
+
+const completeMr1135DoctorValues = {
+  condition_description_en: "Diabetic foot infection.",
+  condition_description_ar: "عدوى القدم السكرية.",
+  proposed_procedure_en: "Below-knee amputation, left leg.",
+  proposed_procedure_ar: "بتر تحت الركبة، الساق اليسرى.",
+  significant_risks_options_en: "Infection, bleeding.",
+  significant_risks_options_ar: "عدوى، نزيف.",
+  risks_without_procedure_en: "Sepsis.",
+  risks_without_procedure_ar: "تسمم الدم.",
+  physician_name: "Dr. Ahmed",
+  physician_designation: "Orthopedic Surgery",
+  interpreter_required: "false",
+  interpreter_present: "false",
+  anesthesia_applies: "false",
+};
+
+const completeMr1135Assembly = {
+  tenantId: "tenant-1",
+  status: "ready",
+  procedureId: "imc-approved-amputation",
+  procedureCode: "amputation",
+  procedureNameEn: "Amputation",
+  procedureNameAr: "",
+  packageId: "pkg-1",
+  packageVersion: "1.0",
+  assemblyId: "asm-1",
+  consentForm: {
+    id: "imc-approved-amputation",
+    tenantId: "tenant-1",
+    code: "IMC MR 1135",
+    titleEn: "Amputation",
+    titleAr: "",
+    formType: "PROCEDURE_CONSENT",
+    riskLevel: "HIGH",
+    status: "PUBLISHED",
+    version: "1.0",
+    effectiveDate: "2026-01-01T00:00:00.000Z",
+    expiryDate: null,
+    governanceSnapshot: null,
+    pdfTemplateUrl: "/approved-consent-forms/amputation.pdf",
+    requiresWitness: true,
+    requiresInterpreter: true,
+    createdByUserId: "",
+    publishedByUserId: null,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+    sections: [],
+  },
+  educationMaterials: [],
+  riskDisclosures: [],
+  illustrations: [],
+  decisionRules: [],
+  suggestions: [],
+  blockers: [],
+  requiredParticipants: [],
+  packageSnapshot: null,
+  assembledAt: "2026-01-01T00:00:00.000Z",
+} as unknown as import("@/components/informed-consents/production-workspace/types").ProductionAssembly;
+
+test("Generate Filled Preview is enabled only when all prerequisites are satisfied", () => {
+  const readiness = computePhysicianJourneyReadiness({
+    ...baseArgs,
+    patient: { id: "patient-1", mrn: "MRN-000001", name: "Test Patient", dateOfBirth: "1985-03-15", languagePreference: "bilingual" as const },
+    encounter: { id: "enc-1", encounterId: "enc-1" },
+    selectedProcedure: {
+      id: "imc-approved-amputation",
+      titleEn: "Amputation",
+      titleAr: "",
+      procedureCode: "amputation",
+      categoryCode: "general-surgery",
+      specialty: "General Surgery",
+      anesthesiaRequired: true,
+    },
+    assembly: completeMr1135Assembly,
+    fieldMappingReadiness: mr1135FieldMapping,
+    doctorCompletionValues: completeMr1135DoctorValues,
+    physicianSignatureDataUrl: "data:image/png;base64,AAAA",
+  });
+
+  assert.equal(isGenerateFilledPreviewEnabled(readiness, mr1135FieldMapping), true);
+});
+
+test("Generate Filled Preview is disabled when physician fields are incomplete", () => {
+  const readiness = computePhysicianJourneyReadiness({
+    ...baseArgs,
+    patient: { id: "patient-1", mrn: "MRN-000001", name: "Test Patient", dateOfBirth: "1985-03-15", languagePreference: "bilingual" as const },
+    encounter: { id: "enc-1", encounterId: "enc-1" },
+    selectedProcedure: {
+      id: "imc-approved-amputation",
+      titleEn: "Amputation",
+      titleAr: "",
+      procedureCode: "amputation",
+      categoryCode: "general-surgery",
+      specialty: "General Surgery",
+      anesthesiaRequired: true,
+    },
+    assembly: completeMr1135Assembly,
+    fieldMappingReadiness: mr1135FieldMapping,
+    doctorCompletionValues: {
+      ...completeMr1135DoctorValues,
+      condition_description_ar: "",
+    },
+    physicianSignatureDataUrl: "data:image/png;base64,AAAA",
+  });
+
+  assert.equal(isGenerateFilledPreviewEnabled(readiness, mr1135FieldMapping), false);
+  assert.equal(findItem(readiness, "physician_fields_complete")?.status, "BLOCKED");
+});
+
+test("Generate Filled Preview is disabled when physician signature is missing", () => {
+  const readiness = computePhysicianJourneyReadiness({
+    ...baseArgs,
+    patient: { id: "patient-1", mrn: "MRN-000001", name: "Test Patient", dateOfBirth: "1985-03-15", languagePreference: "bilingual" as const },
+    encounter: { id: "enc-1", encounterId: "enc-1" },
+    selectedProcedure: {
+      id: "imc-approved-amputation",
+      titleEn: "Amputation",
+      titleAr: "",
+      procedureCode: "amputation",
+      categoryCode: "general-surgery",
+      specialty: "General Surgery",
+      anesthesiaRequired: true,
+    },
+    assembly: completeMr1135Assembly,
+    fieldMappingReadiness: mr1135FieldMapping,
+    doctorCompletionValues: completeMr1135DoctorValues,
+    physicianSignatureDataUrl: "",
+  });
+
+  assert.equal(isGenerateFilledPreviewEnabled(readiness, mr1135FieldMapping), false);
+  assert.equal(findItem(readiness, "physician_signature_complete")?.status, "REQUIRED");
+});
+
+test("Generate Filled Preview is disabled when knowledge package is not ready", () => {
+  const readiness = computePhysicianJourneyReadiness({
+    ...baseArgs,
+    patient: { id: "patient-1", mrn: "MRN-000001", name: "Test Patient", dateOfBirth: "1985-03-15", languagePreference: "bilingual" as const },
+    encounter: { id: "enc-1", encounterId: "enc-1" },
+    selectedProcedure: {
+      id: "imc-approved-amputation",
+      titleEn: "Amputation",
+      titleAr: "",
+      procedureCode: "amputation",
+      categoryCode: "general-surgery",
+      specialty: "General Surgery",
+      anesthesiaRequired: true,
+    },
+    assembly: {
+      ...completeMr1135Assembly,
+      status: "draft",
+    } as unknown as import("@/components/informed-consents/production-workspace/types").ProductionAssembly,
+    fieldMappingReadiness: mr1135FieldMapping,
+    doctorCompletionValues: completeMr1135DoctorValues,
+    physicianSignatureDataUrl: "data:image/png;base64,AAAA",
+  });
+
+  assert.equal(findItem(readiness, "knowledge_package_ready")?.status, "BLOCKED");
+  assert.equal(isGenerateFilledPreviewEnabled(readiness, mr1135FieldMapping), false);
+});
+
+test("Preview Reviewed remains blocked before successful filled draft generation", () => {
+  const readiness = computePhysicianJourneyReadiness({
+    ...baseArgs,
+    patient: { id: "patient-1", mrn: "MRN-000001", name: "Test Patient", dateOfBirth: "1985-03-15", languagePreference: "bilingual" as const },
+    encounter: { id: "enc-1", encounterId: "enc-1" },
+    selectedProcedure: {
+      id: "imc-approved-amputation",
+      titleEn: "Amputation",
+      titleAr: "",
+      procedureCode: "amputation",
+      categoryCode: "general-surgery",
+      specialty: "General Surgery",
+      anesthesiaRequired: true,
+    },
+    assembly: completeMr1135Assembly,
+    fieldMappingReadiness: mr1135FieldMapping,
+    doctorCompletionValues: completeMr1135DoctorValues,
+    physicianSignatureDataUrl: "data:image/png;base64,AAAA",
+    filledDraftStatus: "idle",
+    filledDraftReviewed: false,
+  });
+
+  assert.equal(findItem(readiness, "filled_draft_current")?.status, "REQUIRED");
+  assert.equal(findItem(readiness, "preview_reviewed")?.status, "BLOCKED");
+  assert.equal(readiness.sendReady, false);
+});
+
+test("Preview Reviewed becomes available after successful filled draft generation", () => {
+  const readiness = computePhysicianJourneyReadiness({
+    ...baseArgs,
+    patient: { id: "patient-1", mrn: "MRN-000001", name: "Test Patient", dateOfBirth: "1985-03-15", languagePreference: "bilingual" as const },
+    encounter: { id: "enc-1", encounterId: "enc-1" },
+    selectedProcedure: {
+      id: "imc-approved-amputation",
+      titleEn: "Amputation",
+      titleAr: "",
+      procedureCode: "amputation",
+      categoryCode: "general-surgery",
+      specialty: "General Surgery",
+      anesthesiaRequired: true,
+    },
+    assembly: completeMr1135Assembly,
+    fieldMappingReadiness: mr1135FieldMapping,
+    doctorCompletionValues: completeMr1135DoctorValues,
+    physicianSignatureDataUrl: "data:image/png;base64,AAAA",
+    filledDraftStatus: "current",
+    filledDraftReviewed: false,
+  });
+
+  assert.equal(findItem(readiness, "filled_draft_current")?.status, "COMPLETE");
+  assert.equal(findItem(readiness, "preview_reviewed")?.status, "REQUIRED");
+});
+
+test("Approve Draft and Send remain blocked until preview is reviewed and draft is approved", () => {
+  const baseComplete = {
+    ...baseArgs,
+    patient: { id: "patient-1", mrn: "MRN-000001", name: "Test Patient", dateOfBirth: "1985-03-15", languagePreference: "bilingual" as const },
+    encounter: { id: "enc-1", encounterId: "enc-1" },
+    selectedProcedure: {
+      id: "imc-approved-amputation",
+      titleEn: "Amputation",
+      titleAr: "",
+      procedureCode: "amputation",
+      categoryCode: "general-surgery",
+      specialty: "General Surgery",
+      anesthesiaRequired: true,
+    },
+    assembly: completeMr1135Assembly,
+    fieldMappingReadiness: mr1135FieldMapping,
+    doctorCompletionValues: completeMr1135DoctorValues,
+    physicianSignatureDataUrl: "data:image/png;base64,AAAA",
+    filledDraftStatus: "current" as const,
+    recipientMobile: "+966500000000",
+    recipientEmail: "patient@example.com",
+  };
+
+  const withoutReview = computePhysicianJourneyReadiness({
+    ...baseComplete,
+    filledDraftReviewed: false,
+    draftApproved: false,
+  });
+  assert.equal(findItem(withoutReview, "preview_reviewed")?.status, "REQUIRED");
+  assert.equal(withoutReview.sendReady, false);
+
+  const reviewedNotApproved = computePhysicianJourneyReadiness({
+    ...baseComplete,
+    filledDraftReviewed: true,
+    draftApproved: false,
+  });
+  assert.equal(findItem(reviewedNotApproved, "preview_reviewed")?.status, "COMPLETE");
+  assert.equal(findItem(reviewedNotApproved, "draft_approved")?.status, "REQUIRED");
+  assert.equal(reviewedNotApproved.sendReady, false);
+
+  const readyToSend = computePhysicianJourneyReadiness({
+    ...baseComplete,
+    filledDraftReviewed: true,
+    draftApproved: true,
+  });
+  assert.equal(findItem(readyToSend, "preview_reviewed")?.status, "COMPLETE");
+  assert.equal(findItem(readyToSend, "draft_approved")?.status, "COMPLETE");
+  assert.equal(readyToSend.sendReady, true);
+});

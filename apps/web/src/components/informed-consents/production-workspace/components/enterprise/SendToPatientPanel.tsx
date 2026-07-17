@@ -111,8 +111,20 @@ export function SendToPatientPanel({
         ) : null}
 
         <div className="flex flex-col gap-3">
-          <Button variant={draftApproved ? "outline" : "default"} size="sm" className="h-11 rounded-2xl" disabled={draftApproved} onClick={onApproveDraft}>
-            {draftApproved ? (lang === "ar" ? "تم اعتماد المسودة" : "Draft Approved") : (lang === "ar" ? "اعتماد المسودة" : "Approve Draft")}
+          <Button
+            variant={draftApproved ? "outline" : "default"}
+            size="sm"
+            className="h-11 rounded-2xl"
+            disabled={draftApproved || !previewReviewed}
+            onClick={onApproveDraft}
+          >
+            {draftApproved
+              ? lang === "ar"
+                ? "تم اعتماد المسودة"
+                : "Draft Approved"
+              : lang === "ar"
+                ? "اعتماد المسودة"
+                : "Approve Draft"}
           </Button>
           <Button variant="default" size="sm" className="h-11 rounded-2xl" disabled={sendDisabled} onClick={onSend}>
             <Send className="mr-1 size-4" />

@@ -195,10 +195,10 @@ export function ApprovedPdfViewer({
                           <RefreshCw className="mr-1 size-3.5" />
                           {draftPdfUrl
                             ? lang === "ar"
-                              ? "تحديث معاينة النموذج المعبأ"
+                              ? "تحديث المعاينة المعبأة"
                               : "Refresh Filled Preview"
                             : lang === "ar"
-                              ? "توليد معاينة النموذج المعبأ"
+                              ? "إنشاء المعاينة المعبأة"
                               : "Generate Filled Preview"}
                         </Button>
                       </div>
@@ -243,7 +243,7 @@ export function ApprovedPdfViewer({
                         </p>
                         <Button variant="outline" size="sm" className="rounded-xl" disabled={filledDraftStatus === "loading"} onClick={onGenerateFilledDraft}>
                           <RefreshCw className="mr-1 size-3.5" />
-                          {lang === "ar" ? "توليد المعاينة" : "Generate Preview"}
+                          {lang === "ar" ? "إنشاء المعاينة المعبأة" : "Generate Filled Preview"}
                         </Button>
                       </div>
                     )}
@@ -276,7 +276,7 @@ export function ApprovedPdfViewer({
                     <Button
                       variant={filledDraftReviewed ? "outline" : "default"}
                       size="sm"
-                      disabled={filledDraftReviewed || filledDraftStatus !== "current"}
+                      disabled={filledDraftReviewed || filledDraftStatus !== "current" || !draftPdfUrl}
                       className="rounded-xl"
                       onClick={onMarkFilledDraftReviewed}
                     >
@@ -289,8 +289,20 @@ export function ApprovedPdfViewer({
                           : "Mark Filled Preview Reviewed"}
                     </Button>
                   ) : (
-                    <Button variant={reviewed ? "outline" : "default"} size="sm" disabled={reviewed} className="rounded-xl" onClick={onMarkReviewed}>
-                      {reviewed ? (lang === "ar" ? "تم وسم المعاينة" : "Marked reviewed") : (lang === "ar" ? "تأكيد مراجعة المعاينة" : "Mark Preview Reviewed")}
+                    <Button
+                      variant={reviewed ? "outline" : "default"}
+                      size="sm"
+                      disabled={reviewed || isAcroFormBacked}
+                      className="rounded-xl"
+                      onClick={onMarkReviewed}
+                    >
+                      {reviewed
+                        ? lang === "ar"
+                          ? "تم وسم المعاينة"
+                          : "Marked reviewed"
+                        : lang === "ar"
+                          ? "تأكيد مراجعة المعاينة"
+                          : "Mark Preview Reviewed"}
                     </Button>
                   )}
                 </div>

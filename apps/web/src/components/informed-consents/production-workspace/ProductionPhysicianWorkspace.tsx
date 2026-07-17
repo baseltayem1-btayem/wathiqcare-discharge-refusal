@@ -2,7 +2,7 @@
 
 import { isAssemblyApprovedPdfSourceVerified } from "./utils/approvedPdfSource";
 import { useState } from "react";
-import { Card, CardContent } from "@/components/design-system";
+import { Button, Card, CardContent } from "@/components/design-system";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { PhysicianContext } from "./types";
 import { useProductionWorkspace } from "./hooks/useProductionWorkspace";
@@ -10,7 +10,8 @@ import { PatientEncounterSelector } from "./components/PatientEncounterSelector"
 import { ConsentPreviewModal } from "./components/ConsentPreviewModal";
 import { SendConfirmationModal } from "./components/SendConfirmationModal";
 import { WorkflowStepper } from "./components/WorkflowStepper";
-import { WorkspaceSectionLabel } from "./components/WorkspaceAtoms";
+import { WorkspaceCard, WorkspaceCardHeader, WorkspaceSectionLabel } from "./components/WorkspaceAtoms";
+import { FileText, Loader2, RefreshCw } from "lucide-react";
 import {
   PatientsPage,
   EncountersPage,
@@ -80,6 +81,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
   const [sendModalOpen, setSendModalOpen] = useState(false);
 
   function handleApprove() {
+    if (!effectivePreviewReviewed) return;
     approveDraft();
   }
 
@@ -99,6 +101,20 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
 
   const hasApprovedPdfSource = isAssemblyApprovedPdfSourceVerified(state.assembly);
   const isAcroFormBacked = Boolean(state.fieldMappingReadiness?.acroForm);
+
+  const canGenerateFilledPreview =
+    isAcroFormBacked &&
+    readiness.patientReady &&
+    readiness.encounterReady &&
+    readiness.assemblyReady &&
+    hasApprovedPdfSource &&
+    readiness.fieldMappingVerified &&
+    readiness.doctorCompletionReady &&
+    readiness.anesthesiaMappingReady &&
+    readiness.patientSignatureMapped &&
+    state.filledDraftStatus !== "loading";
+
+  const effectivePreviewReviewed = isAcroFormBacked ? state.filledDraftReviewed : state.previewReviewed;
 
   const sendReason = (() => {
     if (sendLoading) return "Sending…";
@@ -177,6 +193,46 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
               onPhysicianSignatureChange={setPhysicianSignatureDataUrl}
               disabled={sendLoading}
             />
+
+            {isAcroFormBacked ? (
+              <WorkspaceCard className="overflow-hidden">
+                <WorkspaceCardHeader
+                  icon={<FileText className="size-5" />}
+                  title={lang === "ar" ? "المعاينة المعبأة" : "Filled draft preview"}
+                  description={
+                    lang === "ar"
+                      ? "أنشئ معاينة النموذج المعبأة من المصدر المعتمد والقيم المدخلة."
+                      : "Generate the filled draft preview from the approved source and entered values."
+                  }
+                />
+                <div className="space-y-4 px-5 py-5">
+                  {state.filledDraftError ? (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800">
+                      {state.filledDraftError}
+                    </div>
+                  ) : null}
+                  <Button
+                    className="h-11 w-full rounded-2xl"
+                    disabled={!canGenerateFilledPreview}
+                    onClick={() => void generateFilledDraftPreview()}
+                  >
+                    {state.filledDraftStatus === "loading" ? (
+                      <Loader2 className="mr-1 size-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="mr-1 size-4" />
+                    )}
+                    {state.filledDraftStatus === "loading"
+                      ? lang === "ar"
+                        ? "جاري الإنشاء…"
+                        : "Generating…"
+                      : lang === "ar"
+                        ? "إنشاء المعاينة المعبأة"
+                        : "Generate Filled Preview"}
+                  </Button>
+                </div>
+              </WorkspaceCard>
+            ) : null}
+
             <ReadinessChecklist readiness={readiness} />
           </div>
 
@@ -205,7 +261,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
               allowlisted={state.sendEligibility?.allowlisted}
               pilotEnabled={state.sendEligibility?.pilotEnabled}
               reason={state.sendEligibility?.reason}
-              previewReviewed={state.previewReviewed}
+              previewReviewed={effectivePreviewReviewed}
               draftApproved={state.draftApproved}
               sendDisabled={!readiness.sendReady || sendLoading || !hasApprovedPdfSource}
               sendReason={sendReason}
