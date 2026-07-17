@@ -18,6 +18,7 @@ import {
 
 import {
   generateGovernedPatientCopy,
+  isAcroFormBackedPatientCopy,
   type ConsentDocumentForPatientCopy,
 } from "@/lib/server/acroform/patient-copy-dispatch-service";
 
@@ -264,6 +265,17 @@ export async function GET(
           metadata: consentDocument.metadata,
         }
       : null;
+
+    const isAcroFormBacked = Boolean(
+      acroFormDocument && isAcroFormBackedPatientCopy(acroFormDocument),
+    );
+
+    if (isAcroFormBacked && !governedPatientCopy) {
+      throw new ApiError(
+        422,
+        "Governed patient copy is not bound to this signing session.",
+      );
+    }
 
     if (governedPatientCopy && acroFormDocument) {
       const patientSignature = await resolvePatientSignatureForAcroForm({

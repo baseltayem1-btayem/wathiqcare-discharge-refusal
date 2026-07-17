@@ -25,6 +25,11 @@ import {
   validatePublicSigningSession,
 } from "@/lib/server/public-signing-decision-service";
 import { getSigningTokenContext, type SigningTokenContext } from "@/lib/server/signing-token-context-service";
+import {
+  isAcroFormBackedPatientCopy,
+  type ConsentDocumentForPatientCopy,
+} from "@/lib/server/acroform/patient-copy-dispatch-service";
+import type { PrismaClient } from "@prisma/client";
 
 const prisma = () => getPrisma();
 
@@ -32,12 +37,14 @@ function buildPatientCopyPdfUrl(token: string): string {
   return `/api/public/informed-consents/signing/${encodeURIComponent(token)}/patient-copy-pdf`;
 }
 
-async function resolveGovernedPatientCopyUrl(args: {
+export async function resolveGovernedPatientCopyUrl(args: {
   token: string;
   tenantId: string;
   sessionId: string;
+  client?: PrismaClient;
 }): Promise<string | null> {
-  const session = await prisma().signingSession.findFirst({
+  const db = args.client ?? prisma();
+  const session = await db.signingSession.findFirst({
     where: { id: args.sessionId, tenantId: args.tenantId },
     select: { metadata: true },
   });
@@ -50,6 +57,14 @@ async function resolveGovernedPatientCopyUrl(args: {
   }
 
   return buildPatientCopyPdfUrl(args.token);
+}
+
+export function documentRequiresGovernedPatientCopy(doc: { id: string; metadata: unknown }): boolean {
+  const candidate: ConsentDocumentForPatientCopy = {
+    id: doc.id,
+    metadata: doc.metadata,
+  };
+  return isAcroFormBackedPatientCopy(candidate);
 }
 
 const SAFE_REFUSAL_LEGAL_TEXT_AR =
@@ -221,6 +236,10 @@ async function buildPreOtpBootstrapPayload(
     sessionId: context.sessionId,
   });
 
+  if (!governedUrl && documentRequiresGovernedPatientCopy(doc)) {
+    throw new ApiError(422, "Governed patient copy is not bound to this signing session.");
+  }
+
   const linkedEducationPackage = await getLinkedEducationPackage(
     context.tenantId,
     doc.templateId,
@@ -261,6 +280,10 @@ async function buildPublicSigningDocumentPayload(
     tenantId: context.tenantId,
     sessionId: context.sessionId,
   });
+
+  if (!governedUrl && documentRequiresGovernedPatientCopy(doc)) {
+    throw new ApiError(422, "Governed patient copy is not bound to this signing session.");
+  }
 
   const linkedEducationPackage = await getLinkedEducationPackage(
     context.tenantId,

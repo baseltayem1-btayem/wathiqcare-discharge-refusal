@@ -183,6 +183,10 @@ export async function POST(
     typeof docMetadata.approvedConsentFormCode === "string"
       ? docMetadata.approvedConsentFormCode
       : undefined;
+  const filledDraftFingerprint =
+    typeof docMetadata.filledDraftFingerprint === "string" && docMetadata.filledDraftFingerprint.trim()
+      ? docMetadata.filledDraftFingerprint.trim()
+      : undefined;
 
   const serverKey = deriveSendRootOperationKey({
     tenantId,
@@ -191,6 +195,7 @@ export async function POST(
     approvedConsentFormKey,
     approvedTemplateVersionId: document.templateVersionId || undefined,
     immutablePdfHash: approvedPdfHash,
+    filledDraftFingerprint,
     mobileNumber,
     recipientEmail,
     locale: locale as "ar" | "en",
@@ -212,6 +217,7 @@ export async function POST(
       approvedConsentFormKey,
       approvedTemplateVersionId: document.templateVersionId || undefined,
       immutablePdfHash: approvedPdfHash,
+      filledDraftFingerprint,
       idempotencyKey: serverKey,
     });
 

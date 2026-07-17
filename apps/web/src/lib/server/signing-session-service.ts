@@ -511,22 +511,18 @@ export async function markSessionSentIfPending(
   return result.count > 0;
 }
 
-export async function revokeSigningSessionForDocument(
+export async function revokeActiveSigningSessionsForDocument(
   tenantId: string,
   documentId: string,
   revokedBy: string,
-  reason?: string,
+  reason: string,
+  client?: PrismaClient,
 ): Promise<{ revokedAt: string; revokedSessions: number; documentId: string }> {
   const now = new Date();
+  const db = client ?? prisma();
 
-  const revokedSessionIds = await prisma().$transaction(async (tx) => {
-    return revokeActiveSessionsForDocument(
-      tenantId,
-      documentId,
-      revokedBy,
-      reason || "Revoked from signing session service",
-      tx,
-    );
+  const revokedSessionIds = await db.$transaction(async (tx) => {
+    return revokeActiveSessionsForDocument(tenantId, documentId, revokedBy, reason, tx);
   });
 
   return {
@@ -534,4 +530,18 @@ export async function revokeSigningSessionForDocument(
     revokedSessions: revokedSessionIds.length,
     documentId,
   };
+}
+
+export async function revokeSigningSessionForDocument(
+  tenantId: string,
+  documentId: string,
+  revokedBy: string,
+  reason?: string,
+): Promise<{ revokedAt: string; revokedSessions: number; documentId: string }> {
+  return revokeActiveSigningSessionsForDocument(
+    tenantId,
+    documentId,
+    revokedBy,
+    reason || "Revoked from signing session service",
+  );
 }

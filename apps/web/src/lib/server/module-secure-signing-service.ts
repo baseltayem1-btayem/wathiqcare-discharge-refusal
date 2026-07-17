@@ -1,7 +1,11 @@
 import crypto from "node:crypto";
 import { Prisma, PatientMessageChannel, PatientMessageStatus } from "@prisma/client";
 import type { PrismaClient } from "@prisma/client";
-import { createSigningSessionIdempotent } from "@/lib/server/signing-session-service";
+import type { Browser } from "puppeteer";
+import {
+  createSigningSessionIdempotent,
+  revokeActiveSigningSessionsForDocument,
+} from "@/lib/server/signing-session-service";
 import { getPrisma } from "@/lib/server/prisma";
 import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { ApiError } from "@/lib/server/http";
@@ -328,6 +332,10 @@ export type SendModuleSecureSigningLinkOptions = {
   approvedConsentFormKey?: string;
   approvedTemplateVersionId?: string;
   immutablePdfHash?: string;
+  /** Governed filled-draft fingerprint bound at dispatch; included in idempotency identity. */
+  filledDraftFingerprint?: string;
+  /** Optional Puppeteer browser for deterministic testing. */
+  browser?: Browser;
 };
 
 function normalizeSendOptions(args: SendModuleSecureSigningLinkOptions): {
@@ -350,6 +358,7 @@ function buildSendPayloadFingerprint(args: SendModuleSecureSigningLinkOptions): 
     approvedConsentFormKey: args.approvedConsentFormKey,
     approvedTemplateVersionId: args.approvedTemplateVersionId,
     immutablePdfHash: args.immutablePdfHash,
+    filledDraftFingerprint: args.filledDraftFingerprint,
     mobileHash: hashRecipient(normalizedMobile, { tenantId: args.tenantId }),
     emailHash: hashRecipient(normalizedEmail, { tenantId: args.tenantId }),
     locale: args.locale || "en",
@@ -376,6 +385,13 @@ function resolveRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
+}
+
+function readFilledDraftFingerprint(metadata: unknown): string | undefined {
+  const record = resolveRecord(metadata);
+  if (!record) return undefined;
+  const value = record.filledDraftFingerprint;
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
 /**
@@ -417,6 +433,7 @@ export function deriveSendRootOperationKey(args: {
   approvedConsentFormKey?: string;
   approvedTemplateVersionId?: string;
   immutablePdfHash?: string;
+  filledDraftFingerprint?: string;
   mobileNumber: string;
   recipientEmail: string;
   locale?: "ar" | "en";
@@ -431,6 +448,7 @@ export function deriveSendRootOperationKey(args: {
     approvedConsentFormKey: args.approvedConsentFormKey,
     approvedTemplateVersionId: args.approvedTemplateVersionId,
     immutablePdfHash: args.immutablePdfHash,
+    filledDraftFingerprint: args.filledDraftFingerprint,
     mobileHash: hashRecipient(normalizedMobile, { tenantId: args.tenantId }),
     emailHash: hashRecipient(normalizedEmail, { tenantId: args.tenantId }),
     locale: args.locale || "en",
@@ -454,7 +472,49 @@ export async function sendModuleSecureSigningLink(
     throw new ApiError(400, "Invalid email address");
   }
 
-  const payloadFingerprint = buildSendPayloadFingerprint(args);
+  // Explicit-resend validation is input-only and must fail before any database
+  // lookup so that offline/unit-test callers receive the expected 400.
+  if (args.explicitResend) {
+    const resendRequestKey = args.resendRequestKey?.trim();
+    if (!resendRequestKey) {
+      throw new ApiError(400, "Explicit resend requires a resend request key");
+    }
+    validateIdempotencyKey(resendRequestKey);
+  }
+
+  const db = args.client ?? prisma();
+
+  let consentDocument: {
+    id: string;
+    patientName: string | null;
+    mrn: string | null;
+    dob: string | null;
+    physicianName: string | null;
+    physicianSpecialty: string | null;
+    metadata: unknown;
+  } | null = null;
+
+  if (args.moduleType === "informed_consent") {
+    consentDocument = await db.consentDocument.findFirst({
+      where: { id: args.documentId, tenantId: args.tenantId },
+      select: {
+        id: true,
+        patientName: true,
+        mrn: true,
+        dob: true,
+        physicianName: true,
+        physicianSpecialty: true,
+        metadata: true,
+      },
+    });
+  }
+
+  const filledDraftFingerprint = consentDocument
+    ? readFilledDraftFingerprint(consentDocument.metadata)
+    : undefined;
+  const fingerprintedArgs = { ...args, filledDraftFingerprint };
+
+  const payloadFingerprint = buildSendPayloadFingerprint(fingerprintedArgs);
 
   // The canonical server-derived identity is always used as the root for
   // explicit resends so that the resend request key is combined with stable
@@ -466,6 +526,7 @@ export async function sendModuleSecureSigningLink(
     approvedConsentFormKey: args.approvedConsentFormKey,
     approvedTemplateVersionId: args.approvedTemplateVersionId,
     immutablePdfHash: args.immutablePdfHash,
+    filledDraftFingerprint,
     mobileNumber: args.mobileNumber,
     recipientEmail: args.recipientEmail,
     locale: args.locale,
@@ -475,11 +536,7 @@ export async function sendModuleSecureSigningLink(
   let sessionIdempotencyKey: string;
 
   if (args.explicitResend) {
-    const resendRequestKey = args.resendRequestKey?.trim();
-    if (!resendRequestKey) {
-      throw new ApiError(400, "Explicit resend requires a resend request key");
-    }
-    validateIdempotencyKey(resendRequestKey);
+    const resendRequestKey = args.resendRequestKey!.trim();
     rootKey = canonicalRootKey;
     sessionIdempotencyKey = deriveChildIdempotencyKey(
       `${canonicalRootKey}:resend:${resendRequestKey}`,
@@ -498,43 +555,63 @@ export async function sendModuleSecureSigningLink(
     );
   }
 
+  // A stale session (e.g. created before the governed patient-copy binding or
+  // with a different filled-document identity) must not remain active. Only an
+  // exact idempotency match keeps the existing session alive.
+  if (!args.explicitResend) {
+    const existingActive = await db.signingSession.findFirst({
+      where: {
+        tenantId: args.tenantId,
+        documentId: args.documentId,
+        status: { in: ["PENDING", "SENT", "PARTIALLY_SIGNED"] },
+      },
+      select: { id: true, idempotencyKey: true },
+      orderBy: { createdAt: "desc" },
+    });
+    if (
+      existingActive
+      && typeof existingActive.idempotencyKey === "string"
+      && existingActive.idempotencyKey !== sessionIdempotencyKey
+    ) {
+      await revokeActiveSigningSessionsForDocument(
+        args.tenantId,
+        args.documentId,
+        args.initiatedBy,
+        "Governed filled-document identity changed; replacing active signing session",
+        args.client,
+      );
+    }
+  }
+
   let pdfBytes: Buffer;
   let sessionMetadataOverride: Record<string, unknown> | undefined;
 
   if (args.moduleType === "informed_consent") {
-    const consentDocument = await prisma().consentDocument.findFirst({
-      where: { id: args.documentId, tenantId: args.tenantId },
-      select: {
-        id: true,
-        patientName: true,
-        mrn: true,
-        dob: true,
-        physicianName: true,
-        physicianSpecialty: true,
-        metadata: true,
-      },
-    });
-
     const acroFormDocument: ConsentDocumentForPatientCopy | null = consentDocument
       ? {
           id: consentDocument.id,
-          patientName: consentDocument.patientName,
+          patientName: consentDocument.patientName ?? undefined,
           mrn: consentDocument.mrn,
           dob: consentDocument.dob,
-          physicianName: consentDocument.physicianName,
-          physicianSpecialty: consentDocument.physicianSpecialty,
+          physicianName: consentDocument.physicianName ?? undefined,
+          physicianSpecialty: consentDocument.physicianSpecialty ?? undefined,
           metadata: consentDocument.metadata,
         }
       : null;
 
     if (acroFormDocument && isAcroFormBackedPatientCopy(acroFormDocument)) {
-      const governed = await generateGovernedPatientCopy({ document: acroFormDocument });
+      const governed = await generateGovernedPatientCopy({
+        document: acroFormDocument,
+        browser: args.browser,
+      });
       pdfBytes = Buffer.from(governed.bytes);
       sessionMetadataOverride = {
+        acroFormBacked: true,
         governedPatientCopy: {
           pdfHash: governed.pdfHash,
           pdfBytesBase64: pdfBytes.toString("base64"),
           fingerprint: governed.fingerprint,
+          filledDraftFingerprint,
           formId: governed.formId,
           approvedPdfUrl: governed.approvedPdfUrl,
           manifestHash: governed.manifestHash,
@@ -635,6 +712,7 @@ export async function sendModuleSecureSigningLink(
     tenantId: args.tenantId,
     sessionId: session.sessionId,
     smsStatus,
+    client: args.client,
   });
 
   const smsDeliveryStatus = toLegacyDeliveryStatus(smsStatus);
