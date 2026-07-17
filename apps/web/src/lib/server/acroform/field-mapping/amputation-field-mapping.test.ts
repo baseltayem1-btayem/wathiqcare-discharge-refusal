@@ -212,6 +212,26 @@ test("buildAmputationFieldAddressedValues falls back to context physician name a
   );
 });
 
+test("buildAmputationFieldAddressedValues supports alternate designation keys and never uses email", () => {
+  const values = buildAmputationFieldAddressedValues({
+    doctorCompletionValues: {
+      designation: "Consultant Surgeon / استشاري جراحة",
+    },
+    physicianSignatureDataUrl: undefined,
+    patientSignatureDataUrl: undefined,
+    physicianName: "Dr. Ahmed",
+    physicianSpecialty: "physician@example.com",
+    patientName: "Najib Al-Rashid",
+    mrn: "IMC-2026-02000",
+    dob: "1985-03-15",
+    signedAt: null,
+  });
+
+  const designation = (values.doctor_delegate_designation as { kind: "text"; value: string }).value;
+  assert.equal(designation, "Consultant Surgeon / استشاري جراحة");
+  assert.ok(!designation.includes("@"), "Designation must never be an email address");
+});
+
 test("buildAmputationFieldAddressedValues passes physician signature to both language targets", () => {
   const signatureDataUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=";
   const values = buildAmputationFieldAddressedValues({

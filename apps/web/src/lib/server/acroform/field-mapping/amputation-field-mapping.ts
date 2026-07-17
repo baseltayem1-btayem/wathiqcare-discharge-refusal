@@ -257,8 +257,17 @@ export function buildAmputationFieldAddressedValues(
   // the authenticated session name (which may fall back to email) is only a
   // fallback so the field is never blank when the doctor has completed it.
   const printablePhysicianName = asString(doctorCompletionValues.physician_name) ?? physicianName;
+
+  // The physician-entered designation is primary; support the canonical mapping
+  // key and a small set of legacy/alternate keys. Never use an email address as
+  // a printable designation.
+  const rawDesignation =
+    asString(doctorCompletionValues.physician_designation) ??
+    asString(doctorCompletionValues.designation) ??
+    asString(doctorCompletionValues.doctor_designation) ??
+    physicianSpecialty;
   const printablePhysicianDesignation =
-    asString(doctorCompletionValues.physician_designation) ?? physicianSpecialty;
+    rawDesignation && !rawDesignation.includes("@") ? rawDesignation : physicianSpecialty;
 
   setValue(values, "doctor_delegate_name", text(printablePhysicianName));
   setValue(values, "doctor_delegate_designation", text(printablePhysicianDesignation));

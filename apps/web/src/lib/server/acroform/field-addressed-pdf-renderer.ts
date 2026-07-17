@@ -7,13 +7,17 @@
  * actions remain.
  */
 
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
 import type { Browser } from "puppeteer";
 import { PDFArray, PDFDict, PDFDocument, PDFName, StandardFonts, rgb } from "pdf-lib";
 import { isArabicText, normalizeArabicText } from "@/lib/pdf-engine/core/pdf-rtl";
 import type { AcroFormTemplateManifest } from "./field-addressed-template-manifest";
 import { parseWidgetRect } from "./field-addressed-template-manifest";
+import {
+  buildInlinePdfFontFaceCss,
+  buildOverlayPrepareScript,
+  extractCoverageTestStrings,
+  resolveFieldFitSpec,
+} from "./field-addressed-overlay-helpers";
 
 export type FieldAddressedRenderValue =
   | { kind: "text"; value: string }
@@ -66,44 +70,6 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function buildInlinePdfFontFaceCss(): string {
-  const candidates = [
-    path.join("@fontsource", "ibm-plex-sans-arabic", "files", "ibm-plex-sans-arabic-arabic-400-normal.woff2"),
-    path.join("@fontsource", "ibm-plex-sans-arabic", "files", "ibm-plex-sans-arabic-arabic-700-normal.woff2"),
-    path.join("@fontsource", "tajawal", "files", "tajawal-arabic-400-normal.woff2"),
-    path.join("@fontsource", "tajawal", "files", "tajawal-arabic-700-normal.woff2"),
-  ];
-
-  const resolveBase64 = (relativePath: string): string => {
-    const absoluteCandidates = [
-      path.join(process.cwd(), "node_modules", relativePath),
-      path.join(process.cwd(), "..", "..", "node_modules", relativePath),
-    ];
-    for (const candidate of absoluteCandidates) {
-      if (existsSync(candidate)) {
-        return readFileSync(candidate).toString("base64");
-      }
-    }
-    return "";
-  };
-
-  const [plex400, plex700, tajawal400, tajawal700] = candidates.map(resolveBase64);
-  const faces: string[] = [];
-  if (plex400) {
-    faces.push(`@font-face{font-family:"WathiqOverlaySans";src:url("data:font/woff2;base64,${plex400}") format("woff2");font-weight:400;font-style:normal;}`);
-  }
-  if (plex700) {
-    faces.push(`@font-face{font-family:"WathiqOverlaySans";src:url("data:font/woff2;base64,${plex700}") format("woff2");font-weight:700;font-style:normal;}`);
-  }
-  if (tajawal400) {
-    faces.push(`@font-face{font-family:"WathiqOverlayArabic";src:url("data:font/woff2;base64,${tajawal400}") format("woff2");font-weight:400;font-style:normal;}`);
-  }
-  if (tajawal700) {
-    faces.push(`@font-face{font-family:"WathiqOverlayArabic";src:url("data:font/woff2;base64,${tajawal700}") format("woff2");font-weight:700;font-style:normal;}`);
-  }
-  return faces.join("\n");
-}
-
 function buildTextOverlayHtml(args: {
   manifest: AcroFormTemplateManifest;
   values: Record<string, FieldAddressedRenderValue>;
@@ -139,12 +105,29 @@ function buildTextOverlayHtml(args: {
         const rawText = normalizeArabicText(value.value);
         if (!rawText) continue;
         const isArabic = isArabicText(rawText) || field.language === "AR";
-        const fontSize = Math.max(7, Math.min(11, cssHeight * 0.55));
+        const fitSpec = resolveFieldFitSpec({
+          fieldName: field.name,
+          cssHeight,
+          multiline: field.multiline === true,
+          autofit: field.autofit === true,
+          isArabic,
+        });
+        const fitAttrs = [
+          `data-fit="${fitSpec.mode}"`,
+          `data-min-font-size="${fitSpec.minFontSize}"`,
+          `data-max-font-size="${fitSpec.maxFontSize}"`,
+          `data-line-height="${fitSpec.lineHeight}"`,
+          fitSpec.maxLines !== undefined ? `data-max-lines="${fitSpec.maxLines}"` : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
         markup.push(`
           <div
             class="field-text ${isArabic ? "field-text-ar" : "field-text-en"}"
-            style="left:${cssLeft}px;top:${cssTop}px;width:${cssWidth}px;height:${cssHeight}px;font-size:${fontSize}px;"
+            style="left:${cssLeft}px;top:${cssTop}px;width:${cssWidth}px;height:${cssHeight}px;font-size:${fitSpec.maxFontSize}px;"
             dir="${isArabic ? "rtl" : "ltr"}"
+            lang="${isArabic ? "ar" : "en"}"
+            ${fitAttrs}
           >${escapeHtml(rawText)}</div>
         `);
       }
@@ -216,20 +199,35 @@ function buildTextOverlayHtml(args: {
   return { html, drawn: markup.length };
 }
 
-async function renderOverlayPng(browser: Browser, html: string, width: number, height: number): Promise<Buffer> {
+async function renderOverlayPng(
+  browser: Browser,
+  html: string,
+  width: number,
+  height: number,
+  values?: Record<string, FieldAddressedRenderValue>,
+): Promise<Buffer> {
   const page = await browser.newPage();
   try {
     await page.setViewport({ width: Math.ceil(width), height: Math.ceil(height), deviceScaleFactor: 1 });
     await page.setContent(html, { waitUntil: "load" });
     await page.emulateMediaType("screen");
-    await page.evaluate(async () => {
-      // Ensure the embedded Unicode Arabic and Latin fonts are decoded before
-      // the screenshot so mixed Arabic/Latin values render with glyphs, not
-      // fallback boxes or invisible letters.
-      await document.fonts.load('400 16px "WathiqOverlayArabic"');
-      await document.fonts.load('400 16px "WathiqOverlaySans"');
-      await document.fonts.ready;
-    });
+
+    const { arabic, latin } = values ? extractCoverageTestStrings(values) : { arabic: [], latin: [] };
+    const prepareScript = buildOverlayPrepareScript({ arabicStrings: arabic, latinStrings: latin });
+
+    await page.evaluate(prepareScript);
+
+    const overlayErrors =
+      (await page.evaluate(() => {
+        const errors = (window as { __overlayErrors?: string[] }).__overlayErrors;
+        return Array.isArray(errors) ? errors : [];
+      })) ?? [];
+
+    if (overlayErrors.length > 0) {
+      const diagnostics = overlayErrors.join("; ");
+      throw new Error(`Overlay rendering failed: ${diagnostics}`);
+    }
+
     return Buffer.from(
       await page.screenshot({
         type: "png",
@@ -321,7 +319,7 @@ async function drawTextOverlays(args: {
     const overlay = buildTextOverlayHtml({ manifest, values, pageIndex });
     if (!overlay.html) continue;
 
-    const pngBytes = await renderOverlayPng(browser, overlay.html, pageWidth, pageHeight);
+    const pngBytes = await renderOverlayPng(browser, overlay.html, pageWidth, pageHeight, values);
     const pngImage = await pdfDoc.embedPng(pngBytes);
     const page = pages[pageIndex];
     page.drawImage(pngImage, { x: 0, y: 0, width: pageWidth, height: pageHeight });

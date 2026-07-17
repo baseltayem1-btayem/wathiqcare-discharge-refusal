@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import path from "node:path";
 import fs from "node:fs";
+import { PNG } from "pngjs";
 import { PDFArray, PDFDocument, PDFName } from "pdf-lib";
 import type { Browser } from "puppeteer";
 import {
@@ -11,6 +12,8 @@ import {
   type AcroFormFilledDraftRequest,
 } from "@/lib/server/acroform/filled-draft-preview-service";
 import { getAcroFormTemplateDiagnostics } from "@/lib/server/acroform/acroform-diagnostics-service";
+import { launchOverlayBrowser } from "@/lib/server/imc-approved-pdf-template-engine";
+import { renderPdfPageToPng } from "@/lib/server/imc-approved-pdf-template-engine";
 
 // 1x1 transparent PNG
 const TINY_PNG_BASE64 =
@@ -401,5 +404,148 @@ test("renderAcroFormFilledDraftPreview renders each field at most once", async (
   for (const fieldName of result.summary.fieldsRendered) {
     assert.ok(!seen.has(fieldName), `Field ${fieldName} must not be rendered twice in the summary`);
     seen.add(fieldName);
+  }
+});
+
+test("renderAcroFormFilledDraftPreview rejects missing patient DOB", async () => {
+  const browser = createMockBrowser();
+  const pdfBytes = loadCanonicalAmputationPdf();
+  const request = buildValidRequest({ patientDisplay: { name: "SYNTHETIC PATIENT", mrn: "TEST-MRN-1135" } });
+
+  await assert.rejects(
+    async () =>
+      renderAcroFormFilledDraftPreview({
+        request,
+        browser,
+        canonicalPdfBytes: pdfBytes,
+        canonicalPdfHash: sha256Hex(pdfBytes),
+      }),
+    /Patient date of birth is required/,
+  );
+});
+
+test("renderAcroFormFilledDraftPreview normalizes DD/MM/YYYY DOB", async () => {
+  const browser = createMockBrowser();
+  const pdfBytes = loadCanonicalAmputationPdf();
+  const request = buildValidRequest({ patientDisplay: { name: "SYNTHETIC PATIENT", mrn: "TEST-MRN-1135", dob: "17/07/1985" } });
+
+  const result = await renderAcroFormFilledDraftPreview({
+    request,
+    browser,
+    canonicalPdfBytes: pdfBytes,
+    canonicalPdfHash: sha256Hex(pdfBytes),
+  });
+
+  assert.ok(result.summary.fieldsRendered.includes("date_of_birth"));
+});
+
+test("renderAcroFormFilledDraftPreview uses physician designation fallback and never uses email", async () => {
+  const browser = createMockBrowser();
+  const pdfBytes = loadCanonicalAmputationPdf();
+  const request = buildValidRequest({
+    doctorCompletionValues: {
+      ...buildValidRequest().doctorCompletionValues,
+      physician_designation: undefined,
+      designation: "Consultant Surgeon",
+    },
+    physicianContext: {
+      name: "physician@example.com",
+      designation: "Fallback Specialty",
+    },
+  });
+
+  const result = await renderAcroFormFilledDraftPreview({
+    request,
+    browser,
+    canonicalPdfBytes: pdfBytes,
+    canonicalPdfHash: sha256Hex(pdfBytes),
+  });
+
+  assert.ok(result.summary.fieldsRendered.includes("doctor_delegate_designation"));
+});
+
+function countNonWhitePixels(png: PNG, x1: number, y1: number, x2: number, y2: number): number {
+  let count = 0;
+  for (let y = Math.max(0, y1); y < Math.min(png.height, y2); y++) {
+    for (let x = Math.max(0, x1); x < Math.min(png.width, x2); x++) {
+      const idx = (png.width * y + x) * 4;
+      const r = png.data[idx];
+      const g = png.data[idx + 1];
+      const b = png.data[idx + 2];
+      const a = png.data[idx + 3];
+      // Treat any non-background (not fully white/transparent) pixel as ink.
+      if (a > 30 && (r < 250 || g < 250 || b < 250)) {
+        count++;
+      }
+    }
+  }
+  return count;
+}
+
+test("renderAcroFormFilledDraftPreview renders Arabic glyphs visibly on a real browser", async () => {
+  const browser = await launchOverlayBrowser();
+  const pdfBytes = loadCanonicalAmputationPdf();
+  const request = buildValidRequest({
+    doctorCompletionValues: {
+      ...buildValidRequest().doctorCompletionValues,
+      condition_description_ar: "اختبار WATHIQ رقم 006",
+    },
+  });
+
+  try {
+    const result = await renderAcroFormFilledDraftPreview({
+      request,
+      browser,
+      canonicalPdfBytes: pdfBytes,
+      canonicalPdfHash: sha256Hex(pdfBytes),
+    });
+
+    assert.ok(result.summary.fieldsRendered.includes("condition_description_ar"));
+
+    const pngBytes = await renderPdfPageToPng({ pdfBytes: result.bytes, pageIndex: 0, scale: 2 });
+    const png = PNG.sync.read(Buffer.from(pngBytes));
+
+    // condition_description_ar widget rect in PDF points: [338, 451, 560, 494]
+    // Page height is 792; CSS top = 792 - 451 = 341; height = 494 - 451 = 43; width = 560 - 338 = 222
+    // At scale 2 these map to pixels.
+    const fieldLeft = Math.round(338 * 2);
+    const fieldTop = Math.round(341 * 2);
+    const fieldWidth = Math.round(222 * 2);
+    const fieldHeight = Math.round(43 * 2);
+
+    // Arabic is RTL, so the first Arabic word "اختبار" appears on the right side
+    // of the box and the last word "رقم" appears left of the Latin digits.
+    const arabicRightRegion = {
+      x1: fieldLeft + Math.round(fieldWidth * 0.55),
+      y1: fieldTop + 4,
+      x2: fieldLeft + fieldWidth - 4,
+      y2: fieldTop + fieldHeight - 4,
+    };
+    const arabicLeftRegion = {
+      x1: fieldLeft + 4,
+      y1: fieldTop + 4,
+      x2: fieldLeft + Math.round(fieldWidth * 0.35),
+      y2: fieldTop + fieldHeight - 4,
+    };
+
+    const rightPixels = countNonWhitePixels(
+      png,
+      arabicRightRegion.x1,
+      arabicRightRegion.y1,
+      arabicRightRegion.x2,
+      arabicRightRegion.y2,
+    );
+    const leftPixels = countNonWhitePixels(
+      png,
+      arabicLeftRegion.x1,
+      arabicLeftRegion.y1,
+      arabicLeftRegion.x2,
+      arabicLeftRegion.y2,
+    );
+
+    assert.ok(rightPixels > 50, `Expected Arabic glyphs on right side of field, found ${rightPixels} ink pixels`);
+    assert.ok(leftPixels > 50, `Expected Arabic glyphs on left side of field, found ${leftPixels} ink pixels`);
+  } finally {
+    await browser.close();
   }
 });

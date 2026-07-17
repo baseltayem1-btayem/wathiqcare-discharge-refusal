@@ -33,8 +33,10 @@ export function parseAcroFormFilledDraftRequest(
 
   const patientName = readString(patientDisplayRecord?.name);
   const patientMrn = readString(patientDisplayRecord?.mrn);
+  const patientDob = readOptionalString(patientDisplayRecord?.dob);
   if (patientDisplayRecord && !patientName) missing.push("patientDisplay.name");
   if (patientDisplayRecord && !patientMrn) missing.push("patientDisplay.mrn");
+  if (patientDisplayRecord && !patientDob) missing.push("patientDisplay.dob");
 
   const physicianName = readString(physicianContextRecord?.name);
   if (physicianContextRecord && !physicianName) missing.push("physicianContext.name");
@@ -48,7 +50,7 @@ export function parseAcroFormFilledDraftRequest(
     patientDisplay: {
       name: patientName,
       mrn: patientMrn,
-      dob: readOptionalString(patientDisplayRecord?.dob),
+      dob: patientDob,
     },
     physicianContext: {
       name: physicianName,

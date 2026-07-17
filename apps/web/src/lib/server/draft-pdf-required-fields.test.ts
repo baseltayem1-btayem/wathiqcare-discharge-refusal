@@ -90,6 +90,22 @@ test("parseAcroFormFilledDraftRequest rejects missing physicianContext.name", ()
   assert.ok(missing.includes("physicianContext.name"));
 });
 
+test("parseAcroFormFilledDraftRequest rejects missing patientDisplay.dob", () => {
+  const { missing } = parseAcroFormFilledDraftRequest("imc-approved-amputation", {
+    ...VALID_BODY,
+    patientDisplay: { name: "SYNTHETIC PATIENT", mrn: "TEST-MRN-1135" },
+  });
+  assert.ok(missing.includes("patientDisplay.dob"));
+});
+
+test("parseAcroFormFilledDraftRequest rejects empty patientDisplay.dob", () => {
+  const { missing } = parseAcroFormFilledDraftRequest("imc-approved-amputation", {
+    ...VALID_BODY,
+    patientDisplay: { name: "SYNTHETIC PATIENT", mrn: "TEST-MRN-1135", dob: "   " },
+  });
+  assert.ok(missing.includes("patientDisplay.dob"));
+});
+
 test("createAcroFormFilledDraftPreview sends the canonical required fields", async () => {
   const captured: { url: string; init: RequestInit }[] = [];
   const originalFetch = globalThis.fetch;

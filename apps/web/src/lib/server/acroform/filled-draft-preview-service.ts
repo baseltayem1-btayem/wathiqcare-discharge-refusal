@@ -209,6 +209,10 @@ export async function renderAcroFormFilledDraftPreview(args: {
     throw new ApiError(409, "Canonical approved PDF hash mismatch.");
   }
 
+  if (!request.patientDisplay.dob) {
+    throw new ApiError(422, "Patient date of birth is required to generate a governed filled draft preview.");
+  }
+
   const values = buildFieldAddressedDraftValues({
     doctorCompletionValues: request.doctorCompletionValues,
     patientDisplay: request.patientDisplay,
@@ -290,6 +294,10 @@ export async function renderAcroFormPatientCopy(args: {
 
   if (canonicalPdfHash !== diagnostics.canonicalApprovedPdf?.sha256) {
     throw new ApiError(409, "Canonical approved PDF hash mismatch.");
+  }
+
+  if (!request.patientDisplay.dob) {
+    throw new ApiError(422, "Patient date of birth is required to generate a governed patient copy.");
   }
 
   const values = buildFieldAddressedPatientCopyValues({
