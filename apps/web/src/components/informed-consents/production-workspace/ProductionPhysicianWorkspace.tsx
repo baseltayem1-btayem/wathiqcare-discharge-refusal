@@ -73,6 +73,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     approveDraft,
     generateFilledDraftPreview,
     setFilledDraftReviewed,
+    setPdfViewerMode,
     send,
     sendDryRun,
   } = useProductionWorkspace(physician);
@@ -255,6 +256,8 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
             isAcroFormBacked={isAcroFormBacked}
             filledDraftStatus={state.filledDraftStatus}
             filledDraftReviewed={state.filledDraftReviewed}
+            viewerMode={state.pdfViewerMode}
+            onViewerModeChange={setPdfViewerMode}
             onGenerateFilledDraft={() => void generateFilledDraftPreview()}
             onMarkFilledDraftReviewed={() => setFilledDraftReviewed(true)}
             onOpenPreview={() => setPreviewOpen(true)}

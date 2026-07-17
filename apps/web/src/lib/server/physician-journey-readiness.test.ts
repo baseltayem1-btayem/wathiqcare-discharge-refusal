@@ -720,3 +720,65 @@ test("Approve Draft and Send remain blocked until preview is reviewed and draft 
   assert.equal(findItem(readyToSend, "draft_approved")?.status, "COMPLETE");
   assert.equal(readyToSend.sendReady, true);
 });
+
+test("AcroForm preview reviewed is driven by filledDraftReviewed, not raw previewReviewed", () => {
+  const readiness = computePhysicianJourneyReadiness({
+    ...baseArgs,
+    fieldMappingReadiness: mr1135FieldMapping,
+    doctorCompletionValues: completeMr1135DoctorValues,
+    physicianSignatureDataUrl: "data:image/png;base64,AAAA",
+    previewReviewed: true,
+    filledDraftStatus: "current",
+    filledDraftReviewed: false,
+  });
+
+  assert.equal(findItem(readiness, "preview_reviewed")?.status, "REQUIRED");
+  assert.equal(readiness.sendReady, false);
+});
+
+test("Stale filled draft invalidates prior review and approval", () => {
+  const readiness = computePhysicianJourneyReadiness({
+    ...baseArgs,
+    fieldMappingReadiness: mr1135FieldMapping,
+    doctorCompletionValues: completeMr1135DoctorValues,
+    physicianSignatureDataUrl: "data:image/png;base64,AAAA",
+    filledDraftStatus: "stale",
+    filledDraftReviewed: true,
+    draftApproved: true,
+  });
+
+  assert.equal(findItem(readiness, "filled_draft_current")?.status, "BLOCKED");
+  assert.equal(findItem(readiness, "preview_reviewed")?.status, "BLOCKED");
+  assert.equal(findItem(readiness, "draft_approved")?.status, "COMPLETE");
+  assert.equal(readiness.sendReady, false);
+});
+
+test("Send remains blocked when allowlist gate is missing", () => {
+  const readiness = computePhysicianJourneyReadiness({
+    ...baseArgs,
+    patient: { id: "patient-1", mrn: "MRN-000001", name: "Test Patient", dateOfBirth: "1985-03-15", languagePreference: "bilingual" as const },
+    encounter: { id: "enc-1", encounterId: "enc-1" },
+    selectedProcedure: {
+      id: "imc-approved-amputation",
+      titleEn: "Amputation",
+      titleAr: "",
+      procedureCode: "amputation",
+      categoryCode: "general-surgery",
+      specialty: "General Surgery",
+      anesthesiaRequired: true,
+    },
+    assembly: completeMr1135Assembly,
+    fieldMappingReadiness: mr1135FieldMapping,
+    doctorCompletionValues: completeMr1135DoctorValues,
+    physicianSignatureDataUrl: "data:image/png;base64,AAAA",
+    filledDraftStatus: "current",
+    filledDraftReviewed: true,
+    recipientMobile: "+966500000000",
+    recipientEmail: "patient@example.com",
+    sendEligibility: { allowlisted: false, reason: "Recipient is not in the pilot allowlist." },
+    draftApproved: true,
+  });
+
+  assert.equal(findItem(readiness, "recipient_allowlisted")?.status, "BLOCKED");
+  assert.equal(readiness.sendReady, false);
+});

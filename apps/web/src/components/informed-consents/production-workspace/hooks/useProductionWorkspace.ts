@@ -65,6 +65,7 @@ export type ProductionWorkspaceState = {
   filledDraftStatus: FilledDraftStatus;
   filledDraftError?: string;
   filledDraftReviewed: boolean;
+  pdfViewerMode: "source" | "filled";
   sentAt?: string;
   signingResult?: SecureSigningResult;
   dryRunSuccess?: boolean;
@@ -135,6 +136,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     physicianSignatureDataUrl: "",
     filledDraftStatus: "idle",
     filledDraftReviewed: false,
+    pdfViewerMode: "source",
     timeline: [],
     acknowledgedBlockers: new Set(),
     acknowledgedAlerts: new Set(),
@@ -159,6 +161,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
   const [sendLoading, setSendLoading] = useState(false);
   const [sendError, setSendError] = useState<string>("");
   const filledDraftAbortControllerRef = useRef<AbortController | null>(null);
+  const eligibilityRequestIdRef = useRef(0);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -181,6 +184,8 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       filledDraftStatus: "stale",
       filledDraftReviewed: false,
       filledDraftError: undefined,
+      previewReviewed: false,
+      draftApproved: false,
     };
   }
 
@@ -244,14 +249,21 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       }));
       return;
     }
+    const requestId = ++eligibilityRequestIdRef.current;
     try {
       const result = await checkSendEligibility({ mobileNumber: mobile, recipientEmail: email });
-      setState((s) => ({ ...s, sendEligibility: result }));
+      setState((s) => {
+        if (requestId !== eligibilityRequestIdRef.current) return s;
+        return { ...s, sendEligibility: result };
+      });
     } catch {
-      setState((s) => ({
-        ...s,
-        sendEligibility: { pilotEnabled: false, allowlisted: false, reason: "Unable to verify recipient eligibility." },
-      }));
+      setState((s) => {
+        if (requestId !== eligibilityRequestIdRef.current) return s;
+        return {
+          ...s,
+          sendEligibility: { pilotEnabled: false, allowlisted: false, reason: "Unable to verify recipient eligibility." },
+        };
+      });
     }
   }, []);
 
@@ -503,6 +515,10 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     setState((s) => ({ ...s, filledDraftReviewed: reviewed }));
   }, []);
 
+  const setPdfViewerMode = useCallback((mode: "source" | "filled") => {
+    setState((s) => ({ ...s, pdfViewerMode: mode }));
+  }, []);
+
   const generateFilledDraftPreview = useCallback(async () => {
     if (!state.assembly || !state.patient || !state.encounter) return;
 
@@ -570,6 +586,8 @@ export function useProductionWorkspace(physician: PhysicianContext) {
           filledDraftStatus: "current",
           filledDraftReviewed: false,
           filledDraftError: undefined,
+          draftApproved: false,
+          pdfViewerMode: "filled",
         };
       });
     } catch (error) {
@@ -830,6 +848,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         filledDraftStatus: "idle",
         filledDraftError: undefined,
         filledDraftReviewed: false,
+        pdfViewerMode: "source",
         dryRunSuccess: false,
         dryRunMessage: undefined,
         timeline: [],
@@ -851,9 +870,10 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     const educationReady = assemblyReady && (hasEducation || blockersResolved);
     const contactAvailable = hasContact(state.recipientMobile, state.recipientEmail);
     const allowlisted = Boolean(state.sendEligibility?.allowlisted);
-    const previewReviewed = state.previewReviewed;
-    const draftApproved = state.draftApproved;
     const fieldMappingReadiness = state.fieldMappingReadiness;
+    const isAcroFormBacked = Boolean(fieldMappingReadiness?.acroForm);
+    const previewReviewed = isAcroFormBacked ? state.filledDraftReviewed : state.previewReviewed;
+    const draftApproved = state.draftApproved;
     const fieldMappingVerified = Boolean(
       fieldMappingReadiness?.hasMapping && fieldMappingReadiness.verificationStatus === "VERIFIED",
     );
@@ -1024,6 +1044,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     approveDraft,
     generateFilledDraftPreview,
     setFilledDraftReviewed,
+    setPdfViewerMode,
     verifyFieldMapping,
     acknowledgeBlocker,
     acknowledgeAlert,

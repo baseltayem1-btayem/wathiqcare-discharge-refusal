@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 import { isAssemblyApprovedPdfSourceVerified, resolveAssemblyApprovedPdfUrl, resolveAssemblyPatientCopyPdfUrl } from "../../utils/approvedPdfSource";
 
 import { CheckCircle2, ExternalLink, Eye, FileCheck2, FileText, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
@@ -11,8 +10,13 @@ import { EmptyState } from "./EmptyState";
 import { ErrorState } from "./ErrorState";
 import { LoadingState } from "./LoadingState";
 import { PdfObjectEmbedViewer } from "../PdfObjectEmbedViewer";
+import {
+  isFilledDraftReviewable,
+  type FilledDraftStatus,
+} from "../../utils/pdfViewerMode";
 
 type WorkspaceBadgeTone = "blue" | "green" | "gold" | "slate" | "red";
+type ViewerMode = "source" | "filled";
 
 interface ApprovedPdfViewerProps {
   assembly?: ClinicalKnowledgeAssembly;
@@ -24,8 +28,10 @@ interface ApprovedPdfViewerProps {
   draftPdfLoading?: boolean;
   draftPdfError?: string;
   isAcroFormBacked?: boolean;
-  filledDraftStatus?: "idle" | "loading" | "current" | "stale" | "error";
+  filledDraftStatus?: FilledDraftStatus;
   filledDraftReviewed?: boolean;
+  viewerMode?: ViewerMode;
+  onViewerModeChange?: (mode: ViewerMode) => void;
   onGenerateFilledDraft?: () => void;
   onMarkFilledDraftReviewed?: () => void;
 }
@@ -42,6 +48,8 @@ export function ApprovedPdfViewer({
   isAcroFormBacked = false,
   filledDraftStatus = "idle",
   filledDraftReviewed = false,
+  viewerMode = "source",
+  onViewerModeChange,
   onGenerateFilledDraft,
   onMarkFilledDraftReviewed,
 }: ApprovedPdfViewerProps) {
@@ -50,7 +58,10 @@ export function ApprovedPdfViewer({
   const approvedPdfUrl = resolveAssemblyApprovedPdfUrl(assembly);
   const patientCopyPdfUrl = resolveAssemblyPatientCopyPdfUrl(assembly);
   const hasApprovedPdfSource = isAssemblyApprovedPdfSourceVerified(assembly);
-  const [viewerMode, setViewerMode] = useState<"source" | "filled">("source");
+
+  const setViewerMode = (mode: ViewerMode) => {
+    onViewerModeChange?.(mode);
+  };
 
   const sourceTitle = lang === "ar" ? "المصدر المعتمد" : "Approved Source";
   const filledTitle = lang === "ar" ? "معاينة النموذج المعبأ" : "Filled Draft Preview";
@@ -276,7 +287,7 @@ export function ApprovedPdfViewer({
                     <Button
                       variant={filledDraftReviewed ? "outline" : "default"}
                       size="sm"
-                      disabled={filledDraftReviewed || filledDraftStatus !== "current" || !draftPdfUrl}
+                      disabled={!isFilledDraftReviewable(filledDraftStatus, draftPdfUrl, filledDraftReviewed)}
                       className="rounded-xl"
                       onClick={onMarkFilledDraftReviewed}
                     >
