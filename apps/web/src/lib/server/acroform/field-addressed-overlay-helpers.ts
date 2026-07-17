@@ -173,12 +173,16 @@ export function buildOverlayPrepareScript(args: {
         if (mode === "single") {
           // Measure as a single unwrapped line so the width check is accurate.
           element.style.whiteSpace = "nowrap";
-          // Binary search the largest font size that does not overflow horizontally.
+          // Identity fields must remain legible for long legal names; allow the
+          // rendered width to use the full box (including padding band) rather
+          // than the strict content area. Non-identity fields respect padding.
+          const isIdentityField = element.getAttribute("data-identity") === "true";
+          const widthLimit = isIdentityField ? element.clientWidth : availableWidth;
           while (high - low > 0.25) {
             const mid = (low + high) / 2;
             element.style.fontSize = mid + "px";
             // Force a layout flush.
-            const overflow = element.scrollWidth > element.clientWidth;
+            const overflow = element.scrollWidth > widthLimit;
             if (overflow) {
               high = mid;
             } else {
@@ -282,7 +286,7 @@ export function buildInlinePdfFontFaceCss(): string {
   return faces.join("\n");
 }
 
-const IDENTITY_FIELD_NAMES = new Set([
+export const IDENTITY_FIELD_NAMES = new Set([
   "patient_name",
   "mrn",
   "date_of_birth",

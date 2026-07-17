@@ -16,8 +16,17 @@ import {
   buildInlinePdfFontFaceCss,
   buildOverlayPrepareScript,
   extractCoverageTestStrings,
+  IDENTITY_FIELD_NAMES,
   resolveFieldFitSpec,
 } from "./field-addressed-overlay-helpers";
+import {
+  GOVERNED_OVERLAY_COLOR,
+  GOVERNED_OVERLAY_FONT_WEIGHT,
+  GOVERNED_OVERLAY_HORIZONTAL_PADDING_PT,
+  GOVERNED_OVERLAY_IDENTITY_FONT_WEIGHT,
+  GOVERNED_OVERLAY_OPACITY,
+  GOVERNED_OVERLAY_VERTICAL_PADDING_PT,
+} from "./governed-overlay-style";
 
 export type FieldAddressedRenderValue =
   | { kind: "text"; value: string }
@@ -105,6 +114,7 @@ function buildTextOverlayHtml(args: {
         const rawText = normalizeArabicText(value.value);
         if (!rawText) continue;
         const isArabic = isArabicText(rawText) || field.language === "AR";
+        const isIdentity = IDENTITY_FIELD_NAMES.has(field.name);
         const fitSpec = resolveFieldFitSpec({
           fieldName: field.name,
           cssHeight,
@@ -118,12 +128,15 @@ function buildTextOverlayHtml(args: {
           `data-max-font-size="${fitSpec.maxFontSize}"`,
           `data-line-height="${fitSpec.lineHeight}"`,
           fitSpec.maxLines !== undefined ? `data-max-lines="${fitSpec.maxLines}"` : "",
+          isIdentity ? "data-identity=\"true\"" : "",
         ]
           .filter(Boolean)
           .join(" ");
+        const langClass = isArabic ? "field-text-ar" : "field-text-en";
+        const identityClass = isIdentity ? "field-text-identity" : "";
         markup.push(`
           <div
-            class="field-text ${isArabic ? "field-text-ar" : "field-text-en"}"
+            class="field-text ${langClass} ${identityClass}"
             style="left:${cssLeft}px;top:${cssTop}px;width:${cssWidth}px;height:${cssHeight}px;font-size:${fitSpec.maxFontSize}px;"
             dir="${isArabic ? "rtl" : "ltr"}"
             lang="${isArabic ? "ar" : "en"}"
@@ -159,8 +172,10 @@ function buildTextOverlayHtml(args: {
           .field-text {
             position: absolute;
             overflow: hidden;
-            padding: 1px 2px;
-            color: #0d2c57;
+            padding: ${GOVERNED_OVERLAY_VERTICAL_PADDING_PT}px ${GOVERNED_OVERLAY_HORIZONTAL_PADDING_PT}px;
+            color: ${GOVERNED_OVERLAY_COLOR};
+            font-weight: ${GOVERNED_OVERLAY_FONT_WEIGHT};
+            opacity: ${GOVERNED_OVERLAY_OPACITY};
             line-height: 1.25;
             white-space: pre-wrap;
             word-break: normal;
@@ -177,12 +192,16 @@ function buildTextOverlayHtml(args: {
             direction: rtl;
             unicode-bidi: plaintext;
           }
+          .field-text-identity {
+            font-weight: ${GOVERNED_OVERLAY_IDENTITY_FONT_WEIGHT};
+          }
           .field-checkbox {
             position: absolute;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #0d2c57;
+            color: ${GOVERNED_OVERLAY_COLOR};
+            opacity: ${GOVERNED_OVERLAY_OPACITY};
           }
           .field-checkbox svg {
             width: 70%;
@@ -251,12 +270,119 @@ function decodeSignatureImageDataUrl(value: string): { mimeType: "image/png" | "
   };
 }
 
+type RecoloredSignature = { bytes: Uint8Array; mimeType: "image/png" };
+
+/**
+ * Recolor a signature image to the governed overlay blue while preserving
+ * transparency, original shape, aspect ratio, and stroke detail. Pixels that
+ * are not part of the signature stroke remain transparent (or become
+ * transparent for light JPEG backgrounds).
+ */
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const clean = hex.replace("#", "");
+  return {
+    r: parseInt(clean.slice(0, 2), 16),
+    g: parseInt(clean.slice(2, 4), 16),
+    b: parseInt(clean.slice(4, 6), 16),
+  };
+}
+
+async function recolorSignatureToBlue(args: {
+  browser: Browser;
+  imageDataUrl: string;
+}): Promise<RecoloredSignature | null> {
+  const { r: blueR, g: blueG, b: blueB } = hexToRgb(GOVERNED_OVERLAY_COLOR);
+  const page = await args.browser.newPage();
+  try {
+    const recoloredDataUrl = await page.evaluate(
+({ imageDataUrl, blueR, blueG, blueB }) => {
+        return new Promise<string>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              reject(new Error("canvas context unavailable"));
+              return;
+            }
+            ctx.drawImage(img, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            // Detect whether the source has meaningful transparency. JPEG
+            // signatures are opaque; PNG signatures from the workspace canvas
+            // have transparent backgrounds.
+            let hasTransparency = false;
+            for (let i = 3; i < data.length; i += 4) {
+              if (data[i] < 250) {
+                hasTransparency = true;
+                break;
+              }
+            }
+
+            for (let i = 0; i < data.length; i += 4) {
+              const r = data[i];
+              const g = data[i + 1];
+              const b = data[i + 2];
+              const a = data[i + 3];
+
+              if (hasTransparency) {
+                // PNG path: preserve alpha, replace stroke color with blue.
+                if (a > 30) {
+                  data[i] = blueR;
+                  data[i + 1] = blueG;
+                  data[i + 2] = blueB;
+                }
+              } else {
+                // JPEG path: treat dark pixels as stroke with alpha derived
+                // from luminance. Light background pixels become transparent.
+                const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+                const backgroundThreshold = 245;
+                if (luminance < backgroundThreshold) {
+                  const strokeAlpha = Math.min(255, Math.round((backgroundThreshold - luminance) / backgroundThreshold * 255));
+                  data[i] = blueR;
+                  data[i + 1] = blueG;
+                  data[i + 2] = blueB;
+                  data[i + 3] = strokeAlpha;
+                } else {
+                  data[i + 3] = 0;
+                }
+              }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+            resolve(canvas.toDataURL("image/png"));
+          };
+          img.onerror = () => reject(new Error("signature image load failed"));
+          img.src = imageDataUrl;
+        });
+      },
+      {
+        imageDataUrl: args.imageDataUrl,
+        blueR,
+        blueG,
+        blueB,
+      },
+    );
+
+    const base64 = recoloredDataUrl.split(",")[1];
+    return { bytes: Uint8Array.from(Buffer.from(base64, "base64")), mimeType: "image/png" };
+  } catch {
+    return null;
+  } finally {
+    await page.close();
+  }
+}
+
 async function drawSignatures(args: {
   pdfDoc: PDFDocument;
   manifest: AcroFormTemplateManifest;
   values: Record<string, FieldAddressedRenderValue>;
+  browser: Browser;
 }): Promise<string[]> {
-  const { pdfDoc, manifest, values } = args;
+  const { pdfDoc, manifest, values, browser } = args;
   const drawn: string[] = [];
   const pages = pdfDoc.getPages();
 
@@ -267,10 +393,13 @@ async function drawSignatures(args: {
     const decoded = decodeSignatureImageDataUrl(value.imageDataUrl);
     if (!decoded) continue;
 
+    const recolored = await recolorSignatureToBlue({ browser, imageDataUrl: value.imageDataUrl });
     const img =
-      decoded.mimeType === "image/png"
-        ? await pdfDoc.embedPng(decoded.bytes)
-        : await pdfDoc.embedJpg(decoded.bytes);
+      recolored?.mimeType === "image/png"
+        ? await pdfDoc.embedPng(recolored.bytes)
+        : decoded.mimeType === "image/png"
+          ? await pdfDoc.embedPng(decoded.bytes)
+          : await pdfDoc.embedJpg(decoded.bytes);
 
     for (const widget of field.widgets) {
       const pageIndex = widget.page - 1;
@@ -445,7 +574,7 @@ export async function renderFieldAddressedOverlays(args: {
     browser,
   });
 
-  const signaturesRendered = await drawSignatures({ pdfDoc, manifest, values });
+  const signaturesRendered = await drawSignatures({ pdfDoc, manifest, values, browser });
   const checkboxesRendered = fieldsRendered.filter((name) => {
     const field = manifest.fields.find((f) => f.name === name);
     return field?.type === "/Btn";
