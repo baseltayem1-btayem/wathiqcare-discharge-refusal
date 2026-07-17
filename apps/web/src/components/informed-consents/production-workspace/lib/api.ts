@@ -114,6 +114,109 @@ export type ConsentFieldMappingReadiness = {
   } | null;
 };
 
+function readOptionalString(value: unknown): string | undefined {
+  return typeof value === "string" ? value.trim() : undefined;
+}
+
+function parseAcroFormReadiness(value: unknown): ConsentFieldMappingReadiness["acroForm"] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const record = value as Record<string, unknown>;
+
+  const identity = record.canonicalTemplateIdentity;
+  if (!identity || typeof identity !== "object" || Array.isArray(identity)) return undefined;
+  const identityRecord = identity as Record<string, unknown>;
+
+  const manifest = record.manifestState;
+  if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) return undefined;
+  const manifestRecord = manifest as Record<string, unknown>;
+
+  const readStringField = (target: Record<string, unknown>, key: string): string =>
+    typeof target[key] === "string" ? String(target[key]).trim() : "";
+
+  const readBooleanField = (target: Record<string, unknown>, key: string): boolean =>
+    Boolean(target[key]);
+
+  const parseSignatureTarget = (item: unknown): { key: string; labelEn: string; labelAr?: string; role: string } | null => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+    const r = item as Record<string, unknown>;
+    const key = readStringField(r, "key");
+    const labelEn = readStringField(r, "labelEn");
+    const role = readStringField(r, "role");
+    if (!key || !labelEn) return null;
+    return {
+      key,
+      labelEn,
+      labelAr: readOptionalString(r.labelAr),
+      role,
+    };
+  };
+
+  const parseSemanticField = (item: unknown): {
+    key: string;
+    labelEn: string;
+    labelAr?: string;
+    section?: string;
+    type: string;
+    required: boolean;
+    requiredWhen?: string;
+    role: string;
+  } | null => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+    const r = item as Record<string, unknown>;
+    const key = readStringField(r, "key");
+    const labelEn = readStringField(r, "labelEn");
+    const type = readStringField(r, "type");
+    const role = readStringField(r, "role");
+    if (!key || !labelEn || !type) return null;
+    return {
+      key,
+      labelEn,
+      labelAr: readOptionalString(r.labelAr),
+      section: readOptionalString(r.section),
+      type,
+      required: readBooleanField(r, "required"),
+      requiredWhen: readOptionalString(r.requiredWhen),
+      role,
+    };
+  };
+
+  const parseArray = <T>(
+    arr: unknown,
+    parser: (item: unknown) => T | null,
+  ): T[] => {
+    if (!Array.isArray(arr)) return [];
+    return arr.map(parser).filter((item): item is T => item !== null);
+  };
+
+  return {
+    canonicalTemplateIdentity: {
+      formId: readStringField(identityRecord, "formId"),
+      slug: readStringField(identityRecord, "slug"),
+      titleEn: readStringField(identityRecord, "titleEn"),
+      titleAr: readOptionalString(identityRecord.titleAr),
+      templateCode: readOptionalString(identityRecord.templateCode),
+      layoutFamily: readStringField(identityRecord, "layoutFamily"),
+    },
+    manifestState: {
+      present: readBooleanField(manifestRecord, "present"),
+      hashMatches: readBooleanField(manifestRecord, "hashMatches"),
+      hash: typeof manifestRecord.hash === "string" ? manifestRecord.hash : null,
+      status: manifestRecord.status === "READY" || manifestRecord.status === "NOT_READY" ? manifestRecord.status : "NOT_READY",
+      blockers: Array.isArray(manifestRecord.blockers)
+        ? manifestRecord.blockers.map(String)
+        : [],
+    },
+    semanticPhysicianFields: parseArray(record.semanticPhysicianFields, parseSemanticField),
+    patientSignatureTargets: parseArray(record.patientSignatureTargets, parseSignatureTarget),
+    physicianSignatureTargets: parseArray(record.physicianSignatureTargets, parseSignatureTarget),
+    interpreterApplicable: readBooleanField(record, "interpreterApplicable"),
+    anesthesiaApplicable: readBooleanField(record, "anesthesiaApplicable"),
+    educationRequired: readBooleanField(record, "educationRequired"),
+    substituteDecisionMakerApplicable: readBooleanField(record, "substituteDecisionMakerApplicable"),
+    witnessApplicable: readBooleanField(record, "witnessApplicable"),
+  };
+}
+
 export async function fetchConsentFieldMappingReadiness(formId: string): Promise<ConsentFieldMappingReadiness> {
   const response = await fetch(
     `/api/modules/informed-consents/forms/${encodeURIComponent(formId)}/field-mapping`,
@@ -162,6 +265,7 @@ export async function fetchConsentFieldMappingReadiness(formId: string): Promise
               : undefined,
         }
       : null,
+    acroForm: parseAcroFormReadiness(payload.acroForm),
   };
 }
 

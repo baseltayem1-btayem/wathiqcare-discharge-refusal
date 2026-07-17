@@ -6,6 +6,7 @@ import { Button, Card, CardContent } from "@/components/design-system";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { PhysicianContext } from "./types";
 import { useProductionWorkspace } from "./hooks/useProductionWorkspace";
+import { computeSupportsFilledDraftPreview } from "./utils/filledDraftPreviewCapability";
 import { PatientEncounterSelector } from "./components/PatientEncounterSelector";
 import { ConsentPreviewModal } from "./components/ConsentPreviewModal";
 import { SendConfirmationModal } from "./components/SendConfirmationModal";
@@ -102,19 +103,26 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
   const hasApprovedPdfSource = isAssemblyApprovedPdfSourceVerified(state.assembly);
   const isAcroFormBacked = Boolean(state.fieldMappingReadiness?.acroForm);
 
+  // Governed capability for the AcroForm filled-draft preview card.
+  // Derived from the same canonical prerequisites required by generateFilledDraftPreview:
+  // a verified approved PDF source, a verified field mapping, and a verified READY manifest hash.
+  const supportsFilledDraftPreview = computeSupportsFilledDraftPreview({
+    fieldMappingReadiness: state.fieldMappingReadiness,
+    hasApprovedPdfSource,
+    fieldMappingVerified: readiness.fieldMappingVerified,
+  });
+
   const canGenerateFilledPreview =
-    isAcroFormBacked &&
+    supportsFilledDraftPreview &&
     readiness.patientReady &&
     readiness.encounterReady &&
     readiness.assemblyReady &&
-    hasApprovedPdfSource &&
-    readiness.fieldMappingVerified &&
     readiness.doctorCompletionReady &&
     readiness.anesthesiaMappingReady &&
     readiness.patientSignatureMapped &&
     state.filledDraftStatus !== "loading";
 
-  const effectivePreviewReviewed = isAcroFormBacked ? state.filledDraftReviewed : state.previewReviewed;
+  const effectivePreviewReviewed = supportsFilledDraftPreview ? state.filledDraftReviewed : state.previewReviewed;
 
   const sendReason = (() => {
     if (sendLoading) return "Sending…";
@@ -194,7 +202,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
               disabled={sendLoading}
             />
 
-            {isAcroFormBacked ? (
+            {supportsFilledDraftPreview ? (
               <WorkspaceCard className="overflow-hidden">
                 <WorkspaceCardHeader
                   icon={<FileText className="size-5" />}
