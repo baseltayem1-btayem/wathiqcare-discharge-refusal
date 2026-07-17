@@ -7,8 +7,8 @@ import { isAcroFormBackedTemplate } from "@/lib/server/acroform/acroform-templat
 import {
   renderAcroFormFilledDraftPreview,
   sha256Hex,
-  type AcroFormFilledDraftRequest,
 } from "@/lib/server/acroform/filled-draft-preview-service";
+import { parseAcroFormFilledDraftRequest } from "@/lib/server/draft-pdf-request-parser";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -63,65 +63,6 @@ async function readPublicPdf(publicUrl: string): Promise<Uint8Array | undefined>
     }
   }
   return undefined;
-}
-
-function readOptionalString(value: unknown): string | undefined {
-  return typeof value === "string" ? value.trim() : undefined;
-}
-
-function readOptionalRecord(value: unknown): Record<string, unknown> | undefined {
-  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
-}
-
-function parseAcroFormFilledDraftRequest(
-  formId: string,
-  body: Record<string, unknown>,
-): { request: AcroFormFilledDraftRequest; missing: string[] } {
-  const approvedPdfUrl = readString(body.approvedPdfUrl) || readString(body.pdfUrl);
-  const doctorCompletionValues = readOptionalRecord(body.doctorCompletionValues) ?? readOptionalRecord(body.values) ?? {};
-  const patientDisplayRecord = readOptionalRecord(body.patientDisplay);
-  const physicianContextRecord = readOptionalRecord(body.physicianContext);
-  const encounterReferenceRecord = readOptionalRecord(body.encounterReference);
-  const manifestHash = readString(body.manifestHash);
-
-  const missing: string[] = [];
-  if (!approvedPdfUrl) missing.push("approvedPdfUrl");
-  if (!patientDisplayRecord) missing.push("patientDisplay");
-  if (!physicianContextRecord) missing.push("physicianContext");
-  if (!manifestHash) missing.push("manifestHash");
-
-  const patientName = readString(patientDisplayRecord?.name);
-  const patientMrn = readString(patientDisplayRecord?.mrn);
-  if (patientDisplayRecord && !patientName) missing.push("patientDisplay.name");
-  if (patientDisplayRecord && !patientMrn) missing.push("patientDisplay.mrn");
-
-  const physicianName = readString(physicianContextRecord?.name);
-  if (physicianContextRecord && !physicianName) missing.push("physicianContext.name");
-
-  const request: AcroFormFilledDraftRequest = {
-    formId,
-    approvedPdfUrl,
-    doctorCompletionValues,
-    patientDisplay: {
-      name: patientName,
-      mrn: patientMrn,
-      dob: readOptionalString(patientDisplayRecord?.dob),
-    },
-    physicianContext: {
-      name: physicianName,
-      designation: readOptionalString(physicianContextRecord?.designation) ?? readOptionalString(physicianContextRecord?.specialty),
-    },
-    encounterReference: encounterReferenceRecord
-      ? {
-          id: readOptionalString(encounterReferenceRecord.id),
-          encounterId: readOptionalString(encounterReferenceRecord.encounterId),
-        }
-      : undefined,
-    manifestHash,
-    correlationId: readOptionalString(body.correlationId),
-  };
-
-  return { request, missing };
 }
 
 export async function POST(request: NextRequest, { params }: RouteContext) {

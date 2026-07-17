@@ -1,12 +1,11 @@
 "use client";
 
-import { isAssemblyApprovedPdfSourceVerified, resolveAssemblyApprovedPdfUrl } from "./utils/approvedPdfSource";
-import { useEffect, useRef, useState } from "react";
+import { isAssemblyApprovedPdfSourceVerified } from "./utils/approvedPdfSource";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/design-system";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { PhysicianContext } from "./types";
 import { useProductionWorkspace } from "./hooks/useProductionWorkspace";
-import { createDoctorCompletedDraftPdfPreview } from "./lib/api";
 import { PatientEncounterSelector } from "./components/PatientEncounterSelector";
 import { ConsentPreviewModal } from "./components/ConsentPreviewModal";
 import { SendConfirmationModal } from "./components/SendConfirmationModal";
@@ -79,10 +78,6 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
   const [activePage, setActivePage] = useState<WorkspacePageId>("workspace");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [sendModalOpen, setSendModalOpen] = useState(false);
-  const [draftPdfUrl, setDraftPdfUrl] = useState<string>();
-  const [draftPdfLoading, setDraftPdfLoading] = useState(false);
-  const [draftPdfError, setDraftPdfError] = useState<string>();
-  const draftPdfUrlRef = useRef<string | undefined>(undefined);
 
   function handleApprove() {
     approveDraft();
@@ -103,108 +98,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
   }
 
   const hasApprovedPdfSource = isAssemblyApprovedPdfSourceVerified(state.assembly);
-
-
   const isAcroFormBacked = Boolean(state.fieldMappingReadiness?.acroForm);
-
-  useEffect(() => {
-    // AcroForm-backed forms use the explicit Generate Filled Preview action.
-    // The coordinate-based preview state is not used; any existing object URL
-    // is revoked by the transition cleanup effect below.
-    if (isAcroFormBacked) {
-      return;
-    }
-
-    const formId = state.fieldMappingReadiness?.formId || state.assembly?.consentForm?.id || "";
-    const approvedPdfUrl = resolveAssemblyApprovedPdfUrl(state.assembly);
-    const values = state.doctorCompletionValues || {};
-    const hasDoctorValues = Object.values(values).some((value) => String(value || "").trim().length > 0);
-    const hasPhysicianSignature = Boolean(state.physicianSignatureDataUrl.trim());
-
-    if (!formId || !approvedPdfUrl || (!hasDoctorValues && !hasPhysicianSignature)) {
-      const resetTimer = window.setTimeout(() => {
-        setDraftPdfLoading(false);
-        setDraftPdfError(undefined);
-        setDraftPdfUrl((previous) => {
-          if (previous) URL.revokeObjectURL(previous);
-          draftPdfUrlRef.current = undefined;
-          return undefined;
-        });
-      }, 0);
-      return () => {
-        window.clearTimeout(resetTimer);
-      };
-    }
-
-    const controller = new AbortController();
-    let disposed = false;
-    const timer = window.setTimeout(() => {
-      setDraftPdfLoading(true);
-      setDraftPdfError(undefined);
-
-      createDoctorCompletedDraftPdfPreview(
-        {
-          formId,
-          approvedPdfUrl,
-          doctorCompletionValues: values,
-          physicianSignatureDataUrl: state.physicianSignatureDataUrl,
-        },
-        controller.signal,
-      )
-        .then((url) => {
-          if (disposed || controller.signal.aborted) {
-            URL.revokeObjectURL(url);
-            return;
-          }
-          setDraftPdfUrl((previous) => {
-            if (previous) URL.revokeObjectURL(previous);
-            draftPdfUrlRef.current = url;
-            return url;
-          });
-        })
-        .catch((error) => {
-          if (disposed || controller.signal.aborted) return;
-          setDraftPdfError(
-            error instanceof Error
-              ? error.message
-              : "Doctor-completed draft PDF preview could not be generated.",
-          );
-        })
-        .finally(() => {
-          if (!disposed && !controller.signal.aborted) {
-            setDraftPdfLoading(false);
-          }
-        });
-    }, 650);
-
-    return () => {
-      disposed = true;
-      window.clearTimeout(timer);
-      controller.abort();
-    };
-  }, [
-    state.assembly,
-    state.fieldMappingReadiness?.formId,
-    state.doctorCompletionValues,
-    state.physicianSignatureDataUrl,
-    isAcroFormBacked,
-  ]);
-
-  // Revoke any coordinate-based preview object URL when switching to an
-  // AcroForm-backed form and on unmount. State is ignored while AcroForm-backed
-  // and will be reset when the coordinate-based effect next runs.
-  useEffect(() => {
-    if (isAcroFormBacked && draftPdfUrlRef.current) {
-      URL.revokeObjectURL(draftPdfUrlRef.current);
-      draftPdfUrlRef.current = undefined;
-    }
-    return () => {
-      if (draftPdfUrlRef.current) {
-        URL.revokeObjectURL(draftPdfUrlRef.current);
-        draftPdfUrlRef.current = undefined;
-      }
-    };
-  }, [isAcroFormBacked]);
 
   const sendReason = (() => {
     if (sendLoading) return "Sending…";
@@ -291,9 +185,9 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
             assembly={state.assembly}
             loading={assemblyLoading}
             reviewed={state.previewReviewed}
-            draftPdfUrl={isAcroFormBacked ? state.filledDraftPdfUrl : draftPdfUrl}
-            draftPdfLoading={isAcroFormBacked ? state.filledDraftStatus === "loading" : draftPdfLoading}
-            draftPdfError={isAcroFormBacked ? state.filledDraftError : draftPdfError}
+            draftPdfUrl={state.filledDraftPdfUrl}
+            draftPdfLoading={state.filledDraftStatus === "loading"}
+            draftPdfError={state.filledDraftError}
             isAcroFormBacked={isAcroFormBacked}
             filledDraftStatus={state.filledDraftStatus}
             filledDraftReviewed={state.filledDraftReviewed}
