@@ -4,6 +4,24 @@ import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import TabletSignaturePad from "@/components/modules/informed-consent-signing/TabletSignaturePad";
 import { FEATURE_UI_REFRESH_V1_1 } from "@/lib/config/ui-refresh-flag";
 import PatientLandingV11 from "@/components/modules/public-signing/PatientLandingV11";
+import LanguageSelector from "@/components/modules/public-signing/LanguageSelector";
+import IdentityConfirmation from "@/components/modules/public-signing/IdentityConfirmation";
+import MobilePdfViewer from "@/components/modules/public-signing/MobilePdfViewer";
+import RefusalReasonInput from "@/components/modules/public-signing/RefusalReasonInput";
+import GuardianSignatureBlock from "@/components/modules/public-signing/GuardianSignatureBlock";
+import DeliveryOptions from "@/components/modules/public-signing/DeliveryOptions";
+import {
+  type PublicSigningLang,
+  resolveWorkflowLang,
+  getUiLang,
+  getSignerLabels,
+  getSignaturePadLabel,
+  getStageLabels,
+  formatMaskedPhone,
+  getFinalPdfUrl,
+  getDeliveryEndpoint,
+  computeStageIndex,
+} from "@/components/modules/public-signing/public-signing-helpers";
 
 type PublicSigningDocumentPayload = {
   documentId: string;
@@ -17,6 +35,9 @@ type PublicSigningDocumentPayload = {
   templateTitleAr: string;
   templateTitleEn: string;
   versionLabel: string;
+  approvedPdfUrl: string | null;
+  approvedContentAvailable: boolean;
+  illustrations: Array<Record<string, unknown>>;
   sections: Array<{
     id: string;
     sectionKey: string;
@@ -228,6 +249,12 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpBusy, setOtpBusy] = useState(false);
   const [otpError, setOtpError] = useState("");
+  // --- Patient mobile-journey state ---
+  const [lang, setLang] = useState<PublicSigningLang>("bilingual");
+  const [identityConfirmed, setIdentityConfirmed] = useState(false);
+  const [pdfReviewAcknowledged, setPdfReviewAcknowledged] = useState(false);
+  const [refusalReason, setRefusalReason] = useState("");
+  const [guardianRelationship, setGuardianRelationship] = useState("");
   const educationStartedAtRef = useRef<number | null>(null);
   const presentedSentRef = useRef(false);
   const completedSentRef = useRef(false);
@@ -360,11 +387,15 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
           // Discriminate the pre-OTP bootstrap response (no session cookie yet)
           // from the full validated document response. See PRE_OTP_BOOTSTRAP_FLOW.md.
           if (payload && typeof payload === "object" && (payload as { phase?: string }).phase === "pre-otp") {
-            setBootstrap((payload as { bootstrap: PreOtpBootstrap }).bootstrap);
+            const nextBootstrap = (payload as { bootstrap: PreOtpBootstrap }).bootstrap;
+            setBootstrap(nextBootstrap);
             setDocumentData(null);
+            setLang((current) => resolveWorkflowLang(current, nextBootstrap.locale));
           } else {
             setBootstrap(null);
-            setDocumentData(payload as PublicSigningDocumentPayload);
+            const nextDocument = payload as PublicSigningDocumentPayload;
+            setDocumentData(nextDocument);
+            setLang((current) => resolveWorkflowLang(current, nextDocument.education.language ?? undefined));
           }
         }
       } catch (loadError) {
@@ -479,20 +510,32 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
   }, [allEducationRequirementsMet, assetViews, documentData, scrollCompletion]);
 
   async function submitSignature() {
+    if (!identityConfirmed) {
+      setError(uiLang === "ar" ? "يُرجى تأكيد الهوية أولاً" : "Please confirm your identity first");
+      return;
+    }
+    if (!pdfReviewAcknowledged) {
+      setError(uiLang === "ar" ? "يُرجى تأكيد مراجعة نسخة الطبيب المعبأة" : "Please confirm you reviewed the doctor-filled copy");
+      return;
+    }
     if (documentData?.education.required && !educationAcknowledged) {
-      setError("Education acknowledgement is required before signing");
+      setError(uiLang === "ar" ? "مطلوب إقرار التثقيف قبل التوقيع" : "Education acknowledgement is required before signing");
       return;
     }
     if (documentData?.decision.status === "UNDECIDED") {
-      setError("Patient decision is required before signing");
+      setError(uiLang === "ar" ? "مطلوب اتخاذ القرار قبل التوقيع" : "Patient decision is required before signing");
       return;
     }
     if (documentData?.decision.status === "CONSENT_REFUSED" && !documentData.decision.refusalAcknowledged) {
-      setError("Refusal acknowledgement is required before signing the refusal form");
+      setError(uiLang === "ar" ? "مطلوب إقرار الرفض قبل توقيع نموذج الرفض" : "Refusal acknowledgement is required before signing the refusal form");
+      return;
+    }
+    if (documentData?.signerRole.trim().toUpperCase() === "GUARDIAN" && !guardianRelationship.trim()) {
+      setError(uiLang === "ar" ? "مطلوب تحديد علاقة ولي الأمر بالمريض" : "Guardian relationship to patient is required");
       return;
     }
     if (!signerName.trim()) {
-      setError("Signer name is required");
+      setError(uiLang === "ar" ? "الاسم مطلوب" : "Signer name is required");
       return;
     }
 
@@ -646,28 +689,45 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
   }
 
   if (loading) {
-    return <main className="mx-auto max-w-5xl p-6 text-sm text-slate-600">Loading public signing workflow...</main>;
+    return <main className="mx-auto max-w-5xl px-4 py-5 text-sm text-slate-600 sm:p-6">Loading public signing workflow...</main>;
   }
 
   // Pre-OTP bootstrap render. The session cookie does not exist yet (true cold
   // open from Mail/SMS). Render only the OTP form using non-PHI bootstrap
   // metadata; once verifyOtp() succeeds we re-fetch the full payload above.
   if (bootstrap && !documentData) {
+    const bootstrapLang = resolveWorkflowLang(lang, bootstrap.locale);
+    const bootstrapUiLang = getUiLang(bootstrapLang);
+    const isRtl = bootstrapLang === "ar" || bootstrapLang === "bilingual";
+    const title = bootstrapLang === "ar" ? bootstrap.templateTitleAr : bootstrap.templateTitleEn;
+    const subtitle = bootstrapLang === "ar" ? bootstrap.templateTitleEn : bootstrap.templateTitleAr;
+
     return (
-      <main className="mx-auto max-w-5xl space-y-5 p-6">
+      <main className="mx-auto max-w-5xl space-y-4 px-4 py-5 sm:space-y-5 sm:p-6" dir={isRtl ? "rtl" : "ltr"}>
+        <LanguageSelector lang={bootstrapLang} onChange={setLang} />
         <section className="rounded-2xl border border-sky-200 bg-white p-5 shadow-sm">
           <div className="space-y-1">
             {bootstrap.facilityName ? (
               <p className="text-xs uppercase tracking-wide text-slate-500">{bootstrap.facilityName}</p>
             ) : null}
-            <h1 className="text-xl font-semibold text-slate-900" dir="rtl">{bootstrap.templateTitleAr}</h1>
-            <h2 className="text-base font-medium text-slate-700">{bootstrap.templateTitleEn}</h2>
+            <h1 className="text-xl font-semibold text-slate-900">{title}</h1>
+            <h2 className="text-base font-medium text-slate-700">{subtitle}</h2>
           </div>
           <p className="mt-3 text-sm text-slate-600">
-            Verify your mobile number to begin. We will send you a one-time password (OTP) to start the consent workflow.
+            {bootstrapUiLang === "ar"
+              ? "أدخل رقم الجوال المرتبط بهذه الموافقة. سنرسل رمز تحقق لمرة واحدة (OTP) لبدء رحلة الموافقة."
+              : "Enter the mobile number associated with this consent. We will send a one-time password (OTP) to start the consent workflow."}
           </p>
+          {bootstrap.maskedMobile ? (
+            <p className="mt-2 text-xs text-slate-500">
+              {bootstrapUiLang === "ar" ? "الرقم المسجل: " : "Registered number: "}
+              {formatMaskedPhone(bootstrap.maskedMobile)}
+            </p>
+          ) : null}
           <div className="mt-4 space-y-3">
-            <label className="block text-sm font-medium text-slate-700" htmlFor="otpMobile">Mobile Number</label>
+            <label className="block text-sm font-medium text-slate-700" htmlFor="otpMobile">
+              {bootstrapUiLang === "ar" ? "رقم الجوال" : "Mobile Number"}
+            </label>
             <input
               id="otpMobile"
               type="tel"
@@ -681,21 +741,27 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
               type="button"
               onClick={() => void requestOtp()}
               disabled={otpBusy || !otpMobile.trim()}
-              className="inline-flex rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex min-h-[44px] rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {otpBusy && !otpRequestResult ? "Sending OTP..." : otpRequestResult ? "OTP sent" : "Request OTP"}
+              {otpBusy && !otpRequestResult
+                ? (bootstrapUiLang === "ar" ? "جاري الإرسال..." : "Sending OTP...")
+                : otpRequestResult
+                  ? (bootstrapUiLang === "ar" ? "تم إرسال OTP" : "OTP sent")
+                  : (bootstrapUiLang === "ar" ? "طلب OTP" : "Request OTP")}
             </button>
             {otpRequestResult ? (
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-                <p>OTP delivery status: {otpRequestResult.deliveryStatus}</p>
-                <p>Mobile: {otpRequestResult.maskedPhone}</p>
-                <p>Expires at: {otpRequestResult.expiresAt ? new Date(otpRequestResult.expiresAt).toLocaleString() : "\u2014"}</p>
-                {otpRequestResult.fallbackMode ? <p>SMS provider is not configured in this environment.</p> : null}
+                <p>{bootstrapUiLang === "ar" ? "حالة التوصيل:" : "OTP delivery status:"} {otpRequestResult.deliveryStatus}</p>
+                <p dir="ltr">{bootstrapUiLang === "ar" ? "الجوال:" : "Mobile:"} {otpRequestResult.maskedPhone}</p>
+                <p>{bootstrapUiLang === "ar" ? "ينتهي عند:" : "Expires at:"} {otpRequestResult.expiresAt ? new Date(otpRequestResult.expiresAt).toLocaleString() : "\u2014"}</p>
+                {otpRequestResult.fallbackMode ? <p>{bootstrapUiLang === "ar" ? "مزود الرسائل غير مُهيأ في هذا البيئة." : "SMS provider is not configured in this environment."}</p> : null}
               </div>
             ) : null}
             {otpRequestResult ? (
               <div className="mt-2 space-y-2">
-                <label className="block text-sm font-medium text-slate-700" htmlFor="otpCode">OTP Code</label>
+                <label className="block text-sm font-medium text-slate-700" htmlFor="otpCode">
+                  {bootstrapUiLang === "ar" ? "رمز OTP" : "OTP Code"}
+                </label>
                 <input
                   id="otpCode"
                   type="text"
@@ -711,16 +777,20 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
                   type="button"
                   onClick={() => void verifyOtp()}
                   disabled={otpBusy || !otpCode.trim()}
-                  className="inline-flex rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex min-h-[44px] rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {otpBusy ? "Verifying..." : "Verify OTP"}
+                  {otpBusy
+                    ? (bootstrapUiLang === "ar" ? "جاري التحقق..." : "Verifying...")
+                    : (bootstrapUiLang === "ar" ? "التحقق من OTP" : "Verify OTP")}
                 </button>
               </div>
             ) : null}
             {otpError ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{otpError}</div> : null}
           </div>
           <p className="mt-4 text-xs text-slate-500" data-pre-otp-marker="v1">
-            Education review and full consent content will be presented after OTP verification.
+            {bootstrapUiLang === "ar"
+              ? "سيتم عرض التثقيف والموافقة الكاملة بعد التحقق من OTP."
+              : "Education review and full consent content will be presented after OTP verification."}
           </p>
         </section>
       </main>
@@ -728,38 +798,41 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
   }
 
   if (!documentData) {
-    return <main className="mx-auto max-w-5xl p-6 text-sm text-rose-700">{error || "Public signing workflow is unavailable."}</main>;
+    return (
+      <main className="mx-auto max-w-5xl px-4 py-5 text-sm text-rose-700 sm:p-6">
+        {error || "Public signing workflow is unavailable."}
+      </main>
+    );
   }
 
+  const uiLang = getUiLang(lang);
+  const signerLabels = documentData ? getSignerLabels(documentData.signerRole, lang) : getSignerLabels("PATIENT", lang);
+  const signaturePadLabel = documentData ? getSignaturePadLabel(documentData.signerRole, lang) : getSignaturePadLabel("PATIENT", lang);
+
   return (
-    <main className="mx-auto max-w-5xl space-y-5 p-6">
+    <main className="mx-auto max-w-5xl space-y-4 px-4 py-5 sm:space-y-5 sm:p-6" dir={lang === "ar" || lang === "bilingual" ? "rtl" : "ltr"}>
+      <LanguageSelector lang={lang} onChange={setLang} />
+
       {/* --- Step indicator (v1.0.1 — corrected sequence) --- */}
       {(() => {
         // [WORKFLOW_SEQUENCE_CORRECTION] OTP precedes clinical content. The
         // lifecycle is now: OTP → Education → Consent Review → Decision →
         // Signature → Confirmation. Decision and signature still come after
         // education/consent review (legal requirement preserved).
-        const baseStages = educationRequired
-          ? ["OTP Verification", "Education", "Consent Review", "Decision", "Signature", "Confirmation"]
-          : ["OTP Verification", "Consent Review", "Decision", "Signature", "Confirmation"];
-        const stages = isRefusalPath
-          ? (educationRequired
-              ? ["OTP Verification", "Education", "Consent Review", "Decision", "Refusal Acknowledgement", "Refusal Signature"]
-              : ["OTP Verification", "Consent Review", "Decision", "Refusal Acknowledgement", "Refusal Signature"])
-          : baseStages;
-        let currentIndex = 0;
-        if (documentData.signatureCaptured) {
-          currentIndex = stages.length - 1;
-        } else if (documentData.decision.status !== "UNDECIDED" && (!isRefusalPath || documentData.decision.refusalAcknowledged)) {
-          currentIndex = stages.indexOf(isRefusalPath ? "Refusal Signature" : "Signature");
-        } else if (isRefusalPath) {
-          currentIndex = stages.indexOf("Refusal Acknowledgement");
-        } else if (educationRequired && !educationAcknowledged) {
-          currentIndex = stages.indexOf("Education");
-        } else {
-          currentIndex = stages.indexOf("Decision");
-        }
-        if (currentIndex < 0) currentIndex = 0;
+        const stages = getStageLabels(educationRequired, isRefusalPath, lang);
+        const currentIndex = Math.max(
+          0,
+          computeStageIndex(stages, {
+            identityConfirmed,
+            otpVerified,
+            educationAcknowledged,
+            decisionStatus: documentData.decision.status,
+            refusalAcknowledged: documentData.decision.refusalAcknowledged,
+            signatureCaptured: documentData.signatureCaptured,
+            educationRequired,
+            isRefusalPath,
+          }),
+        );
         // --- Controlled UI Refresh wiring: landing visual layer only ---
         // When FEATURE_UI_REFRESH_V1_1 is ON, swap the legacy step-indicator
         // + header pair for the v1.1 landing block. Decision/OTP/signature/
@@ -767,15 +840,16 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
         if (FEATURE_UI_REFRESH_V1_1) {
           return (
             <PatientLandingV11
+              lang={uiLang}
               titleEn={documentData.templateTitleEn}
               titleAr={documentData.templateTitleAr}
               description={`${documentData.consentReference} · ${documentData.versionLabel}`}
-              consentTypeLabel="Procedure"
+              consentTypeLabel={uiLang === "ar" ? "الإجراء" : "Procedure"}
               consentTypeValue={documentData.plannedProcedure || documentData.templateTitleEn}
-              physician={documentData.physicianName ? `Physician · ${documentData.physicianName}` : undefined}
-              facility={documentData.consentReference ? `Reference · ${documentData.consentReference}` : undefined}
-              trustBannerMessage="Your information is protected. This session is encrypted end-to-end."
-              whatToExpectTitle="What to expect"
+              physician={documentData.physicianName ? `${uiLang === "ar" ? "الطبيب" : "Physician"} · ${documentData.physicianName}` : undefined}
+              facility={documentData.consentReference ? `${uiLang === "ar" ? "الرقم المرجعي" : "Reference"} · ${documentData.consentReference}` : undefined}
+              trustBannerMessage={uiLang === "ar" ? "معلوماتك محمية. هذه الجلسة مشفرة من الطرفين." : "Your information is protected. This session is encrypted end-to-end."}
+              whatToExpectTitle={uiLang === "ar" ? "ما يمكن توقعه" : "What to expect"}
               whatToExpectItems={stages.map((label, index) => ({ id: `${index}-${label}`, text: label }))}
               currentStep={currentIndex + 1}
               totalSteps={stages.length}
@@ -823,7 +897,7 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
 
       <section className="rounded-2xl border border-sky-200 bg-sky-50 p-5 text-sm text-sky-900 shadow-sm">
         <h2 className="text-lg font-semibold">Educational Materials Status</h2>
-        <div className="mt-3 grid gap-2 md:grid-cols-2">
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
           <p><strong>Education required:</strong> {documentData.education.required ? "Yes" : "No"}</p>
           <p><strong>Completed:</strong> {documentData.education.completed ? "Yes" : "No"}</p>
           <p><strong>Patient acknowledged:</strong> {documentData.education.patientAcknowledged ? "Yes" : "No"}</p>
@@ -835,7 +909,25 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
         </div>
       </section>
 
-      {documentData.education.required ? (
+      <IdentityConfirmation
+        lang={lang}
+        patientName={documentData.patientName}
+        physicianName={documentData.physicianName}
+        procedure={documentData.plannedProcedure}
+        consentReference={documentData.consentReference}
+        confirmed={identityConfirmed}
+        onConfirm={setIdentityConfirmed}
+      />
+
+      {!identityConfirmed ? (
+        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm">
+          {uiLang === "ar"
+            ? "يُرجى تأكيد هويتك أعلاه لمتابعة رحلة الموافقة."
+            : "Please confirm your identity above to continue the consent journey."}
+        </section>
+      ) : null}
+
+      {identityConfirmed && documentData.education.required ? (
         <section className="space-y-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
           <div>
             <h2 className="text-xl font-semibold text-slate-900">Patient Education</h2>
@@ -997,7 +1089,17 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
         </section>
       ) : null}
 
-      {(!documentData.education.required || educationAcknowledged) && documentData.sections.length > 0 ? documentData.sections.map((section) => (
+      {identityConfirmed && (!documentData.education.required || educationAcknowledged) ? (
+        <MobilePdfViewer
+          url={documentData.approvedPdfUrl}
+          token={token}
+          lang={lang}
+          acknowledged={pdfReviewAcknowledged}
+          onAcknowledge={setPdfReviewAcknowledged}
+        />
+      ) : null}
+
+      {identityConfirmed && (!documentData.education.required || educationAcknowledged) && documentData.sections.length > 0 ? documentData.sections.map((section) => (
         <SectionBlock
           key={section.id}
           titleAr={section.titleAr}
@@ -1007,7 +1109,7 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
         />
       )) : null}
 
-      {(!documentData.education.required || educationAcknowledged) && (documentData.legalTextAr || documentData.legalTextEn) ? (
+      {identityConfirmed && (!documentData.education.required || educationAcknowledged) && (documentData.legalTextAr || documentData.legalTextEn) ? (
         <SectionBlock
           titleAr="النص القانوني"
           titleEn="Legal Consent Text"
@@ -1016,7 +1118,7 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
         />
       ) : null}
 
-      {(!documentData.education.required || educationAcknowledged) && (documentData.pdplTextAr || documentData.pdplTextEn) ? (
+      {identityConfirmed && (!documentData.education.required || educationAcknowledged) && (documentData.pdplTextAr || documentData.pdplTextEn) ? (
         <SectionBlock
           titleAr="حماية البيانات والخصوصية"
           titleEn="Privacy and Data Protection"
@@ -1025,8 +1127,16 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
         />
       ) : null}
 
+      {!pdfReviewAcknowledged && identityConfirmed && (!documentData.education.required || educationAcknowledged) ? (
+        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm">
+          {uiLang === "ar"
+            ? "يُرجى مراجعة نسخة الطبيب المعبأة وتأكيد الاطلاع عليها قبل اتخاذ القرار."
+            : "Please review the doctor-filled copy and confirm you have seen it before making your decision."}
+        </section>
+      ) : null}
+
       {/* --- Decision Section: Accept or Refuse (v1.0.1) --- */}
-      {(!documentData.education.required || educationAcknowledged) && documentData.decision.status === "UNDECIDED" ? (
+      {identityConfirmed && pdfReviewAcknowledged && (!documentData.education.required || educationAcknowledged) && documentData.decision.status === "UNDECIDED" ? (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">Consent Decision</h2>
           <p className="mt-2 text-sm text-slate-600">After reviewing the educational materials, consent text, and privacy notice above, choose whether to proceed.</p>
@@ -1051,13 +1161,13 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
         </section>
       ) : null}
 
-      {(!documentData.education.required || educationAcknowledged) && documentData.decision.status === "CONSENT_ACCEPTED" ? (
+      {identityConfirmed && pdfReviewAcknowledged && (!documentData.education.required || educationAcknowledged) && documentData.decision.status === "CONSENT_ACCEPTED" ? (
         <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
           Consent acceptance recorded on {documentData.decision.selectedAt ? new Date(documentData.decision.selectedAt).toLocaleString() : "—"}.
         </section>
       ) : null}
 
-      {isRefusalPath && documentData.decision.refusalForm ? (
+      {identityConfirmed && pdfReviewAcknowledged && isRefusalPath && documentData.decision.refusalForm ? (
         <section className="rounded-2xl border border-rose-200 bg-rose-50 p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">Treatment Refusal Form</h2>
           <div className="mt-4 grid gap-4 lg:grid-cols-2 text-sm text-slate-700">
@@ -1076,6 +1186,13 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
               <p className="mt-4 leading-7">{documentData.decision.refusalForm.statementAr}</p>
             </div>
           </div>
+          <RefusalReasonInput
+            lang={lang}
+            value={refusalReason}
+            onChange={setRefusalReason}
+            className="mt-4"
+          />
+
           <div className="mt-4 rounded-2xl border border-rose-200 bg-white p-4 text-sm text-slate-700">
             <label className="flex items-start gap-3">
               <input
@@ -1118,59 +1235,100 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">{isRefusalPath ? "Treatment Refusal Signature" : "Patient Signature"}</h2>
-        <p className="mt-2 text-sm text-slate-600">
-          {documentData.education.required && !educationAcknowledged
-            ? "Complete education acknowledgement to reveal the consent document and signature step."
-            : documentData.decision.status === "UNDECIDED"
-              ? "Record your consent decision before continuing to signature."
-              : isRefusalPath && !documentData.decision.refusalAcknowledged
-                ? "Acknowledge the refusal form before signing."
-                : !otpVerified
-                  ? "Verify the OTP before signing."
-                  : isRefusalPath
-                    ? "OTP has been verified. Submit the signer name and signature to persist the treatment refusal form."
-                    : "OTP has been verified. Submit the signer name and signature capture to persist the patient signature."}
-        </p>
-        <div className="mt-4 space-y-4">
-          <label className="block text-sm font-medium text-slate-700" htmlFor="publicSignerName">Signer Name</label>
-          <input
-            id="publicSignerName"
-            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900"
-            value={signerName}
-            onChange={(event) => setSignerName(event.target.value)}
-            placeholder="Enter signer full name"
-            disabled={documentData.signatureCaptured || submitting}
-          />
-          <TabletSignaturePad value={signatureDataUrl} onChange={setSignatureDataUrl} />
-          {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div> : null}
-          {success ? <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{success}</div> : null}
-          {signatureResult ? (
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-              <p><strong>Signature ID:</strong> {signatureResult.signatureId}</p>
-              <p><strong>Status:</strong> {signatureResult.status}</p>
-              <p><strong>OTP Hash:</strong> {signatureResult.evidence.otpHash}</p>
-              <p><strong>Decision:</strong> {signatureResult.evidence.decisionStatus}</p>
-            </div>
+      {identityConfirmed && pdfReviewAcknowledged ? (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">{signerLabels.title}</h2>
+          <p className="mt-2 text-sm text-slate-600">{signerLabels.description}</p>
+
+          {documentData.signerRole.trim().toUpperCase() === "GUARDIAN" ? (
+            <GuardianSignatureBlock
+              lang={lang}
+              relationship={guardianRelationship}
+              onRelationshipChange={setGuardianRelationship}
+              className="mt-4"
+            />
           ) : null}
-          <button
-            type="button"
-            onClick={() => void submitSignature()}
-            disabled={
-              submitting
-              || documentData.signatureCaptured
-              || (documentData.education.required && !educationAcknowledged)
-              || documentData.decision.status === "UNDECIDED"
-              || (isRefusalPath && !documentData.decision.refusalAcknowledged)
-              || !otpVerified
-            }
-            className="inline-flex rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {documentData.signatureCaptured ? "Signature already captured" : submitting ? "Submitting signature..." : isRefusalPath ? "Submit Refusal Signature" : "Submit OTP Signature"}
-          </button>
-        </div>
-      </section>
+
+          <div className="mt-4 space-y-4">
+            <label className="block text-sm font-medium text-slate-700" htmlFor="publicSignerName">{uiLang === "ar" ? "الاسم" : "Signer Name"}</label>
+            <input
+              id="publicSignerName"
+              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900"
+              value={signerName}
+              onChange={(event) => setSignerName(event.target.value)}
+              placeholder={signerLabels.placeholder}
+              disabled={documentData.signatureCaptured || submitting}
+            />
+            <TabletSignaturePad
+              value={signatureDataUrl}
+              onChange={setSignatureDataUrl}
+              label={signaturePadLabel}
+              ariaLabel={signerLabels.ariaLabel}
+            />
+            {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div> : null}
+            {success ? <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{success}</div> : null}
+            {signatureResult ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                <p><strong>Signature ID:</strong> {signatureResult.signatureId}</p>
+                <p><strong>Status:</strong> {signatureResult.status}</p>
+                <p><strong>OTP Hash:</strong> {signatureResult.evidence.otpHash}</p>
+                <p><strong>Decision:</strong> {signatureResult.evidence.decisionStatus}</p>
+              </div>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => void submitSignature()}
+              disabled={
+                submitting
+                || documentData.signatureCaptured
+                || (documentData.education.required && !educationAcknowledged)
+                || documentData.decision.status === "UNDECIDED"
+                || (isRefusalPath && !documentData.decision.refusalAcknowledged)
+                || !otpVerified
+                || (documentData.signerRole.trim().toUpperCase() === "GUARDIAN" && !guardianRelationship.trim())
+              }
+              className="inline-flex min-h-[44px] rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {documentData.signatureCaptured ? (uiLang === "ar" ? "تم التوقيع" : "Signature already captured") : submitting ? (uiLang === "ar" ? "جاري الإرسال..." : "Submitting signature...") : signerLabels.title}
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      {documentData.signatureCaptured ? (
+        <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-emerald-900">
+            {uiLang === "ar" ? "تم التوقيع بنجاح" : "Signing complete"}
+          </h2>
+          <p className="mt-2 text-sm text-emerald-800">
+            {uiLang === "ar"
+              ? "يمكنك الآن تنزيل نسخة المريض أو طلب إرسالها."
+              : "You can now download your patient copy or request delivery."}
+          </p>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <a
+              href={getFinalPdfUrl(token, { copy: "PATIENT_COPY", lang, disposition: "attachment" })}
+              className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-emerald-700 px-4 py-2 text-center text-sm font-semibold text-white"
+            >
+              {uiLang === "ar" ? "تنزيل نسخة المريض" : "Download Patient Copy"}
+            </a>
+            <a
+              href={getFinalPdfUrl(token, { copy: "PATIENT_COPY", lang, disposition: "inline" })}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-emerald-300 bg-white px-4 py-2 text-center text-sm font-semibold text-emerald-700"
+            >
+              {uiLang === "ar" ? "عرض النسخة الموقعة" : "View Signed Copy"}
+            </a>
+          </div>
+          <DeliveryOptions
+            lang={lang}
+            token={token}
+            endpoint={getDeliveryEndpoint(token)}
+            className="mt-4 border-emerald-200 bg-white"
+          />
+        </section>
+      ) : null}
     </main>
   );
 }
