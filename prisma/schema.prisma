@@ -180,9 +180,6 @@ model Tenant {
   caseStepEvents      CaseStepEvent[]
   operationNotifications OperationNotification[]
   departmentSlaConfigs DepartmentSlaConfig[]
-  calibrationJobs     FormCalibrationJob[]
-  calibrationCandidates FormCalibrationCandidate[]
-  calibrationManifests FormCalibrationManifest[]
 
   @@map("tenants")
 }
@@ -260,7 +257,6 @@ model User {
   caseStepEventsByActor CaseStepEvent[] @relation("StepEventActor")
   operationNotifications OperationNotification[] @relation("NotificationRecipient")
   operationNotificationsTriggered OperationNotification[] @relation("NotificationTrigger")
-  calibrationReviews   FormCalibrationCandidate[] @relation("CalibrationReviewer")
 
   @@index([tenantId])
   @@map("users")
@@ -730,106 +726,4 @@ model ConsentCollaborationTeam {
   @@unique([tenantId, departmentName])
   @@index([tenantId, isActive])
   @@map("consent_collaboration_teams")
-}
-
-enum CalibrationJobStatus {
-  PENDING
-  RUNNING
-  COMPLETED
-  FAILED
-  CANCELLED
-
-  @@map("calibration_job_status")
-}
-
-enum CalibrationCandidateStatus {
-  PENDING
-  AUTO_REVIEW_CANDIDATE
-  ASSISTED_REVIEW
-  MANUAL_CALIBRATION_REQUIRED
-  APPROVED
-  REJECTED
-
-  @@map("calibration_candidate_status")
-}
-
-enum CalibrationReviewDecision {
-  APPROVE
-  REJECT
-  REQUEST_MANUAL
-
-  @@map("calibration_review_decision")
-}
-
-model FormCalibrationJob {
-  id                String               @id @default(uuid())
-  tenantId          String               @map("tenant_id")
-  startedByUserId   String               @map("started_by_user_id")
-  status            CalibrationJobStatus @default(PENDING)
-  jobType           String               @map("job_type")
-  totalForms        Int                  @default(0) @map("total_forms")
-  processedForms    Int                  @default(0) @map("processed_forms")
-  approvedCount     Int                  @default(0) @map("approved_count")
-  assistedCount     Int                  @default(0) @map("assisted_count")
-  manualCount       Int                  @default(0) @map("manual_count")
-  errorCount        Int                  @default(0) @map("error_count")
-  manifestId        String?              @map("manifest_id")
-  logSummary        Json?                @map("log_summary")
-  startedAt         DateTime             @default(now()) @map("started_at")
-  completedAt       DateTime?            @map("completed_at")
-
-  tenant            Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  candidates        FormCalibrationCandidate[]
-  manifest          FormCalibrationManifest? @relation(fields: [manifestId], references: [id], onDelete: SetNull)
-
-  @@index([tenantId, status])
-  @@index([tenantId, startedAt])
-  @@map("form_calibration_jobs")
-}
-
-model FormCalibrationCandidate {
-  id                 String                    @id @default(uuid())
-  tenantId           String                    @map("tenant_id")
-  jobId              String                    @map("job_id")
-  sourceFormId       String                    @map("source_form_id")
-  sourceFileName     String                    @map("source_file_name")
-  status             CalibrationCandidateStatus @default(PENDING)
-  layoutFamily       String?                   @map("layout_family")
-  qualityScore       Int                       @default(0) @map("quality_score")
-  qualityReport      Json?                     @map("quality_report")
-  confidence         Json?                     @map("confidence")
-  mappings           Json?                     @map("mappings")
-  syntheticRenderUrl String?                   @map("synthetic_render_url")
-  reviewedByUserId   String?                   @map("reviewed_by_user_id")
-  reviewDecision     CalibrationReviewDecision? @map("review_decision")
-  reviewNotes        String?                   @map("review_notes")
-  createdAt          DateTime                  @default(now()) @map("created_at")
-  updatedAt          DateTime                  @updatedAt @map("updated_at")
-
-  tenant             Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  job                FormCalibrationJob        @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  reviewedBy         User?                     @relation("CalibrationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
-
-  @@index([tenantId, status])
-  @@index([tenantId, jobId])
-  @@index([tenantId, sourceFormId])
-  @@map("form_calibration_candidates")
-}
-
-model FormCalibrationManifest {
-  id              String   @id @default(uuid())
-  tenantId        String   @map("tenant_id")
-  name            String
-  description     String?
-  sourceFormIds   String[] @map("source_form_ids")
-  isActive        Boolean  @default(true) @map("is_active")
-  metadata        Json?
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-
-  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  jobs            FormCalibrationJob[]
-
-  @@index([tenantId, isActive])
-  @@map("form_calibration_manifests")
 }
