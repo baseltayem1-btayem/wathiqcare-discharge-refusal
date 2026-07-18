@@ -266,6 +266,28 @@ export const ENABLE_MODULE_SERVICE_ISOLATION = envBool(
 );
 
 // ---------------------------------------------------------------------------
+// Form Auto-Calibration Engine
+// ---------------------------------------------------------------------------
+
+/** Enable the Form Auto-Calibration Engine (Phase 1). */
+export const FORM_AUTO_CALIBRATION_ENABLED = envBool(
+  "FORM_AUTO_CALIBRATION_ENABLED",
+  false
+);
+
+/** Enable AI-assisted calibration agents (requires credentials). */
+export const FORM_CALIBRATION_AI_ENABLED = envBool(
+  "FORM_CALIBRATION_AI_ENABLED",
+  false
+);
+
+/** Enable the internal review console for calibration candidates. */
+export const FORM_CALIBRATION_REVIEW_CONSOLE_ENABLED = envBool(
+  "FORM_CALIBRATION_REVIEW_CONSOLE_ENABLED",
+  false
+);
+
+// ---------------------------------------------------------------------------
 // Export
 // ---------------------------------------------------------------------------
 
@@ -314,6 +336,9 @@ export const FEATURE_FLAGS = {
   ENABLE_LEGAL_HOLD,
   ENABLE_RETENTION_POLICY,
   ENABLE_MODULE_SERVICE_ISOLATION,
+  FORM_AUTO_CALIBRATION_ENABLED,
+  FORM_CALIBRATION_AI_ENABLED,
+  FORM_CALIBRATION_REVIEW_CONSOLE_ENABLED,
 } as const;
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS;
