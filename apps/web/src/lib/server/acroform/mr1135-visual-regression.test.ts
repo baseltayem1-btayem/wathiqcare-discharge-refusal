@@ -188,6 +188,8 @@ async function getSharedContext(): Promise<TestContext> {
         physicianContext: {
           name: "BASEL TAYEM",
           designation: "Legal Medical Consultant",
+          designationEn: "Legal Medical Consultant",
+          designationAr: "مستشار طبي قانوني",
         },
         physicianSignatureDataUrl,
         encounterReference: { id: "enc-vis-001", encounterId: "ENC-VIS-001" },
@@ -567,4 +569,28 @@ test("rendered pixels remain within mapped field rectangles", async () => {
 
 test("governed constants are centralized and exported", () => {
   assert.equal(GOVERNED_OVERLAY_COLOR, "#0066FF");
+});
+
+test("field rectangles do not overlap protected source regions", () => {
+  // The hospital logo/header block and the rendered pagination footer are
+  // protected: no governed overlay field may map into them.
+  const protectedRegions = [
+    { name: "logo/header", rect: [20, 720, 180, 792] },
+    { name: "page footer", rect: [360, 0, 612, 40] },
+  ];
+
+  function rectsOverlap(a: number[], b: number[]): boolean {
+    return !(a[2] <= b[0] || a[0] >= b[2] || a[3] <= b[1] || a[1] >= b[3]);
+  }
+
+  for (const field of amputationManifest.fields) {
+    for (const widget of field.widgets) {
+      for (const region of protectedRegions) {
+        assert.ok(
+          !rectsOverlap(widget.rect, region.rect),
+          `Field ${field.name} page ${widget.page} rectangle ${widget.rect.join(",")} overlaps ${region.name} ${region.rect.join(",")}`,
+        );
+      }
+    }
+  }
 });

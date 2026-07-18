@@ -70,6 +70,8 @@ const CHECKMARK_SVG = `
 </svg>
 `;
 
+const SIGNATURE_INTERNAL_PADDING_PT = 3;
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -416,7 +418,41 @@ async function recolorSignatureToBlue(args: {
             }
 
             ctx.putImageData(imageData, 0, 0);
-            resolve(canvas.toDataURL("image/png"));
+
+            // Crop to the actual ink bounds so the signature fits tightly inside
+            // the mapped rectangle instead of being dominated by empty canvas.
+            const bounds = { minX: canvas.width, minY: canvas.height, maxX: -1, maxY: -1 };
+            for (let y = 0; y < canvas.height; y++) {
+              for (let x = 0; x < canvas.width; x++) {
+                const idx = (y * canvas.width + x) * 4;
+                if (data[idx + 3] > 30) {
+                  if (x < bounds.minX) bounds.minX = x;
+                  if (x > bounds.maxX) bounds.maxX = x;
+                  if (y < bounds.minY) bounds.minY = y;
+                  if (y > bounds.maxY) bounds.maxY = y;
+                }
+              }
+            }
+            if (bounds.maxX < 0) {
+              reject(new Error("signature image has no visible ink"));
+              return;
+            }
+            const cropPad = 2;
+            const cropX = Math.max(0, bounds.minX - cropPad);
+            const cropY = Math.max(0, bounds.minY - cropPad);
+            const cropWidth = Math.min(canvas.width - cropX, bounds.maxX - bounds.minX + 1 + cropPad * 2);
+            const cropHeight = Math.min(canvas.height - cropY, bounds.maxY - bounds.minY + 1 + cropPad * 2);
+
+            const cropped = document.createElement("canvas");
+            cropped.width = cropWidth;
+            cropped.height = cropHeight;
+            const croppedCtx = cropped.getContext("2d");
+            if (!croppedCtx) {
+              reject(new Error("cropped canvas context unavailable"));
+              return;
+            }
+            croppedCtx.drawImage(canvas, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+            resolve(cropped.toDataURL("image/png"));
           };
           img.onerror = () => reject(new Error("signature image load failed"));
           img.src = imageDataUrl;
@@ -472,21 +508,17 @@ async function drawSignatures(args: {
       const rect = parseWidgetRect(widget.rect);
       const boxWidth = rect.width;
       const boxHeight = rect.height;
-      const minWidth = Math.min(40, page.getWidth() * 0.065);
-      const minHeight = Math.min(16, page.getHeight() * 0.02);
-      const effectiveWidth = Math.max(boxWidth, minWidth);
-      const effectiveHeight = Math.max(boxHeight, minHeight);
 
       const scaled = img.scale(1);
-      const scale = Math.min(effectiveWidth / scaled.width, effectiveHeight / scaled.height);
+      const maxDrawWidth = Math.max(1, boxWidth - SIGNATURE_INTERNAL_PADDING_PT * 2);
+      const maxDrawHeight = Math.max(1, boxHeight - SIGNATURE_INTERNAL_PADDING_PT * 2);
+      const scale = Math.min(1, maxDrawWidth / scaled.width, maxDrawHeight / scaled.height);
       if (!Number.isFinite(scale) || scale <= 0) continue;
 
-      // Increase signature visual presence while keeping it inside the region.
-      const scaleFactor = Math.min(1, scale);
-      const width = scaled.width * scaleFactor;
-      const height = scaled.height * scaleFactor;
-      const x = rect.left + Math.max(0, (effectiveWidth - width) / 2);
-      const y = rect.bottom + Math.max(0, (effectiveHeight - height) / 2);
+      const width = scaled.width * scale;
+      const height = scaled.height * scale;
+      const x = rect.left + (boxWidth - width) / 2;
+      const y = rect.bottom + (boxHeight - height) / 2;
 
       page.drawImage(img, { x, y, width, height });
       drawn.push(field.name);
