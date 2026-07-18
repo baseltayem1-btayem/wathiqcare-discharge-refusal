@@ -132,6 +132,7 @@ export type PublicDecisionStatusPayload = {
   refusalSignedAt: string | null;
   refusalSignatureCaptured: boolean;
   refusalSignatureId: string | null;
+  refusalReason: string | null;
   refusalForm: {
     patientName: string | null;
     mrn: string | null;
@@ -676,6 +677,7 @@ export async function getDecisionStatus(
     refusalSignedAt: refusalSignedEvent?.createdAt?.toISOString() || getNullableString(refusalSignature.capturedAt),
     refusalSignatureCaptured: Boolean(refusalSignedEvent) || Boolean(getNullableString(refusalSignature.signatureId)),
     refusalSignatureId: getNullableString(refusalSignature.signatureId),
+    refusalReason: getNullableString(decisionMetadata.refusalReason),
     refusalForm,
   };
 }
@@ -706,6 +708,7 @@ export function mergeDecisionExecutionContext(args: {
   education: EducationStatus;
   refusalForm: PublicDecisionStatusPayload["refusalForm"];
   refusalAcknowledged?: boolean;
+  refusalReason?: string;
   refusalSignature?: Record<string, unknown>;
 }): Record<string, unknown> {
   const metadata = asRecord(args.rawMetadata) || {};
@@ -740,6 +743,10 @@ export function mergeDecisionExecutionContext(args: {
           args.eventType === "REFUSAL_ACKNOWLEDGED"
             ? currentDecision.refusalAcknowledgedAt || occurredAt
             : currentDecision.refusalAcknowledgedAt || null,
+        refusalReason:
+          args.refusalReason
+          || getNullableString(currentDecision.refusalReason)
+          || null,
         refusalSignedAt: getNullableString(args.refusalSignature?.capturedAt) || getNullableString(currentDecision.refusalSignedAt),
         consentHash: args.consentHash,
         consentVersion: args.consentVersion,
@@ -760,6 +767,7 @@ export async function recordPublicDecisionEvent(args: {
   request?: NextRequest;
   eventType: PublicDecisionEventType;
   refusalAcknowledged?: boolean;
+  refusalReason?: string;
 }): Promise<PublicDecisionStatusPayload> {
   if (args.request) {
     await validatePublicSigningSession({ token: args.token, request: args.request });
@@ -805,6 +813,7 @@ export async function recordPublicDecisionEvent(args: {
           education,
           refusalForm,
           refusalAcknowledged: args.refusalAcknowledged,
+          refusalReason: args.refusalReason,
         }) as Prisma.InputJsonValue,
       },
     });
@@ -823,6 +832,7 @@ export async function recordPublicDecisionEvent(args: {
         educationHash: education.contentHash,
         refusalFormHash: refusalForm?.formHash || null,
         refusalAcknowledged: Boolean(args.refusalAcknowledged),
+        refusalReason: args.refusalReason || null,
       },
       request: args.request,
       tx,
