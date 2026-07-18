@@ -11,7 +11,6 @@ import { isTaqnyatReady } from "@/services/sms/taqnyatClient";
 import { logRuntimeIncident } from "@/lib/server/runtime-observability";
 import { verifyPublicAssetSource } from "@/lib/server/clinical-knowledge/services/source-verification";
 import { getPrisma } from "@/lib/server/prisma";
-import { isAllowlistedRecipient } from "@/lib/server/workspace-consent-helpers";
 import {
   validateIdempotencyKey,
   hashRecipient,
@@ -152,40 +151,8 @@ export async function POST(request: NextRequest) {
   const recipientEmail = canonicalContacts.email ?? "";
 
   if (isDryRunEnabled(body)) {
-    if (!isAllowlistedRecipient(mobileNumber, recipientEmail)) {
-      const maskedMobile = maskMobile(mobileNumber);
-      const maskedEmail = maskEmail(recipientEmail);
-      const reason = `Dry-run blocked: recipient not in pilot allowlist (mobile: ${maskedMobile}, email: ${maskedEmail})`;
-
-      await writeConsentAudit({
-        tenantId,
-        auth,
-        action: "dry_run_blocked_non_allowlisted_recipient",
-        summary: reason,
-        source: "informed-consents-send",
-        caseId,
-        metadata: {
-          documentId,
-          caseId,
-          patientName,
-          mobileNumber: maskedMobile,
-          recipientEmail: maskedEmail,
-          locale,
-          dryRun: true,
-        },
-        request,
-      });
-
-      return NextResponse.json(
-        {
-          ok: false,
-          dryRun: true,
-          error:
-            "Recipient is not approved for pilot send. Contact the platform administrator to add the recipient to the allowlist.",
-        },
-        { status: 403 },
-      );
-    }
+    const maskedMobile = maskMobile(mobileNumber);
+    const maskedEmail = maskEmail(recipientEmail);
 
     await writeConsentAudit({
       tenantId,
@@ -198,8 +165,8 @@ export async function POST(request: NextRequest) {
         documentId,
         caseId,
         patientName,
-        mobileNumber: maskMobile(mobileNumber),
-        recipientEmail: maskEmail(recipientEmail),
+        mobileNumber: maskedMobile,
+        recipientEmail: maskedEmail,
         mobileHash: hashRecipient(mobileNumber, { tenantId }),
         emailHash: hashRecipient(recipientEmail, { tenantId }),
         locale,
@@ -216,6 +183,7 @@ export async function POST(request: NextRequest) {
       auditAction: "consent_dry_run_sent",
       providerStatus: {
         smsReady: isTaqnyatReady(),
+        emailReady: Boolean(process.env.SMTP_HOST || process.env.RESEND_API_KEY),
       },
     });
   }
@@ -369,57 +337,6 @@ export async function POST(request: NextRequest) {
     },
     request,
   });
-
-  if (!isAllowlistedRecipient(mobileNumber, recipientEmail)) {
-    const maskedMobile = maskMobile(mobileNumber);
-    const maskedEmail = maskEmail(recipientEmail);
-    const reason = `Recipient not in pilot allowlist (mobile: ${maskedMobile}, email: ${maskedEmail})`;
-
-    console.warn("[informed-consents-send] blocked non-allowlisted recipient", {
-      tenantId,
-      caseId,
-      documentId,
-      mobileNumber: maskedMobile,
-      recipientEmail: maskedEmail,
-    });
-
-    await writeConsentAudit({
-      tenantId,
-      auth,
-      action: "send_blocked_non_allowlisted_recipient",
-      summary: reason,
-      source: "informed-consents-send",
-      caseId,
-      consentDocumentId: documentId,
-      metadata: {
-        documentId,
-        caseId,
-        patientName,
-        mobileNumber: maskedMobile,
-        recipientEmail: maskedEmail,
-        locale,
-      },
-      request,
-    });
-
-    logRuntimeIncident({
-      module: "informed-consents-send",
-      type: "AUTHORIZATION_FAILURE",
-      operation: "send_blocked_non_allowlisted_recipient",
-      tenantId,
-      error: new Error(reason),
-      details: { caseId, documentId, mobileNumber: maskedMobile, recipientEmail: maskedEmail },
-    });
-
-    return NextResponse.json(
-      {
-        ok: false,
-        error:
-          "Recipient is not approved for pilot send. Contact the platform administrator to add the recipient to the allowlist.",
-      },
-      { status: 403 },
-    );
-  }
 
   try {
     const workflow = await sendModuleSecureSigningLink({

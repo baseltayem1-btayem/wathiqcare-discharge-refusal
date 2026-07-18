@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { isAssemblyApprovedPdfSourceVerified } from "../utils/approvedPdfSource";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -426,6 +426,10 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         ...s.doctorCompletionValues,
         [key]: value,
       },
+      // Editing any governed physician value after approval invalidates the
+      // previous preview approval and requires regeneration/re-review.
+      draftApproved: false,
+      previewReviewed: false,
     }));
   }, []);
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import {
-  envList,
+  isAllowlistEnforced,
   isAllowlistedRecipient,
   isPilotPatientSendEnabled,
   normalizePhoneNumber,
@@ -18,23 +18,21 @@ export async function POST(request: NextRequest) {
   const recipientEmail = String(body.recipientEmail || "").trim().toLowerCase();
 
   const pilotEnabled = isPilotPatientSendEnabled();
-  const allowedMobiles = envList("PILOT_PATIENT_SEND_ALLOWLIST_MOBILE").map(normalizePhoneNumber);
-  const allowedEmails = envList("PILOT_PATIENT_SEND_ALLOWLIST_EMAIL").map(normalizeRecipientEmail);
-
-  const mobileAllowed = Boolean(mobileNumber && allowedMobiles.includes(normalizePhoneNumber(mobileNumber)));
-  const emailAllowed = Boolean(recipientEmail && allowedEmails.includes(normalizeRecipientEmail(recipientEmail)));
+  const allowlistEnforced = isAllowlistEnforced();
   const allowlisted = isAllowlistedRecipient(mobileNumber, recipientEmail);
+  const hasValidContact = Boolean(normalizePhoneNumber(mobileNumber) || normalizeRecipientEmail(recipientEmail));
 
   return NextResponse.json({
     ok: true,
     pilotEnabled,
+    allowlistEnforced,
     allowlisted,
-    mobileAllowed: Boolean(mobileAllowed),
-    emailAllowed: Boolean(emailAllowed),
-    reason: pilotEnabled
+    reason: allowlistEnforced
       ? allowlisted
         ? "Recipient is approved for pilot send."
         : "Recipient is not in the pilot allowlist."
-      : "Patient-facing pilot send is disabled.",
+      : hasValidContact
+        ? "Recipient is eligible for production send."
+        : "A valid patient mobile number or email is required.",
   });
 }

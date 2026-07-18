@@ -53,8 +53,28 @@ export function isPilotPatientSendEnabled(): boolean {
   return envBool("FF_PATIENT_FACING_PILOT_SEND") || (process.env.VERCEL_ENV === "preview" && ENABLE_IMC_PILOT_PATIENTS);
 }
 
+/**
+ * Returns true when the allowlist should be enforced as an explicit
+ * test-mode / sandbox / automated-test restriction.
+ *
+ * Production patient delivery is never gated by the allowlist unless an
+ * operator explicitly opts in to test-mode enforcement.
+ */
+export function isAllowlistEnforced(): boolean {
+  return envBool("FF_PATIENT_SEND_ALLOWLIST_ENFORCED");
+}
+
+function isValidRecipient(mobileNumber: string, recipientEmail: string): boolean {
+  const normalizedMobile = normalizePhoneNumber(mobileNumber);
+  const normalizedEmail = normalizeRecipientEmail(recipientEmail);
+  return normalizedMobile.length > 0 || normalizedEmail.length > 0;
+}
+
 export function isAllowlistedRecipient(mobileNumber: string, recipientEmail: string): boolean {
-  if (!isPilotPatientSendEnabled()) return false;
+  if (!isAllowlistEnforced()) {
+    // Production sending is available to any valid patient recipient.
+    return isValidRecipient(mobileNumber, recipientEmail);
+  }
 
   const allowedMobiles = envList("PILOT_PATIENT_SEND_ALLOWLIST_MOBILE").map(normalizePhoneNumber);
   const allowedEmails = envList("PILOT_PATIENT_SEND_ALLOWLIST_EMAIL").map(normalizeRecipientEmail);
