@@ -31,7 +31,7 @@ export const DEMO_ACCOUNT_PROFILES: readonly DemoAccountProfile[] = [
     scopeLabel: "Platform-wide access",
     scopeLabelAr: "صلاحية على مستوى المنصة",
     mustChangePassword: false,
-    expectedModules: ["informed-consents", "wathiqnote", "promissory-notes", "discharge-refusal"],
+    expectedModules: ["informed-consents", "wathiqnote", "discharge-refusal"],
   },
   {
     key: "legal-affairs",
@@ -43,7 +43,7 @@ export const DEMO_ACCOUNT_PROFILES: readonly DemoAccountProfile[] = [
     scopeLabel: "Tenant-scoped medico-legal access",
     scopeLabelAr: "وصول طبي قانوني ضمن المستأجر",
     mustChangePassword: false,
-    expectedModules: ["informed-consents", "wathiqnote", "promissory-notes", "discharge-refusal"],
+    expectedModules: ["informed-consents", "wathiqnote", "discharge-refusal"],
   },
   {
     key: "doctor",
@@ -91,7 +91,7 @@ export const DEMO_ACCOUNT_PROFILES: readonly DemoAccountProfile[] = [
     scopeLabel: "Audit and governance review",
     scopeLabelAr: "مراجعة التدقيق والحوكمة",
     mustChangePassword: false,
-    expectedModules: ["informed-consents", "wathiqnote", "promissory-notes", "discharge-refusal"],
+    expectedModules: ["informed-consents", "wathiqnote", "discharge-refusal"],
   },
   {
     key: "finance-admin",
@@ -103,7 +103,7 @@ export const DEMO_ACCOUNT_PROFILES: readonly DemoAccountProfile[] = [
     scopeLabel: "Financial undertaking workflows",
     scopeLabelAr: "مسارات التعهدات المالية",
     mustChangePassword: false,
-    expectedModules: ["wathiqnote", "promissory-notes"],
+    expectedModules: ["wathiqnote"],
   },
 ] as const;
 

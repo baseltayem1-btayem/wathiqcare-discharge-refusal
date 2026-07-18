@@ -44,6 +44,7 @@ type OtpChallengePayload = {
   sessionId: string;
   documentId: string;
   moduleType: string;
+  ipAddress?: string | null;
 };
 
 type OtpEventRow = {
@@ -248,12 +249,13 @@ export async function requestSigningOtp(args: {
     challengeId,
     tokenHash: tokenHash(args.token),
     otpHash: otpHash(code),
-    phoneNumber: mobile,
+    phoneNumber: maskPhone(mobile),
     maskedPhone: maskPhone(mobile),
     expiresAt,
     sessionId: context.sessionId,
     documentId: context.documentId,
     moduleType: context.moduleType,
+    ipAddress: getClientIpAddress(args.request),
   };
 
   const linkUrl = `${getBaseUrl()}/sign/${encodeURIComponent(args.token)}`;
