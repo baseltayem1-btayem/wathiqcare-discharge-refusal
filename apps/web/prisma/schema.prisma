@@ -265,6 +265,14 @@ enum ConsentEvidenceCopyType {
   LEGAL_ARCHIVE_COPY
 }
 
+enum ConsentSigningOutcome {
+  PENDING
+  CONSENTED
+  REFUSED
+  GUARDIAN_SIGNED
+  WITHDRAWN
+}
+
 enum PatientMessageChannel {
   SMS
   EMAIL
@@ -1843,6 +1851,13 @@ model ConsentDocument {
   retentionUntil         DateTime?             @map("retention_until")
   idempotencyKey         String?               @map("idempotency_key")
   idempotencyFingerprint String?               @map("idempotency_fingerprint")
+  outcome                ConsentSigningOutcome? @default(PENDING) @map("outcome")
+  refusalReason          String?               @map("refusal_reason")
+  refusalRiskAcknowledged Boolean               @default(false) @map("refusal_risk_acknowledged")
+  finalPdfPath           String?               @map("final_pdf_path")
+  finalPdfHash           String?               @map("final_pdf_hash")
+  patientCopyDeliveredAt DateTime?             @map("patient_copy_delivered_at")
+  patientCopyDeliveryStatus String?            @map("patient_copy_delivery_status")
   metadata               Json?
   createdAt              DateTime              @default(now()) @map("created_at")
   updatedAt              DateTime              @updatedAt @map("updated_at")
@@ -1864,6 +1879,7 @@ model ConsentDocument {
   evidenceV2Timelines EvidenceTimeline[]
   emrMappings         ConsentEmrMapping[]
   sourceSnapshots     ConsentSourceSnapshot[]
+  signingSessions     SigningSession[]
 
   @@unique([tenantId, consentReference], map: "uq_consent_documents_tenant_reference")
   @@unique([tenantId, idempotencyKey], map: "uq_consent_documents_tenant_idempotency_key")
@@ -1896,20 +1912,23 @@ model ConsentDocumentSection {
 }
 
 model ConsentDocumentSignature {
-  id                String               @id @default(uuid())
-  tenantId          String               @map("tenant_id")
-  consentDocumentId String               @map("consent_document_id")
-  role              ConsentSignatureRole
-  signerName        String               @map("signer_name")
-  signerIdNumber    String?              @map("signer_id_number")
-  signerLicense     String?              @map("signer_license")
-  signatureMethod   ConsentMethod        @map("signature_method")
-  signedAt          DateTime             @default(now()) @map("signed_at")
-  ipAddress         String?              @map("ip_address")
-  userAgent         String?              @map("user_agent")
-  signatureHash     String?              @map("signature_hash")
-  metadata          Json?
-  createdAt         DateTime             @default(now()) @map("created_at")
+  id                    String               @id @default(uuid())
+  tenantId              String               @map("tenant_id")
+  consentDocumentId     String               @map("consent_document_id")
+  role                  ConsentSignatureRole
+  signerName            String               @map("signer_name")
+  signerIdNumber        String?              @map("signer_id_number")
+  signerLicense         String?              @map("signer_license")
+  signerRelationship    String?              @map("signer_relationship")
+  authorityDocumentUrl  String?              @map("authority_document_url")
+  signatureMethod       ConsentMethod        @map("signature_method")
+  signedAt              DateTime             @default(now()) @map("signed_at")
+  ipAddress             String?              @map("ip_address")
+  userAgent             String?              @map("user_agent")
+  signatureHash         String?              @map("signature_hash")
+  outcome               ConsentSigningOutcome? @default(PENDING) @map("outcome")
+  metadata              Json?
+  createdAt             DateTime             @default(now()) @map("created_at")
 
   tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   consentDocument ConsentDocument @relation(fields: [consentDocumentId], references: [id], onDelete: Cascade)
@@ -1955,19 +1974,28 @@ model SigningSession {
   expiresAt              DateTime? @map("expires_at")
   completedAt            DateTime? @map("completed_at")
   revokedAt              DateTime? @map("revoked_at")
-  revokedReason          String?   @map("revoked_reason")
-  signedPdfKey           String?   @map("signed_pdf_key")
-  initiatedById          String    @map("initiated_by_id") @db.Uuid
-  resendCount            Int       @default(0) @map("resend_count")
-  lastResentAt           DateTime? @map("last_resent_at")
-  idempotencyKey         String?   @map("idempotency_key")
-  idempotencyFingerprint String?   @map("idempotency_fingerprint")
+  revokedReason          String?               @map("revoked_reason")
+  signedPdfKey           String?               @map("signed_pdf_key")
+  initiatedById          String                @map("initiated_by_id") @db.Uuid
+  resendCount            Int                   @default(0) @map("resend_count")
+  lastResentAt           DateTime?             @map("last_resent_at")
+  idempotencyKey         String?               @map("idempotency_key")
+  idempotencyFingerprint String?               @map("idempotency_fingerprint")
+  otpVerifiedAt          DateTime?             @map("otp_verified_at")
+  otpChallengeId         String?               @map("otp_challenge_id")
+  linkOpenedAt           DateTime?             @map("link_opened_at")
+  finalPdfUrl            String?               @map("final_pdf_url")
+  finalPdfHash           String?               @map("final_pdf_hash")
+  outcome                ConsentSigningOutcome? @default(PENDING) @map("outcome")
   metadata               Json?
-  createdAt              DateTime  @default(now()) @map("created_at")
-  updatedAt              DateTime  @updatedAt @map("updated_at")
+  createdAt              DateTime              @default(now()) @map("created_at")
+  updatedAt              DateTime              @updatedAt @map("updated_at")
 
-  tokens     SigningSecureToken[]
-  dispatches PatientMessageDispatch[]
+  document          ConsentDocument       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  tokens            SigningSecureToken[]
+  dispatches        PatientMessageDispatch[]
+  evidencePackages  ConsentEvidencePackage[]
+  evidenceV2Packages EvidencePackage[]
 
   @@index([tenantId, documentId, status, createdAt], map: "idx_signing_sessions_tenant_doc_status_created")
   @@index([tenantId, documentId, status], map: "idx_signing_sessions_tenant_doc_status")
@@ -2428,56 +2456,68 @@ model ConsentEvidencePackage {
   id                String                  @id @default(uuid())
   tenantId          String                  @map("tenant_id")
   consentDocumentId String                  @map("consent_document_id")
+  signingSessionId  String?                 @map("signing_session_id") @db.Uuid
   copyType          ConsentEvidenceCopyType @map("copy_type")
   fileName          String                  @map("file_name")
   storagePath       String?                 @map("storage_path")
   checksumHash      String                  @map("checksum_hash")
   generatedBy       String?                 @map("generated_by")
   generatedAt       DateTime                @default(now()) @map("generated_at")
+  outcome           ConsentSigningOutcome?  @default(PENDING) @map("outcome")
+  deliveredAt       DateTime?               @map("delivered_at")
+  deliveryStatus    String?                 @map("delivery_status")
   metadata          Json?
 
   tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   consentDocument ConsentDocument @relation(fields: [consentDocumentId], references: [id], onDelete: Cascade)
+  signingSession  SigningSession? @relation(fields: [signingSessionId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, consentDocumentId, copyType], map: "idx_consent_evidence_packages_doc_type")
+  @@index([signingSessionId], map: "idx_consent_evidence_packages_signing_session")
   @@map("consent_evidence_packages")
 }
 
 model EvidencePackage {
-  id                    String    @id @default(uuid())
-  tenantId              String    @map("tenant_id")
-  caseId                String?   @map("case_id")
-  consentDocumentId     String?   @map("consent_document_id")
-  mrn                   String?
-  procedureName         String?   @map("procedure_name")
-  educationVersion      String?   @map("education_version")
-  educationLanguage     String?   @map("education_language")
-  educationViewed       Boolean   @default(false) @map("education_viewed")
-  viewDurationSeconds   Int?      @map("view_duration_seconds")
-  consentTemplate       String?   @map("consent_template")
-  consentVersion        String?   @map("consent_version")
-  consentLanguage       String?   @map("consent_language")
-  consentTimestamp      DateTime? @map("consent_timestamp")
-  signerIdentity        String?   @map("signer_identity")
-  signatureTimestamp    DateTime? @map("signature_timestamp")
-  browser               String?
-  deviceType            String?   @map("device_type")
-  ipAddress             String?   @map("ip_address")
-  otpSentTime           DateTime? @map("otp_sent_time")
-  otpVerificationTime   DateTime? @map("otp_verification_time")
-  otpVerificationStatus String?   @map("otp_verification_status")
-  maskedMobileNumber    String?   @map("masked_mobile_number")
-  educationSummary      String?   @map("education_summary")
-  consentSummary        String?   @map("consent_summary")
-  timelineSummary       String?   @map("timeline_summary")
-  generatedAt           DateTime  @default(now()) @map("generated_at")
-  metadata              Json?
-  createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @updatedAt @map("updated_at")
+  id                       String                  @id @default(uuid())
+  tenantId                 String                  @map("tenant_id")
+  caseId                   String?                 @map("case_id")
+  consentDocumentId        String?                 @map("consent_document_id")
+  signingSessionId         String?                 @map("signing_session_id") @db.Uuid
+  mrn                      String?
+  procedureName            String?                 @map("procedure_name")
+  educationVersion         String?                 @map("education_version")
+  educationLanguage        String?                 @map("education_language")
+  educationViewed          Boolean                 @default(false) @map("education_viewed")
+  viewDurationSeconds      Int?                    @map("view_duration_seconds")
+  consentTemplate          String?                 @map("consent_template")
+  consentVersion           String?                 @map("consent_version")
+  consentLanguage          String?                 @map("consent_language")
+  consentTimestamp         DateTime?               @map("consent_timestamp")
+  signerIdentity           String?                 @map("signer_identity")
+  signatureTimestamp       DateTime?               @map("signature_timestamp")
+  browser                  String?
+  deviceType               String?                 @map("device_type")
+  ipAddress                String?                 @map("ip_address")
+  otpSentTime              DateTime?               @map("otp_sent_time")
+  otpVerificationTime      DateTime?               @map("otp_verification_time")
+  otpVerificationStatus    String?                 @map("otp_verification_status")
+  maskedMobileNumber       String?                 @map("masked_mobile_number")
+  educationSummary         String?                 @map("education_summary")
+  consentSummary           String?                 @map("consent_summary")
+  timelineSummary          String?                 @map("timeline_summary")
+  generatedAt              DateTime                @default(now()) @map("generated_at")
+  outcome                  ConsentSigningOutcome?  @default(PENDING) @map("outcome")
+  finalPdfHash             String?                 @map("final_pdf_hash")
+  patientCopyDeliveredAt   DateTime?               @map("patient_copy_delivered_at")
+  patientCopyDeliveryStatus String?                @map("patient_copy_delivery_status")
+  metadata                 Json?
+  createdAt                DateTime                @default(now()) @map("created_at")
+  updatedAt                DateTime                @updatedAt @map("updated_at")
 
   tenant          Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   case            Case?                 @relation(fields: [caseId], references: [id], onDelete: SetNull)
   consentDocument ConsentDocument?      @relation(fields: [consentDocumentId], references: [id], onDelete: SetNull)
+  signingSession  SigningSession?       @relation(fields: [signingSessionId], references: [id], onDelete: SetNull)
   events          EvidenceEvent[]
   timeline        EvidenceTimeline?
   assetRecords    EvidenceAssetRecord[]
@@ -2485,6 +2525,7 @@ model EvidencePackage {
   @@index([tenantId, generatedAt], map: "idx_evidence_packages_tenant_generated")
   @@index([tenantId, mrn], map: "idx_evidence_packages_tenant_mrn")
   @@index([tenantId, consentTemplate], map: "idx_evidence_packages_tenant_template")
+  @@index([signingSessionId], map: "idx_evidence_packages_signing_session")
   @@map("evidence_packages")
 }
 
