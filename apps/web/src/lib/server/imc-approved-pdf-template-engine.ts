@@ -1,46 +1,23 @@
-﻿import { existsSync, readFileSync } from "node:fs";
+import crypto from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
 import chromium from "@sparticuz/chromium";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument } from "pdf-lib";
 import puppeteer from "puppeteer";
-import type { Browser, LaunchOptions, Page } from "puppeteer";
+import type { Browser, LaunchOptions } from "puppeteer";
 import QRCode from "qrcode";
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 import { getConsentFieldMappingByFormId } from "@/lib/server/consent-field-mappings";
+import type { ConsentFieldMapping } from "@/lib/consents/field-mapping/types";
 import { resolveConsentSignaturePresentation } from "@/lib/signature/signature-display";
+import {
+  IMC_APPROVED_CONSENT_FORMS_MANIFEST,
+  type ImcApprovedConsentManifestItem as TypeScriptManifestItem,
+} from "@/lib/server/imc-approved-consent-forms.manifest";
 
-type ImcManifestItem = {
-  id: string;
-  titleEn: string;
-  fileName: string;
-  publicPath: string;
-  specialty: string;
-  templateType: string;
-  status: string;
-  source: string;
-  requiresAnesthesia: boolean;
-  isPatientCopy: boolean;
-  isEducation: boolean;
-  isAnesthesia: boolean;
-  lengthBytes: number;
-};
-
-type FieldMapPoint = {
-  page?: number;
-  x: number;
-  y: number;
-  size?: number;
-  maxWidth?: number;
-};
-
-type TemplateFieldMap = {
-  mode: "overlay" | "acroform";
-  appendEvidencePage?: boolean;
-  fields?: Record<string, FieldMapPoint>;
-  requiredFields?: string[];
-};
+type CopyType = "PATIENT_COPY" | "MEDICAL_RECORD_COPY" | "LEGAL_ARCHIVE_COPY";
 
 type OverlayDocumentContext = {
   approvedConsentFormId: string | null;
@@ -216,26 +193,6 @@ function renderWatermarkMarkup(): string {
       <span>Electronically Signed</span>
     </div>
   `).join("");
-}
-
-function buildMainPageStickerRows(context: OverlayDocumentContext): Array<{ label: string; value: string | null }> {
-  return [
-    { label: "Patient Name / اسم المريض", value: context.patientName },
-    { label: "MRN / رقم الملف الطبي", value: context.patientMrn },
-    { label: "DOB / تاريخ الميلاد", value: context.patientDob },
-    { label: "Age / العمر", value: context.patientAge },
-    { label: "Gender / الجنس", value: context.gender },
-    { label: "Encounter ID / رقم الزيارة", value: context.encounterId },
-    { label: "Case ID / رقم الحالة", value: context.caseId },
-    { label: "Visit ID / رقم الزيارة البديل", value: context.visitId },
-    { label: "Facility / المنشأة", value: context.facilityName },
-    { label: "Location / الموقع", value: context.location || context.wardBed },
-    { label: "Procedure / الإجراء", value: context.procedure },
-    { label: "Document ID / رقم المستند", value: context.documentId },
-    { label: "Signature ID / رقم التوقيع", value: context.signatureId },
-    { label: "Consent Reference / مرجع الموافقة", value: context.consentReference },
-    { label: "Signed At / تاريخ ووقت التوقيع", value: context.signedAtEn },
-  ];
 }
 
 function buildAppendixRows(context: OverlayDocumentContext): Array<{ label: string; value: string | null }> {
@@ -689,23 +646,6 @@ function buildSharedMetaItems(context: OverlayDocumentContext): string {
     .join("");
 }
 
-function buildCompactIdentityItems(context: OverlayDocumentContext): string {
-  const rows = [
-    { label: "Procedure / الإجراء", value: context.procedure },
-    { label: "Verify / التحقق", value: truncateForHeader(context.verificationUrl, 26) },
-  ];
-
-  return rows
-    .filter((row) => Boolean(compactWhitespace(row.value)))
-    .map((row) => `
-      <div class="wc-meta-item">
-        <div class="wc-meta-label">${escapeHtml(row.label)}</div>
-        <div class="wc-meta-value">${escapeHtml(compactWhitespace(row.value) || "")}</div>
-      </div>
-    `)
-    .join("");
-}
-
 function buildOverlayPageHtml(args: {
   context: OverlayDocumentContext;
   compact: boolean;
@@ -713,9 +653,6 @@ function buildOverlayPageHtml(args: {
   totalPages: number;
 }): string {
   const { context, compact } = args;
-  const logo = context.wathiqLogoDataUrl
-    ? `<img class="wc-logo" src="${context.wathiqLogoDataUrl}" alt="WathiqCare" />`
-    : `<strong>WathiqCare</strong>`;
 
   return buildOverlayShell({
     body: `
@@ -827,12 +764,6 @@ async function renderOverlayPng(args: { browser: Browser; html: string }): Promi
   }
 }
 
-function buildOverlayContext(args: {
-  doc: Awaited<ReturnType<ReturnType<typeof getPrisma>["consentDocument"]["findFirst"]>> extends infer _T ? never : never;
-}) {
-  void args;
-}
-
 function slugify(value: string): string {
   return String(value || "")
     .trim()
@@ -842,81 +773,6 @@ function slugify(value: string): string {
     .replace(/&/g, "and")
     .replace(/[^a-z0-9\u0600-\u06FF]+/gi, "-")
     .replace(/^-+|-+$/g, "");
-}
-
-async function loadManifest(): Promise<ImcManifestItem[] | null> {
-  const candidates = [
-    path.join(process.cwd(), "public", "imc-consent-library", "imc-consent-catalog.manifest.json"),
-    path.join(process.cwd(), "apps", "web", "public", "imc-consent-library", "imc-consent-catalog.manifest.json"),
-  ];
-
-  for (const candidate of candidates) {
-    try {
-      const raw = await readFile(candidate, "utf8");
-      return JSON.parse(raw.replace(/^\uFEFF/, "")) as ImcManifestItem[];
-    } catch {
-      // try next candidate
-    }
-  }
-
-  return null;
-}
-
-async function loadJsonAssetWithFallback<T>(args: {
-  fileName: string;
-  origin: string;
-}): Promise<T | null> {
-  const { fileName, origin } = args;
-  const response = await fetch(new URL(`/imc-consent-library/${fileName}`, origin));
-
-  if (!response.ok) {
-    return null;
-  }
-
-  return (await response.json()) as T;
-}
-
-async function loadManifestWithFallback(origin: string): Promise<ImcManifestItem[] | null> {
-  const manifest = await loadManifest();
-  if (Array.isArray(manifest) && manifest.length > 0) {
-    return manifest;
-  }
-
-  return await loadJsonAssetWithFallback<ImcManifestItem[]>({
-      fileName: "imc-consent-catalog.manifest.json",
-      origin,
-    });
-}
-
-async function loadFieldMap(): Promise<Record<string, TemplateFieldMap>> {
-  const candidates = [
-    path.join(process.cwd(), "public", "imc-consent-library", "imc-template-field-map.json"),
-    path.join(process.cwd(), "apps", "web", "public", "imc-consent-library", "imc-template-field-map.json"),
-  ];
-
-  for (const candidate of candidates) {
-    try {
-      const raw = await readFile(candidate, "utf8");
-      return JSON.parse(raw.replace(/^\uFEFF/, "")) as Record<string, TemplateFieldMap>;
-    } catch {
-      // try next candidate
-    }
-  }
-
-  return {};
-}
-
-async function loadFieldMapWithFallback(origin: string): Promise<Record<string, TemplateFieldMap>> {
-  const fieldMaps = await loadFieldMap();
-  if (Object.keys(fieldMaps).length > 0) {
-    return fieldMaps;
-  }
-
-  return await loadJsonAssetWithFallback<Record<string, TemplateFieldMap>>({
-      fileName: "imc-template-field-map.json",
-      origin,
-    })
-    || {};
 }
 
 async function readPublicPdf(publicPath: string): Promise<Buffer> {
@@ -972,81 +828,6 @@ function resolveTemplateMetadata(metadata: unknown) {
     locked: template.locked === true,
   };
 }
-
-function buildFallbackManifestItem(linkedTemplate: ReturnType<typeof resolveTemplateMetadata>): ImcManifestItem | undefined {
-  if (!linkedTemplate.publicPath) return undefined;
-
-  const fileName = decodeURIComponent(linkedTemplate.publicPath.split("/").pop() || "approved-consent.pdf");
-
-  return {
-    id: linkedTemplate.id || slugify(linkedTemplate.titleEn || fileName),
-    titleEn: linkedTemplate.titleEn || fileName.replace(/\.pdf$/i, ""),
-    fileName,
-    publicPath: linkedTemplate.publicPath,
-    specialty: "",
-    templateType: linkedTemplate.templateType || "PROCEDURE_CONSENT",
-    status: linkedTemplate.status || "ACTIVE",
-    source: linkedTemplate.source || "IMC_APPROVED_PDF_LIBRARY",
-    requiresAnesthesia: /anesthesia/i.test(linkedTemplate.templateType) || /anesthesia/i.test(linkedTemplate.titleEn),
-    isPatientCopy: /patient copy/i.test(fileName),
-    isEducation: false,
-    isAnesthesia: /anesthesia/i.test(linkedTemplate.templateType) || /anesthesia/i.test(linkedTemplate.titleEn),
-    lengthBytes: 0,
-  };
-}
-
-function validateManifestItem(args: {
-  metadataTemplateId: string;
-  manifestItem: ImcManifestItem | undefined;
-}) {
-  const { metadataTemplateId, manifestItem } = args;
-
-  if (!metadataTemplateId) {
-    throw new ApiError(409, "PDF generation blocked: no IMC approved template is linked to this consent document");
-  }
-
-  if (!manifestItem) {
-    throw new ApiError(409, "PDF generation blocked: linked IMC template was not found in the approved manifest");
-  }
-
-  if (manifestItem.status !== "ACTIVE") {
-    throw new ApiError(409, "PDF generation blocked: linked IMC template is not ACTIVE");
-  }
-
-  if (manifestItem.source !== "IMC_APPROVED_PDF_LIBRARY") {
-    throw new ApiError(409, "PDF generation blocked: linked template source is not IMC_APPROVED_PDF_LIBRARY");
-  }
-}
-
-async function drawMappedText(args: {
-  pdfDoc: PDFDocument;
-  map: TemplateFieldMap;
-  values: Record<string, string>;
-}) {
-  const { pdfDoc, map, values } = args;
-  const pages = pdfDoc.getPages();
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const fields = map.fields || {};
-
-  for (const [key, point] of Object.entries(fields)) {
-    const value = values[key];
-    if (!value) continue;
-
-    const pageIndex = point.page ?? 0;
-    const page = pages[pageIndex];
-    if (!page) continue;
-
-    page.drawText(value, {
-      x: point.x,
-      y: point.y,
-      size: point.size || 9,
-      font,
-      color: rgb(0.05, 0.09, 0.16),
-      maxWidth: point.maxWidth,
-    });
-  }
-}
-
 
 function toFiniteOverlayNumber(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -1525,67 +1306,58 @@ function buildProductionMappedTextOverlayHtml(args: {
 }
 
 async function drawProductionMappedText(args: {
-  browser: Browser;
+  browser?: Browser;
   pdfDoc: PDFDocument;
   mapping: unknown;
   values: Record<string, string>;
   excludedKeys?: Set<string>;
-}) {
-  const pages =
-    args.pdfDoc.getPages();
-
+}): Promise<number> {
+  const pages = args.pdfDoc.getPages();
   let drawn = 0;
 
-  for (
-    let pageIndex = 0;
-    pageIndex < pages.length;
-    pageIndex += 1
-  ) {
-    const overlay =
-      buildProductionMappedTextOverlayHtml({
-        mapping:
-          args.mapping,
-        values:
-          args.values,
+  const externalBrowser = args.browser;
+  let browser = externalBrowser ?? null;
+  let shouldCloseBrowser = false;
+
+  if (!browser) {
+    browser = await launchOverlayBrowser();
+    shouldCloseBrowser = true;
+  }
+
+  try {
+    for (let pageIndex = 0; pageIndex < pages.length; pageIndex += 1) {
+      const overlay = buildProductionMappedTextOverlayHtml({
+        mapping: args.mapping,
+        values: args.values,
         pageIndex,
-        excludedKeys:
-          args.excludedKeys,
+        excludedKeys: args.excludedKeys,
       });
 
-    if (!overlay) {
-      continue;
-    }
+      if (!overlay) {
+        continue;
+      }
 
-    const overlayBytes =
-      await renderOverlayPng({
-        browser:
-          args.browser,
-        html:
-          overlay.html,
+      const overlayBytes = await renderOverlayPng({
+        browser,
+        html: overlay.html,
       });
 
-    const overlayImage =
-      await args.pdfDoc.embedPng(
-        overlayBytes,
-      );
+      const overlayImage = await args.pdfDoc.embedPng(overlayBytes);
+      const page = pages[pageIndex];
 
-    const page =
-      pages[pageIndex];
-
-    page.drawImage(
-      overlayImage,
-      {
+      page.drawImage(overlayImage, {
         x: 0,
         y: 0,
-        width:
-          page.getWidth(),
-        height:
-          page.getHeight(),
-      },
-    );
+        width: page.getWidth(),
+        height: page.getHeight(),
+      });
 
-    drawn +=
-      overlay.drawn;
+      drawn += overlay.drawn;
+    }
+  } finally {
+    if (shouldCloseBrowser && browser) {
+      await browser.close();
+    }
   }
 
   return drawn;
@@ -1625,43 +1397,47 @@ function decodeSignatureImageDataUrl(
   };
 }
 
+type SignatureFallbackPlacement = {
+  page: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  coordinateMode?: "NORMALIZED";
+};
+
 async function drawProductionMappedSignature(args: {
   pdfDoc: PDFDocument;
   mapping: unknown;
   fieldKey: string;
   signatureImageDataUrl: string | null | undefined;
+  fallbackPlacement?: SignatureFallbackPlacement;
 }) {
-  const decoded = decodeSignatureImageDataUrl(
-    args.signatureImageDataUrl,
-  );
+  const decoded = decodeSignatureImageDataUrl(args.signatureImageDataUrl);
 
   if (!decoded) {
     return false;
   }
 
   const mappingRecord = asRecord(args.mapping);
-  const nestedMapping =
-    asRecord(mappingRecord.mapping);
+  const nestedMapping = asRecord(mappingRecord.mapping);
 
   const effectiveMapping =
-    nestedMapping &&
-    Object.keys(nestedMapping).length > 0
+    nestedMapping && Object.keys(nestedMapping).length > 0
       ? nestedMapping
       : mappingRecord;
 
-  const coordinateMode = asString(
-    effectiveMapping.coordinateMode,
-  ).toUpperCase();
+  const mappingCoordinateMode = asString(effectiveMapping.coordinateMode).toUpperCase();
 
-  const field = collectProductionMappingFields(
-    effectiveMapping,
-  ).find((candidate) => asString(candidate.key) === args.fieldKey);
+  const field = collectProductionMappingFields(effectiveMapping).find(
+    (candidate) => asString(candidate.key) === args.fieldKey,
+  );
 
-  if (!field) {
-    return false;
+  let placement = field ? getProductionMappingPlacement(field) : null;
+
+  if (!placement && args.fallbackPlacement) {
+    placement = args.fallbackPlacement;
   }
-
-  const placement = getProductionMappingPlacement(field);
 
   if (!placement) {
     return false;
@@ -1694,7 +1470,7 @@ async function drawProductionMappedSignature(args: {
   ).toUpperCase();
 
   const normalized =
-    coordinateMode === "NORMALIZED" ||
+    mappingCoordinateMode === "NORMALIZED" ||
     placementCoordinateMode === "NORMALIZED" ||
     (
       xRaw >= 0 &&
@@ -1789,44 +1565,34 @@ export async function renderImcApprovedDoctorDraftPdf(args: {
       args.doctorCompletionValues,
     );
 
-  const browser =
-    await launchOverlayBrowser();
+  const browser = await launchOverlayBrowser();
+  let textFieldsDrawn = 0;
 
   try {
-    await drawProductionMappedText({
+    textFieldsDrawn = await drawProductionMappedText({
       browser,
       pdfDoc,
       mapping,
-      values:
-        normalizedValues,
-      excludedKeys:
-        new Set([
-          "patient_signature",
-          "guardian_signature",
-          "treating_physician_signature",
-        ]),
+      values: normalizedValues,
+      excludedKeys: new Set([
+        "patient_signature",
+        "guardian_signature",
+        "treating_physician_signature",
+      ]),
     });
-  }
-  finally {
+  } finally {
     await browser.close();
   }
 
-  let physicianSignatureDrawn =
-    false;
+  let physicianSignatureDrawn = false;
 
-  if (
-    args.physicianSignatureDataUrl
-      ?.trim()
-  ) {
-    physicianSignatureDrawn =
-      await drawProductionMappedSignature({
-        pdfDoc,
-        mapping,
-        fieldKey:
-          "treating_physician_signature",
-        signatureImageDataUrl:
-          args.physicianSignatureDataUrl,
-      });
+  if (args.physicianSignatureDataUrl?.trim()) {
+    physicianSignatureDrawn = await drawProductionMappedSignature({
+      pdfDoc,
+      mapping,
+      fieldKey: "treating_physician_signature",
+      signatureImageDataUrl: args.physicianSignatureDataUrl,
+    });
 
     if (!physicianSignatureDrawn) {
       throw new ApiError(
@@ -1836,15 +1602,267 @@ export async function renderImcApprovedDoctorDraftPdf(args: {
     }
   }
 
-  const bytes =
-    await pdfDoc.save();
+  const bytes = await pdfDoc.save();
 
   return {
-    bytes:
-      Buffer.from(bytes),
+    bytes: Buffer.from(bytes),
     physicianSignatureDrawn,
-    renderingEngine:
-      "approved-imc-overlay",
+    textFieldsDrawn,
+    renderingEngine: "approved-imc-overlay",
+  };
+}
+
+function resolveTypeScriptManifestItem(args: {
+  approvedConsentFormId: string;
+  publicPath?: string | null;
+}): TypeScriptManifestItem | null {
+  return (
+    IMC_APPROVED_CONSENT_FORMS_MANIFEST.find(
+      (item) =>
+        item.id === args.approvedConsentFormId ||
+        item.slug === args.approvedConsentFormId ||
+        (args.publicPath &&
+          (item.pdfUrl === args.publicPath || item.patientCopyPdfUrl === args.publicPath)),
+    ) || null
+  );
+}
+
+function resolveBasePublicPath(args: {
+  manifestItem: TypeScriptManifestItem;
+  copyType: CopyType;
+}): string {
+  if (args.copyType === "PATIENT_COPY" && args.manifestItem.patientCopyPdfUrl) {
+    return args.manifestItem.patientCopyPdfUrl;
+  }
+  return args.manifestItem.pdfUrl;
+}
+
+function resolveApprovedConsentFormIdFromMetadata(metadata: unknown): string {
+  const root = asRecord(metadata);
+  const template = asRecord(root.imcApprovedTemplate);
+
+  if (typeof root.approvedConsentFormId === "string" && root.approvedConsentFormId.trim()) {
+    return root.approvedConsentFormId.trim();
+  }
+
+  if (typeof template.id === "string" && template.id.trim()) {
+    return template.id.trim();
+  }
+
+  return "";
+}
+
+async function renderImcApprovedConsentPdfCore(args: {
+  pdfBytes: Uint8Array;
+  copyType: CopyType;
+  manifestItem: TypeScriptManifestItem;
+  mapping: ConsentFieldMapping | null;
+  doctorCompletionValues: Record<string, unknown>;
+  physicianSignatureDataUrl: string | null | undefined;
+  patientOrGuardianSignatureDataUrl: string | null | undefined;
+  patientOrGuardianRole: "PATIENT" | "GUARDIAN" | null;
+  signedAt: Date | string | null;
+  patientName: string;
+  mrn: string | null;
+  dob?: string | null;
+  procedure: string;
+  physicianName: string | null;
+  documentId: string;
+  consentReference: string;
+  encounterId?: string | null;
+  caseId?: string | null;
+  caseNumber?: string | null;
+  tenantName?: string | null;
+  origin?: string;
+  approvedConsentFormId?: string | null;
+  createdAt?: Date | string | null;
+}): Promise<{
+  bytes: Buffer;
+  checksum: string;
+  textFieldsDrawn: number;
+  physicianSignatureDrawn: boolean;
+  patientSignatureDrawn: boolean;
+  pageCount: number;
+}> {
+  const pdfDoc = await PDFDocument.load(args.pdfBytes, { updateMetadata: false });
+  const stableDate = args.createdAt ? new Date(args.createdAt) : new Date();
+  pdfDoc.setCreationDate(stableDate);
+  pdfDoc.setModificationDate(stableDate);
+
+  const normalizedDoctorValues = normalizeProductionOverlayValues(args.doctorCompletionValues);
+  const values: Record<string, string> = { ...normalizedDoctorValues };
+
+  if (args.signedAt) {
+    const formatted = formatDateTime(args.signedAt, "en");
+    if (formatted) {
+      values.signed_at = formatted;
+    }
+  }
+
+  values.patientName = args.patientName || values.patientName || "";
+  values.mrn = args.mrn || values.mrn || "";
+  values.procedure = args.procedure || values.procedure || "";
+  values.physicianName = args.physicianName || values.physicianName || "";
+
+  const signatureKeys = new Set([
+    "treating_physician_signature",
+    "patient_signature",
+    "guardian_signature",
+  ]);
+
+  const origin = args.origin || "https://wathiqcare.online";
+  const verificationUrl = `${origin}/verify/consent/${args.documentId}`;
+  const qrDataUrl = await QRCode.toDataURL(verificationUrl, {
+    errorCorrectionLevel: "M",
+    width: 280,
+    margin: 1,
+  });
+  const wathiqLogoDataUrl = await readPublicImageDataUrl("/images/wathiqcare-logo.png", "image/png");
+
+  const patientDob = compactWhitespace(args.dob);
+  const patientAge = formatAge(patientDob, args.signedAt || stableDate);
+  const signedAtAr = formatDateTime(args.signedAt || stableDate, "ar");
+  const signedAtEn = formatDateTime(args.signedAt || stableDate, "en");
+
+  const overlayContext: OverlayDocumentContext = {
+    approvedConsentFormId: args.approvedConsentFormId || null,
+    approvedTemplateTitle: compactWhitespace(args.manifestItem.titleEn) || "",
+    caseId: args.caseId || args.documentId,
+    caseNumber: compactWhitespace(args.caseNumber),
+    clinicalConsentFormId: null,
+    consentReference: compactWhitespace(args.consentReference) || args.documentId,
+    documentId: args.documentId,
+    encounterId: args.encounterId || null,
+    facilityName: compactWhitespace(args.tenantName) || "International Medical Center",
+    gender: null,
+    location: null,
+    patientAge,
+    patientDob,
+    patientMrn: compactWhitespace(args.mrn),
+    patientName: compactWhitespace(args.patientName) || "Patient",
+    pdfTemplateUrl: args.manifestItem.pdfUrl,
+    physicianName: compactWhitespace(args.physicianName),
+    procedure: compactWhitespace(args.procedure) || args.manifestItem.titleEn,
+    qrDataUrl,
+    signedAtAr,
+    signedAtEn,
+    signatureId: null,
+    signedStatus: "Electronically Signed / تم التوقيع إلكترونياً",
+    sourcePath: args.manifestItem.sourceFile || args.manifestItem.pdfUrl,
+    verificationUrl,
+    visitId: null,
+    wardBed: null,
+    wathiqLogoDataUrl,
+  };
+
+  const browser = await launchOverlayBrowser();
+  let textFieldsDrawn = 0;
+  let physicianSignatureDrawn = false;
+  let patientSignatureDrawn = false;
+
+  try {
+    if (args.copyType !== "PATIENT_COPY") {
+      const firstPageOverlayBytes = await renderOverlayPng({
+        browser,
+        html: buildOverlayPageHtml({
+          context: overlayContext,
+          compact: false,
+          pageIndex: 0,
+          totalPages: pdfDoc.getPageCount(),
+        }),
+      });
+      const repeatedOverlayBytes = await renderOverlayPng({
+        browser,
+        html: buildOverlayPageHtml({
+          context: overlayContext,
+          compact: true,
+          pageIndex: 1,
+          totalPages: pdfDoc.getPageCount(),
+        }),
+      });
+      const appendixOverlayBytes = await renderOverlayPng({
+        browser,
+        html: buildAppendixHtml(overlayContext),
+      });
+
+      const firstOverlayImage = await pdfDoc.embedPng(firstPageOverlayBytes);
+      const repeatedOverlayImage = await pdfDoc.embedPng(repeatedOverlayBytes);
+      const appendixOverlayImage = await pdfDoc.embedPng(appendixOverlayBytes);
+
+      pdfDoc.getPages().forEach((page, index) => {
+        const image = index === 0 ? firstOverlayImage : repeatedOverlayImage;
+        page.drawImage(image, {
+          x: 0,
+          y: 0,
+          width: page.getWidth(),
+          height: page.getHeight(),
+        });
+      });
+
+      const appendixPage = pdfDoc.addPage([A4_PAGE.width, A4_PAGE.height]);
+      appendixPage.drawImage(appendixOverlayImage, {
+        x: 0,
+        y: 0,
+        width: appendixPage.getWidth(),
+        height: appendixPage.getHeight(),
+      });
+    }
+
+    if (args.mapping) {
+      textFieldsDrawn = await drawProductionMappedText({
+        browser,
+        pdfDoc,
+        mapping: args.mapping,
+        values,
+        excludedKeys: signatureKeys,
+      });
+
+      const lastPageIndex = Math.max(0, pdfDoc.getPageCount() - 1);
+      const fallbackSignaturePlacement: SignatureFallbackPlacement = {
+        page: lastPageIndex + 1,
+        x: 0.15,
+        y: 0.88,
+        width: 0.30,
+        height: 0.075,
+        coordinateMode: "NORMALIZED",
+      };
+
+      if (args.physicianSignatureDataUrl?.trim()) {
+        physicianSignatureDrawn = await drawProductionMappedSignature({
+          pdfDoc,
+          mapping: args.mapping,
+          fieldKey: "treating_physician_signature",
+          signatureImageDataUrl: args.physicianSignatureDataUrl,
+          fallbackPlacement: fallbackSignaturePlacement,
+        });
+      }
+
+      if (args.patientOrGuardianSignatureDataUrl?.trim()) {
+        const fieldKey =
+          args.patientOrGuardianRole === "GUARDIAN" ? "guardian_signature" : "patient_signature";
+        patientSignatureDrawn = await drawProductionMappedSignature({
+          pdfDoc,
+          mapping: args.mapping,
+          fieldKey,
+          signatureImageDataUrl: args.patientOrGuardianSignatureDataUrl,
+          fallbackPlacement: fallbackSignaturePlacement,
+        });
+      }
+    }
+  } finally {
+    await browser.close();
+  }
+
+  const finalBytes = await pdfDoc.save();
+  const checksum = crypto.createHash("sha256").update(finalBytes).digest("hex");
+
+  return {
+    bytes: Buffer.from(finalBytes),
+    checksum,
+    textFieldsDrawn,
+    physicianSignatureDrawn,
+    patientSignatureDrawn,
+    pageCount: pdfDoc.getPageCount(),
   };
 }
 
@@ -1852,6 +1870,7 @@ export async function renderImcApprovedConsentPdf(args: {
   documentId: string;
   tenantId: string;
   origin: string;
+  copyType?: CopyType;
 }) {
   const prisma = getPrisma();
 
@@ -1864,13 +1883,6 @@ export async function renderImcApprovedConsentPdf(args: {
       tenant: {
         select: {
           name: true,
-        },
-      },
-      template: {
-        select: {
-          titleEn: true,
-          consentType: true,
-          specialty: true,
         },
       },
       case: {
@@ -1888,381 +1900,201 @@ export async function renderImcApprovedConsentPdf(args: {
     throw new ApiError(404, "Consent document not found");
   }
 
+  const copyType: CopyType = args.copyType || "PATIENT_COPY";
   const linkedTemplate = resolveTemplateMetadata(doc.metadata);
-  const manifest = await loadManifestWithFallback(args.origin);
-  const manifestItem = manifest?.find((item) => item.id === linkedTemplate.id)
-    || manifest?.find((item) => item.publicPath === linkedTemplate.publicPath)
-    || buildFallbackManifestItem(linkedTemplate);
+  const approvedConsentFormId =
+    resolveApprovedConsentFormIdFromMetadata(doc.metadata) || linkedTemplate.id;
 
-  validateManifestItem({
-    metadataTemplateId: linkedTemplate.id,
-    manifestItem,
+  let manifestItem = resolveTypeScriptManifestItem({
+    approvedConsentFormId,
+    publicPath: linkedTemplate.publicPath,
   });
 
   if (!manifestItem) {
-    throw new ApiError(409, "IMC manifest item not found");
+    if (!linkedTemplate.publicPath) {
+      throw new ApiError(
+        409,
+        "PDF generation blocked: approved IMC template is not linked to a source PDF",
+      );
+    }
+
+    const slug = approvedConsentFormId.replace(/^imc-approved-/, "");
+    manifestItem = {
+      id: approvedConsentFormId,
+      slug,
+      titleEn: linkedTemplate.titleEn || approvedConsentFormId,
+      titleAr: "",
+      category: "general-surgery",
+      specialty: "",
+      procedure: linkedTemplate.titleEn || "",
+      language: "bilingual",
+      version: "1.0",
+      approvalStatus: "approved",
+      legalApprovalDate: "",
+      clinicalApprovalDate: "",
+      governanceOwner: "IMC Consent Governance",
+      riskLevel: "standard",
+      tags: [],
+      pdfUrl: linkedTemplate.publicPath,
+      patientCopyPdfUrl: "",
+      summary: "",
+      sourceFile: linkedTemplate.publicPath.split("/").pop() || `${slug}.pdf`,
+    };
   }
 
-  const fieldMaps = await loadFieldMapWithFallback(args.origin);
-  const fieldMap = fieldMaps[manifestItem.id] || fieldMaps._default;
-
-  if (!fieldMap) {
-    throw new ApiError(409, "PDF generation blocked: no field map exists for the linked IMC approved template");
-  }
-
-  const pdfBytes = await readPublicPdfWithFallback(
-    linkedTemplate.publicPath || manifestItem.publicPath,
-    args.origin,
-  );
-  const pdfDoc =
-    await PDFDocument.load(
-      pdfBytes,
-      {
-        updateMetadata: false,
-      },
+  if (manifestItem.approvalStatus !== "approved") {
+    throw new ApiError(
+      409,
+      `PDF generation blocked: approved IMC template status is ${manifestItem.approvalStatus}`,
     );
+  }
 
-  /*
-   * pdf-lib must not insert a new modification timestamp on every render.
-   * The consent creation time is stable before and after finalization.
-   */
-  pdfDoc.setCreationDate(
-    doc.createdAt,
-  );
-
-  pdfDoc.setModificationDate(
-    doc.createdAt,
-  );
+  const publicPath = resolveBasePublicPath({ manifestItem, copyType });
+  const pdfBytes = await readPublicPdfWithFallback(publicPath, args.origin);
 
   const metadata = asRecord(doc.metadata);
-  const patientIdentity = asRecord(metadata.patientIdentity);
-  const demographics = asRecord(metadata.demographics);
   const encounter = asRecord(metadata.encounter);
   const procedureMetadata = asRecord(metadata.procedure);
-  const locationMetadata = asRecord(metadata.location);
-  const refusalSignature = asRecord(metadata.refusalSignature);
+
   const patientOrGuardianSignature =
-    doc.signatures.find((item) => item.role === "PATIENT")
-    || doc.signatures.find((item) => item.role === "GUARDIAN")
-    || null;
+    doc.signatures.find((item) => item.role === "PATIENT") ||
+    doc.signatures.find((item) => item.role === "GUARDIAN") ||
+    null;
 
   const physicianSignature =
-    doc.signatures
-      .filter(
-        (item) =>
-          item.role === "PHYSICIAN",
-      )
-      .at(-1)
-    || null;
+    doc.signatures.filter((item) => item.role === "PHYSICIAN").at(-1) || null;
 
-  const selectedSignature =
-    patientOrGuardianSignature
-    || doc.signatures.at(-1)
-    || null;
-
-  const selectedSignatureMetadata =
-    asRecord(selectedSignature?.metadata);
-
-  const doctorCompletionValues =
-    asRecord(metadata.doctorCompletionValues);
-
-  const physicianSignaturePresentation =
-    physicianSignature
-      ? resolveConsentSignaturePresentation({
-          metadata:
-            physicianSignature.metadata,
-
-          signatureMethod:
-            physicianSignature.signatureMethod,
-
-          signedAt:
-            physicianSignature.signedAt,
-
-          signerName:
-            physicianSignature.signerName
-            || doc.physicianName
-            || "Physician",
-        })
-      : null;
+  const physicianSignaturePresentation = physicianSignature
+    ? resolveConsentSignaturePresentation({
+        metadata: physicianSignature.metadata,
+        signatureMethod: physicianSignature.signatureMethod,
+        signedAt: physicianSignature.signedAt,
+        signerName: physicianSignature.signerName || doc.physicianName || "Physician",
+      })
+    : null;
 
   const signaturePresentation = patientOrGuardianSignature
     ? resolveConsentSignaturePresentation({
         metadata: patientOrGuardianSignature.metadata,
-        signatureMethod:
-          patientOrGuardianSignature.signatureMethod,
+        signatureMethod: patientOrGuardianSignature.signatureMethod,
         signedAt: patientOrGuardianSignature.signedAt,
-        signerName:
-          patientOrGuardianSignature.signerName
-          || doc.patientName
-          || "Patient",
+        signerName: patientOrGuardianSignature.signerName || doc.patientName || "Patient",
       })
     : null;
 
-  const verificationUrl = `${args.origin}/verify/consent/${doc.id}`;
-  const qrDataUrl = await QRCode.toDataURL(verificationUrl, {
-    errorCorrectionLevel: "M",
-    width: 280,
-    margin: 1,
-  });
-  const wathiqLogoDataUrl = await readPublicImageDataUrl("/images/wathiqcare-logo.png", "image/png");
+  const signedAt = patientOrGuardianSignature?.signedAt || physicianSignature?.signedAt || null;
 
-  const encounterId = pickFirstString({ metadata, encounter }, [
-    ["encounter", "encounterId"],
-    ["encounter", "encounterIdentifier"],
-    ["metadata", "encounterId"],
-    ["metadata", "encounterIdentifier"],
-  ]);
-  const visitId = pickFirstString({ metadata, encounter }, [
-    ["encounter", "visitId"],
-    ["encounter", "visitNumber"],
-    ["metadata", "visitId"],
-  ]);
-  const wardBed = [
-    pickFirstString({ locationMetadata, encounter }, [["locationMetadata", "ward"], ["encounter", "ward"]]),
-    pickFirstString({ locationMetadata, encounter }, [["locationMetadata", "bed"], ["encounter", "bed"]]),
-  ].filter(Boolean).join(" / ") || null;
-  const signedAt = selectedSignature?.signedAt || null;
-  const overlayContext: OverlayDocumentContext = {
-    approvedConsentFormId: pickFirstString({ metadata }, [["metadata", "approvedConsentFormId"]]),
-    approvedTemplateTitle: compactWhitespace(pickFirstString({ metadata }, [["metadata", "approvedConsentFormTitleEn"], ["metadata", "clinicalConsentFormTitleEn"]]) || manifestItem.titleEn) || manifestItem.titleEn,
-    caseId: doc.caseId,
-    caseNumber: compactWhitespace(doc.case?.caseNumber),
-    clinicalConsentFormId: pickFirstString({ metadata }, [["metadata", "clinicalConsentFormId"]]),
-    consentReference: compactWhitespace(doc.consentReference) || doc.id,
+  const encounterId = pickFirstString(
+    { metadata, encounter },
+    [
+      ["encounter", "encounterId"],
+      ["encounter", "encounterIdentifier"],
+      ["metadata", "encounterId"],
+      ["metadata", "encounterIdentifier"],
+    ],
+  );
+
+  const procedure =
+    compactWhitespace(
+      doc.plannedProcedure ||
+        doc.procedureDetails ||
+        pickFirstString({ procedureMetadata }, [["procedureMetadata", "nameEn"]]),
+    ) || manifestItem.titleEn;
+
+  const mapping = getConsentFieldMappingByFormId(approvedConsentFormId);
+
+  const coreResult = await renderImcApprovedConsentPdfCore({
+    pdfBytes,
+    copyType,
+    manifestItem,
+    mapping,
+    doctorCompletionValues: asRecord(metadata.doctorCompletionValues),
+    physicianSignatureDataUrl: physicianSignaturePresentation?.signatureImageDataUrl,
+    patientOrGuardianSignatureDataUrl: signaturePresentation?.signatureImageDataUrl,
+    patientOrGuardianRole:
+      patientOrGuardianSignature?.role === "GUARDIAN" ? "GUARDIAN" : "PATIENT",
+    signedAt,
+    patientName: doc.patientName,
+    mrn: doc.mrn,
+    dob: doc.dob,
+    procedure,
+    physicianName: doc.physicianName,
     documentId: doc.id,
+    consentReference: doc.consentReference,
     encounterId,
-    facilityName: compactWhitespace(doc.tenant?.name) || "International Medical Center",
-    gender: compactWhitespace(doc.gender) || compactWhitespace(pickFirstString({ demographics }, [["demographics", "gender"]])),
-    location: pickFirstString({ locationMetadata, encounter }, [["locationMetadata", "location"], ["encounter", "location"]]),
-    patientAge: formatAge(
-      compactWhitespace(doc.dob)
-        || compactWhitespace(
-          pickFirstString(
-            {
-              demographics,
-            },
-            [
-              [
-                "demographics",
-                "dateOfBirth",
-              ],
-            ],
-          ),
-        ),
-      signedAt
-        || doc.createdAt,
-    ),
-    patientDob: compactWhitespace(doc.dob) || compactWhitespace(pickFirstString({ demographics }, [["demographics", "dateOfBirth"]])),
-    patientMrn: compactWhitespace(doc.mrn) || compactWhitespace(pickFirstString({ patientIdentity }, [["patientIdentity", "mrn"]])),
-    patientName: compactWhitespace(doc.patientName) || "Patient",
-    pdfTemplateUrl: pickFirstString({ metadata }, [["metadata", "pdfTemplateUrl"]]),
-    physicianName: compactWhitespace(doc.physicianName),
-    procedure: compactWhitespace(doc.plannedProcedure || doc.procedureDetails || pickFirstString({ procedureMetadata }, [["procedureMetadata", "nameEn"]])) || manifestItem.titleEn,
-    qrDataUrl,
-    signedAtAr: formatDateTime(
-      signedAt
-        || doc.createdAt,
-      "ar",
-    ),
-    signedAtEn: formatDateTime(
-      signedAt
-        || doc.createdAt,
-      "en",
-    ),
-    signatureId: compactWhitespace(asString(selectedSignatureMetadata.signatureId))
-      || compactWhitespace(selectedSignature?.id)
-      || compactWhitespace(asString(refusalSignature.signatureId)),
-    signedStatus: "Electronically Signed / تم التوقيع إلكترونياً",
-    sourcePath: pickFirstString({ metadata }, [["metadata", "sourcePath"]]),
-    verificationUrl,
-    visitId,
-    wardBed,
-    wathiqLogoDataUrl,
-  };
-
-  const productionMapping =
-    overlayContext.approvedConsentFormId ===
-    "imc-approved-adenotonsillectomy"
-      ? getConsentFieldMappingByFormId(
-          overlayContext.approvedConsentFormId,
-        )
-      : null;
-
-  const normalizedDoctorCompletionValues =
-    normalizeProductionOverlayValues(
-      doctorCompletionValues,
-    );
-
-  const values: Record<string, string> = {
-    patientName: doc.patientName || "",
-    mrn: doc.mrn || "",
-    dob: doc.dob || "",
-    gender: doc.gender || "",
-    diagnosis: doc.diagnosis || "",
-    procedure: doc.plannedProcedure || doc.procedureDetails || "",
-    physicianName: doc.physicianName || "",
-    physicianLicense: doc.physicianLicense || "",
-    physicianSpecialty: doc.physicianSpecialty || doc.template.specialty || "",
-    department: doc.department || "",
-    consentReference: doc.consentReference || "",
-    caseNumber: doc.case?.caseNumber || "",
-    generatedAt:
-      formatDateTime(
-        signedAt
-          || doc.createdAt,
-        "en",
-      )
-      || "",
-  };
-
-  await drawMappedText({
-    pdfDoc,
-    map: fieldMap,
-    values,
+    caseId: doc.caseId,
+    caseNumber: doc.case?.caseNumber,
+    tenantName: doc.tenant?.name,
+    origin: args.origin,
+    approvedConsentFormId,
+    createdAt: doc.createdAt,
   });
-
-  const browser = await launchOverlayBrowser();
-
-  try {
-    const firstPageOverlayBytes = await renderOverlayPng({
-      browser,
-      html: buildOverlayPageHtml({
-        context: overlayContext,
-        compact: false,
-        pageIndex: 0,
-        totalPages: pdfDoc.getPageCount(),
-      }),
-    });
-    const repeatedOverlayBytes = await renderOverlayPng({
-      browser,
-      html: buildOverlayPageHtml({
-        context: overlayContext,
-        compact: true,
-        pageIndex: 1,
-        totalPages: pdfDoc.getPageCount(),
-      }),
-    });
-    const appendixOverlayBytes = await renderOverlayPng({
-      browser,
-      html: buildAppendixHtml(overlayContext),
-    });
-
-    const firstOverlayImage = await pdfDoc.embedPng(firstPageOverlayBytes);
-    const repeatedOverlayImage = await pdfDoc.embedPng(repeatedOverlayBytes);
-    const appendixOverlayImage = await pdfDoc.embedPng(appendixOverlayBytes);
-
-    pdfDoc.getPages().forEach((page, index, pages) => {
-      const image = index === 0 ? firstOverlayImage : repeatedOverlayImage;
-      page.drawImage(image, {
-        x: 0,
-        y: 0,
-        width: page.getWidth(),
-        height: page.getHeight(),
-      });
-
-      if (index > 0) {
-        const footerOverlay = pages.length;
-        void footerOverlay;
-      }
-    });
-
-    if (productionMapping) {
-      await drawProductionMappedText({
-        browser,
-        pdfDoc,
-        mapping:
-          productionMapping,
-        values:
-          normalizedDoctorCompletionValues,
-        excludedKeys:
-          new Set([
-            "patient_signature",
-            "guardian_signature",
-            "treating_physician_signature",
-          ]),
-      });
-    }
-
-    if (fieldMap.appendEvidencePage !== false) {
-      const appendixPage = pdfDoc.addPage([A4_PAGE.width, A4_PAGE.height]);
-      appendixPage.drawImage(appendixOverlayImage, {
-        x: 0,
-        y: 0,
-        width: appendixPage.getWidth(),
-        height: appendixPage.getHeight(),
-      });
-    }
-  } finally {
-    await browser.close();
-  }
-
-  if (productionMapping) {
-    const patientSignatureFieldKey =
-      patientOrGuardianSignature?.role === "GUARDIAN"
-        ? "guardian_signature"
-        : "patient_signature";
-
-    if (
-      !physicianSignaturePresentation
-        ?.signatureImageDataUrl
-    ) {
-      throw new ApiError(
-        409,
-        "Final PDF generation blocked: the treating physician signature image is missing.",
-      );
-    }
-
-    const physicianSignatureDrawn =
-      await drawProductionMappedSignature({
-        pdfDoc,
-        mapping:
-          productionMapping,
-
-        fieldKey:
-          "treating_physician_signature",
-
-        signatureImageDataUrl:
-          physicianSignaturePresentation
-            .signatureImageDataUrl,
-      });
-
-    if (!physicianSignatureDrawn) {
-      throw new ApiError(
-        409,
-        "Final PDF generation blocked: treating physician signature coordinates are missing from the approved form mapping.",
-      );
-    }
-
-    if (!signaturePresentation?.signatureImageDataUrl) {
-      throw new ApiError(
-        409,
-        "Final PDF generation blocked: the patient or guardian signature image is missing.",
-      );
-    }
-
-    const patientSignatureDrawn =
-      await drawProductionMappedSignature({
-        pdfDoc,
-        mapping: productionMapping,
-        fieldKey: patientSignatureFieldKey,
-        signatureImageDataUrl:
-          signaturePresentation.signatureImageDataUrl,
-      });
-
-    if (!patientSignatureDrawn) {
-      throw new ApiError(
-        409,
-        "Final PDF generation blocked: patient signature coordinates are missing from the approved form mapping.",
-      );
-    }
-  }
-
-  const finalBytes = await pdfDoc.save();
 
   return {
-    bytes: Buffer.from(finalBytes),
+    bytes: coreResult.bytes,
+    checksum: coreResult.checksum,
     consentReference: doc.consentReference,
     imcTemplateId: manifestItem.id,
     imcTemplateTitle: manifestItem.titleEn,
   };
+}
+
+export async function renderImcApprovedConsentPdfFromSynthetic(args: {
+  formId: string;
+  copyType?: CopyType;
+  origin?: string;
+  doctorCompletionValues?: Record<string, unknown>;
+  physicianSignatureDataUrl: string;
+  patientOrGuardianSignatureDataUrl: string;
+  patientOrGuardianRole?: "PATIENT" | "GUARDIAN";
+  signedAt?: Date | string;
+  patientName?: string;
+  mrn?: string;
+  dob?: string | null;
+  procedure?: string;
+  physicianName?: string;
+  documentId?: string;
+  consentReference?: string;
+  encounterId?: string;
+  caseId?: string;
+  caseNumber?: string;
+  tenantName?: string;
+}) {
+  const copyType: CopyType = args.copyType || "PATIENT_COPY";
+  const manifestItem = resolveTypeScriptManifestItem({
+    approvedConsentFormId: args.formId,
+  });
+
+  if (!manifestItem) {
+    throw new ApiError(404, `IMC approved form manifest entry not found for ${args.formId}`);
+  }
+
+  const publicPath = resolveBasePublicPath({ manifestItem, copyType });
+  const pdfBytes = await readPublicPdf(publicPath);
+  const mapping = getConsentFieldMappingByFormId(args.formId);
+
+  return renderImcApprovedConsentPdfCore({
+    pdfBytes,
+    copyType,
+    manifestItem,
+    mapping,
+    doctorCompletionValues: args.doctorCompletionValues || {},
+    physicianSignatureDataUrl: args.physicianSignatureDataUrl,
+    patientOrGuardianSignatureDataUrl: args.patientOrGuardianSignatureDataUrl,
+    patientOrGuardianRole: args.patientOrGuardianRole || "PATIENT",
+    signedAt: args.signedAt || new Date(),
+    patientName: args.patientName || "Test Patient",
+    mrn: args.mrn || "TEST-MRN",
+    dob: args.dob,
+    procedure: args.procedure || manifestItem.titleEn,
+    physicianName: args.physicianName || "Dr. Test Physician",
+    documentId: args.documentId || `synthetic-${args.formId}`,
+    consentReference: args.consentReference || `SYNTHETIC-${args.formId}`,
+    encounterId: args.encounterId,
+    caseId: args.caseId,
+    caseNumber: args.caseNumber,
+    tenantName: args.tenantName,
+    origin: args.origin,
+    approvedConsentFormId: args.formId,
+  });
 }

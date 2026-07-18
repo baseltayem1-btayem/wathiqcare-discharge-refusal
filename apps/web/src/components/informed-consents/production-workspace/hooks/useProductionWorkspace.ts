@@ -100,6 +100,10 @@ function hasContact(mobile: string, email: string): boolean {
   return Boolean(normalizeMobile(mobile) || email.trim());
 }
 
+export function invalidateStaleApproval<T extends ProductionWorkspaceState>(state: T): T {
+  return { ...state, draftApproved: false, previewReviewed: false };
+}
+
 export function useProductionWorkspace(physician: PhysicianContext) {
   const [state, setState] = useState<ProductionWorkspaceState>({
     step: "patient",
@@ -188,11 +192,9 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     }
   }, [physician.tenantId]);
 
-  /* eslint-disable react-hooks/set-state-in-effect -- one-time catalog initialization */
   useEffect(() => {
     void loadProcedures();
   }, [loadProcedures]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const refreshSendEligibility = useCallback(async (mobile: string, email: string) => {
     if (!hasContact(mobile, email)) {
@@ -379,8 +381,14 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     }
   }, [pathname, physician, router, searchParams, state.patient, state.encounter, state.reviewMode, state.selectedProcedure]);
 
+
   const setAnesthesia = useCallback((decision: ProductionWorkspaceState["anesthesiaOverride"]) => {
-    setState((s) => ({ ...s, anesthesiaOverride: decision }));
+    setState((s) =>
+      invalidateStaleApproval({
+        ...s,
+        anesthesiaOverride: decision,
+      }),
+    );
   }, []);
 
   const setEducationIncluded = useCallback((included: boolean) => {
@@ -420,27 +428,25 @@ export function useProductionWorkspace(physician: PhysicianContext) {
   }, []);
 
   const setDoctorCompletionValue = useCallback((key: string, value: string) => {
-    setState((s) => ({
-      ...s,
-      doctorCompletionValues: {
-        ...s.doctorCompletionValues,
-        [key]: value,
-      },
-      // Editing any governed physician value after approval invalidates the
-      // previous preview approval and requires regeneration/re-review.
-      draftApproved: false,
-      previewReviewed: false,
-    }));
+    setState((s) =>
+      invalidateStaleApproval({
+        ...s,
+        doctorCompletionValues: {
+          ...s.doctorCompletionValues,
+          [key]: value,
+        },
+      }),
+    );
   }, []);
 
   const setPhysicianSignatureDataUrl = useCallback(
     (physicianSignatureDataUrl: string) => {
-      setState((current) => ({
-        ...current,
-        physicianSignatureDataUrl,
-        draftApproved: false,
-        previewReviewed: false,
-      }));
+      setState((current) =>
+        invalidateStaleApproval({
+          ...current,
+          physicianSignatureDataUrl,
+        }),
+      );
     },
     [],
   );
@@ -544,6 +550,11 @@ export function useProductionWorkspace(physician: PhysicianContext) {
           pdfTemplateUrl: state.assembly.consentForm?.pdfTemplateUrl,
           patientLanguagePreference: state.patient.languagePreference,
           doctorCompletionValues: state.doctorCompletionValues,
+          filledPreviewSnapshot: {
+            filledPreviewGeneratedAt: new Date().toISOString(),
+            filledPreviewFormId: state.assembly.consentForm?.id,
+            doctorCompletionValues: state.doctorCompletionValues,
+          },
           fieldMappingReadiness: state.fieldMappingReadiness
             ? {
                 formId: state.fieldMappingReadiness.formId,
