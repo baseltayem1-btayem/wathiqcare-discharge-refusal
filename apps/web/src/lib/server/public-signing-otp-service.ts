@@ -245,12 +245,13 @@ export async function requestSigningOtp(args: {
     challengeId,
     tokenHash: currentTokenHash,
     otpHash: otpHash(code),
-    phoneNumber: mobile,
+    phoneNumber: maskPhone(mobile),
     maskedPhone: maskPhone(mobile),
     expiresAt,
     sessionId: context.sessionId,
     documentId: context.documentId,
     moduleType: context.moduleType,
+    ipAddress: getClientIpAddress(args.request),
   };
 
   const linkUrl = `${getBaseUrl()}/sign/${encodeURIComponent(args.token)}`;

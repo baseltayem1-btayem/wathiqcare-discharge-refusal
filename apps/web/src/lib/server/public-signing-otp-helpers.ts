@@ -10,6 +10,7 @@ export type OtpChallengePayload = {
   sessionId: string;
   documentId: string;
   moduleType: string;
+  ipAddress?: string | null;
 };
 
 export function normalizePhoneNumber(value: string): string {

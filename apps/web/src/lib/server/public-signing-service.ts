@@ -487,7 +487,7 @@ export async function ensurePublicFinalConsentPdfState(args: {
       metadata: {
         documentId: context.documentId,
         sessionId: context.sessionId,
-        token: args.token,
+        tokenHash: tokenHash(args.token),
       },
       request: args.request,
     });
