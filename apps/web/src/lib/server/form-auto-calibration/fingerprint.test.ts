@@ -62,8 +62,8 @@ test("classifier detects generic single-page consent", () => {
         pageWidth: 612,
         pageHeight: 792,
         textBlocks: [
-          { page: 1, text: "Patient Name", x: 50, y: 700, width: 100, height: 12, xNorm: 0.08, yNorm: 0.88, widthNorm: 0.16 },
-          { page: 1, text: "Signature", x: 50, y: 100, width: 80, height: 12, xNorm: 0.08, yNorm: 0.13, widthNorm: 0.13 },
+          { page: 1, text: "Patient Name", x: 50, y: 700, width: 100, height: 12, xNorm: 0.08, yNorm: 0.88, widthNorm: 0.16, heightNorm: 0.015 },
+          { page: 1, text: "Signature", x: 50, y: 100, width: 80, height: 12, xNorm: 0.08, yNorm: 0.13, widthNorm: 0.13, heightNorm: 0.015 },
         ],
         writingLines: [
           { page: 1, x: 160, y: 700, width: 200, pattern: "underscore", xNorm: 0.26, yNorm: 0.88, widthNorm: 0.33 },

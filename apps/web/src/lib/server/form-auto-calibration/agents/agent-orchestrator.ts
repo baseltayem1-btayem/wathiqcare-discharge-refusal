@@ -75,10 +75,18 @@ export class AgentOrchestrator {
   }): Promise<AgentReviewItem[]> {
     if (!this.config.enabled) return [];
 
+    const simplifiedMappings = params.mappings.map((m) => ({
+      ontologyKey: m.ontologyKey,
+      sourceFieldName: m.rectangles[0]?.anchor && (m.rectangles[0].anchor.kind === "LABEL" || m.rectangles[0].anchor.kind === "SECTION_HEADING")
+        ? m.rectangles[0].anchor.text
+        : m.ontologyKey,
+      rectangles: m.rectangles.map((r) => ({ page: r.page, absolute: r.absolute })),
+    }));
+
     for (let attempt = 0; attempt < (this.config.maxRetries ?? 2); attempt++) {
       try {
         const response = await this.config.provider.complete([
-          { role: "user", content: buildQualityReviewPrompt(params) },
+          { role: "user", content: buildQualityReviewPrompt({ ontology: params.ontology, mappings: simplifiedMappings, qualityReport: params.qualityReport }) },
         ]);
         const parsed = safeJsonParse<unknown>(response.text);
         if (!parsed.ok) continue;

@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       name: body.name,
       description: body.description ?? null,
       sourceFormIds: body.sourceFormIds,
-      metadata: body.metadata ?? null,
+      metadata: (body.metadata ?? null) as any,
     },
   });
 

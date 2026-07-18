@@ -2,7 +2,7 @@
  * Prisma-backed candidate registry.
  */
 
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient, CalibrationCandidateStatus } from "@prisma/client";
 import type { CalibrationCandidate, CandidateRegistry } from "./candidate-registry";
 import type { CandidateFieldMapping } from "../geometry/candidate-rectangle-generator";
 import type { CalibrationQualityReport } from "../mapping/mapping-schema";
@@ -52,7 +52,7 @@ export class PrismaCandidateRegistry implements CandidateRegistry {
         ...(patch.confidence ? { confidence: patch.confidence as any } : {}),
         ...(patch.mappings ? { mappings: patch.mappings as any } : {}),
         ...(patch.syntheticRenderUrl ? { syntheticRenderUrl: patch.syntheticRenderUrl } : {}),
-        ...(patch.reviewDecision ? { reviewDecision: patch.reviewDecision as any } : {}),
+        ...(patch.reviewDecision ? { reviewDecision: mapReviewDecision(patch.reviewDecision) } : {}),
         ...(patch.reviewNotes ? { reviewNotes: patch.reviewNotes } : {}),
       },
     });
@@ -76,7 +76,7 @@ export class PrismaCandidateRegistry implements CandidateRegistry {
   }
 }
 
-function mapStatus(status: CalibrationCandidate["status"]): string {
+function mapStatus(status: CalibrationCandidate["status"]): CalibrationCandidateStatus {
   switch (status) {
     case "pending":
       return "PENDING";
@@ -95,7 +95,11 @@ function mapStatus(status: CalibrationCandidate["status"]): string {
   }
 }
 
-function reverseStatus(status: string): CalibrationCandidate["status"] {
+function mapReviewDecision(decision: CalibrationCandidate["reviewDecision"]): "APPROVE" | "REJECT" | "REQUEST_MANUAL" {
+  return decision ?? "REQUEST_MANUAL";
+}
+
+function reverseStatus(status: CalibrationCandidateStatus): CalibrationCandidate["status"] {
   switch (status) {
     case "PENDING":
       return "pending";
@@ -123,6 +127,9 @@ function mapToDomain(row: any): CalibrationCandidate {
     mappings: (row.mappings ?? []) as CandidateFieldMapping[],
     qualityReport: (row.qualityReport ?? {}) as CalibrationQualityReport,
     confidence: row.confidence as CandidateConfidence | undefined,
+    syntheticRenderUrl: row.syntheticRenderUrl ?? undefined,
+    reviewDecision: row.reviewDecision ?? undefined,
+    reviewNotes: row.reviewNotes ?? undefined,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
