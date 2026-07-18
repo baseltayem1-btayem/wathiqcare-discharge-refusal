@@ -483,6 +483,14 @@ export async function recordDispatchFailed(
     where: { id: dispatchId },
   });
   if (!dispatch) return;
+
+  // Idempotent: if the dispatch is already permanently failed, do not attempt
+  // another transition. This can happen when a downstream fallback step throws
+  // after the terminal status has already been recorded.
+  if (dispatch.status === PatientMessageStatus.PERMANENT_FAILURE) {
+    return;
+  }
+
   statusGuard(dispatch.status, [
     PatientMessageStatus.PENDING,
     PatientMessageStatus.CLAIMED,
@@ -530,6 +538,12 @@ export async function recordDispatchPermanentFailure(
     where: { id: dispatchId },
   });
   if (!dispatch) return;
+
+  // Idempotent: do not re-transition an already permanent failure.
+  if (dispatch.status === PatientMessageStatus.PERMANENT_FAILURE) {
+    return;
+  }
+
   statusGuard(dispatch.status, [
     PatientMessageStatus.PENDING,
     PatientMessageStatus.CLAIMED,

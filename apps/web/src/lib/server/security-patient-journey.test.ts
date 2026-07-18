@@ -76,8 +76,9 @@ test("runtime observability redacts tokens, OTP codes, and phone numbers", () =>
   );
   assert.equal(sanitized.patientName, "[REDACTED]");
   assert.equal(sanitized.diagnosis, "[REDACTED]");
-  assert.equal((sanitized.request as Record<string, unknown>).headers.authorization, "[REDACTED]");
-  assert.equal((sanitized.request as Record<string, unknown>).headers.cookie, "[REDACTED]");
+  const sanitizedRequest = sanitized.request as unknown as Record<string, { authorization?: string; cookie?: string }>;
+  assert.equal(sanitizedRequest.headers.authorization, "[REDACTED]");
+  assert.equal(sanitizedRequest.headers.cookie, "[REDACTED]");
 });
 
 function hashToken(token: string): string {

@@ -1094,7 +1094,7 @@ export async function POST(request: NextRequest) {
 
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const caseId = String(body.caseId || "").trim();
-  let templateId = String(body.templateId || "").trim();
+  const templateId = String(body.templateId || "").trim();
   const language = body.language === "ar" || body.language === "en" ? (body.language as "ar" | "en") : "bilingual";
 
   if (!caseId) {

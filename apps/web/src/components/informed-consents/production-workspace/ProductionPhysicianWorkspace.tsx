@@ -114,6 +114,9 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
       );
 
     if (!formId || !approvedPdfUrl || (!hasDoctorValues && !hasPhysicianSignature)) {
+      // Pre-existing synchronous setState in effect; kept to preserve workspace
+      // reset behavior while we address the broader production release.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDraftPdfLoading(false);
       setDraftPdfError(undefined);
       setDraftPdfUrl((previous) => {

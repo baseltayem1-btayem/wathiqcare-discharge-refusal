@@ -646,7 +646,10 @@ function createMemoryOutboxClient(initial: DispatchRecord[] = []) {
   ): Promise<T> {
     return callback({
       patientMessageDispatch: { findMany, update, updateMany, findUnique },
-      signingSession: { updateMany: async () => ({ count: 0 }) },
+      signingSession: {
+        updateMany: async () => ({ count: 0 }),
+        findUnique: async () => null,
+      },
     });
   }
 
@@ -659,7 +662,10 @@ function createMemoryOutboxClient(initial: DispatchRecord[] = []) {
       update,
       updateMany,
     },
-    signingSession: { updateMany: async () => ({ count: 0 }) },
+    signingSession: {
+      updateMany: async () => ({ count: 0 }),
+      findUnique: async () => null,
+    },
     $queryRaw: queryRaw as unknown as PrismaClient["$queryRaw"],
     $transaction: transaction as unknown as PrismaClient["$transaction"],
     get records() {
@@ -2344,7 +2350,10 @@ test("dispatch idempotency keys are deterministic child keys per signer", async 
     client: client as unknown as PrismaClient,
   });
 
-  assert.equal(client.dispatchInputs.length, 2);
+  // When both channels are available, only the preferred primary dispatch is
+  // created immediately; the fallback is stored as a plan in session metadata.
+  assert.equal(client.dispatchInputs.length, 1);
+  assert.equal(client.sessions.length, 1);
 
   const smsKey = deriveChildIdempotencyKey(
     deriveChildIdempotencyKey(idempotencyKey, "PATIENT_MESSAGE_SMS"),
@@ -2355,13 +2364,20 @@ test("dispatch idempotency keys are deterministic child keys per signer", async 
     "PATIENT",
   );
 
+  const sessionMeta = (client.sessions[0].metadata || {}) as Record<string, unknown>;
+  const fallbackPlans = Array.isArray(sessionMeta.fallbackDispatches)
+    ? sessionMeta.fallbackDispatches
+    : [];
+
   const smsDispatch = client.dispatchInputs.find((d) => d.channel === PatientMessageChannel.SMS);
-  const emailDispatch = client.dispatchInputs.find((d) => d.channel === PatientMessageChannel.EMAIL);
+  const emailPlan = fallbackPlans.find(
+    (p: { channel?: string }) => p.channel === PatientMessageChannel.EMAIL,
+  );
 
   assert.ok(smsDispatch);
-  assert.ok(emailDispatch);
+  assert.ok(emailPlan);
   assert.equal(smsDispatch.idempotencyKey, smsKey);
-  assert.equal(emailDispatch.idempotencyKey, emailKey);
+  assert.equal(emailPlan.idempotencyKey, emailKey);
 });
 
 // ---------------------------------------------------------------------------
