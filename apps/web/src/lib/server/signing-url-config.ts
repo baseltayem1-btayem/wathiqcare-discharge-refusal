@@ -7,6 +7,7 @@ const DEFAULT_APPROVED_HOSTS = [
 ];
 
 const PRODUCTION_HOSTS = new Set(["wathiqcare.online", "wathiqcare.med.sa"]);
+const CANONICAL_PRODUCTION_URL = "https://wathiqcare.online";
 
 function getApprovedHosts(): string[] {
   const env = process.env.SIGNING_URL_APPROVED_HOSTS?.trim();
@@ -40,9 +41,26 @@ function isTestEnvironment(): boolean {
 }
 
 function resolveCanonicalProductionUrl(): string {
-  return process.env.NEXT_PUBLIC_CANONICAL_PRODUCTION_URL?.trim()
-    || process.env.CANONICAL_PRODUCTION_URL?.trim()
-    || "https://wathiqcare.online";
+  const configured =
+    process.env.NEXT_PUBLIC_CANONICAL_PRODUCTION_URL?.trim()
+    || process.env.CANONICAL_PRODUCTION_URL?.trim();
+
+  const withProtocol = configured
+    ? (configured.match(/^https?:\/\//i) ? configured : `https://${configured}`)
+    : CANONICAL_PRODUCTION_URL;
+
+  // In production the canonical URL must point to an explicitly approved
+  // production host. Never silently fall back to a wildcard or localhost URL.
+  try {
+    const url = new URL(withProtocol);
+    if (!PRODUCTION_HOSTS.has(url.hostname.toLowerCase())) {
+      return CANONICAL_PRODUCTION_URL;
+    }
+  } catch {
+    return CANONICAL_PRODUCTION_URL;
+  }
+
+  return withProtocol;
 }
 
 /**
@@ -94,6 +112,14 @@ export function resolveTrustedSigningBaseUrl(baseUrl?: string): string {
 
   if (!isApprovedHost(host)) {
     throw new Error(`Signing base URL host is not approved: ${host}`);
+  }
+
+  // Production environments must generate links only on production hosts.
+  // This is a defense-in-depth check on top of the canonical-URL precedence.
+  if (isProductionEnvironment() && !PRODUCTION_HOSTS.has(host)) {
+    throw new Error(
+      `Production signing base URL must use a production host: ${host}`,
+    );
   }
 
   return `${url.origin}`;

@@ -109,7 +109,7 @@ export function isPermanentError(
   return permanentCodes.some((code) => text.includes(code));
 }
 
-function sanitizeErrorMessage(message?: string | null): string | null {
+export function sanitizeErrorMessage(message?: string | null): string | null {
   if (!message) return null;
   const redacted = message
     .replace(/https?:\/\/[^\s]+/gi, "[REDACTED_URL]")
@@ -117,6 +117,76 @@ function sanitizeErrorMessage(message?: string | null): string | null {
     .replace(/\+?\d[\d\s\-()]{6,}\d/g, "[REDACTED_RECIPIENT]")
     .replace(/[^\s@]+@[^\s@]+\.[^\s@]+/g, "[REDACTED_EMAIL]");
   return redacted.slice(0, MAX_ERROR_MESSAGE_LENGTH);
+}
+
+type FallbackDispatchPlan = {
+  channel: PatientMessageChannel;
+  idempotencyKey: string;
+  idempotencyFingerprint: string;
+  recipientHash: string;
+  recipientReference: string;
+  templateKey: string;
+  locale: "ar" | "en";
+  signerRole: string;
+  expiresAt: string;
+  created?: boolean;
+};
+
+async function maybeCreateFallbackDispatch(
+  dispatchId: string,
+  client?: PrismaClient | Prisma.TransactionClient,
+): Promise<void> {
+  const db = client ?? prisma();
+
+  const dispatch = await db.patientMessageDispatch.findUnique({
+    where: { id: dispatchId },
+    select: { signingSessionId: true, tenantId: true },
+  });
+  if (!dispatch?.signingSessionId) return;
+
+  const session = await db.signingSession.findUnique({
+    where: { id: dispatch.signingSessionId },
+    select: { metadata: true },
+  });
+  if (!session) return;
+
+  const meta = (session.metadata || {}) as Record<string, unknown>;
+  const plans = Array.isArray(meta.fallbackDispatches)
+    ? (meta.fallbackDispatches as FallbackDispatchPlan[])
+    : [];
+  const planIndex = plans.findIndex((p) => !p.created);
+  if (planIndex === -1) return;
+
+  const plan = plans[planIndex];
+  await createPatientMessageDispatch(
+    {
+      tenantId: dispatch.tenantId,
+      signingSessionId: dispatch.signingSessionId,
+      channel: plan.channel,
+      idempotencyKey: plan.idempotencyKey,
+      idempotencyFingerprint: plan.idempotencyFingerprint,
+      recipientHash: plan.recipientHash,
+      recipientReference: plan.recipientReference,
+      templateKey: plan.templateKey,
+      locale: plan.locale,
+      signerRole: plan.signerRole,
+      expiresAt: new Date(plan.expiresAt),
+    },
+    db,
+  );
+
+  const updatedPlans = plans.map((p, index) =>
+    index === planIndex ? { ...p, created: true } : p,
+  );
+  await db.signingSession.update({
+    where: { id: dispatch.signingSessionId },
+    data: {
+      metadata: {
+        ...meta,
+        fallbackDispatches: updatedPlans,
+      } as Prisma.InputJsonValue,
+    },
+  });
 }
 
 function buildDispatchMetadata(input: CreateDispatchInput): Record<string, unknown> {
@@ -443,6 +513,10 @@ export async function recordDispatchFailed(
       nextAttemptAt,
     },
   });
+
+  if (nextStatus === PatientMessageStatus.PERMANENT_FAILURE) {
+    await maybeCreateFallbackDispatch(dispatchId, client);
+  }
 }
 
 export async function recordDispatchPermanentFailure(
@@ -470,6 +544,8 @@ export async function recordDispatchPermanentFailure(
       lastErrorMessage: sanitizeErrorMessage(errorMessage),
     },
   });
+
+  await maybeCreateFallbackDispatch(dispatchId, client);
 }
 
 function verifyResolvedRecipientHash(args: {

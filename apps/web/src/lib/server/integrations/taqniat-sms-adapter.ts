@@ -8,6 +8,7 @@
  */
 
 import { SIGNATURE_CONFIG } from "@/lib/config/platform-config";
+import { getEnvironmentConfig } from "@/lib/environment/environment";
 
 export interface SmsDeliveryResult {
   messageId?: string;
@@ -39,6 +40,13 @@ export class TaqniatSmsAdapter {
    */
   async send(message: SmsMessage): Promise<SmsDeliveryResult> {
     if (!this.isConfigured) {
+      const isProduction = getEnvironmentConfig().isProduction;
+      if (isProduction) {
+        return {
+          status: "failed",
+          error: `Taqniat SMS is not configured in production. Set ${SIGNATURE_CONFIG.taqniatApiKeyEnv}.`,
+        };
+      }
       console.warn(
         `[TaqniatSmsAdapter] Not configured — stub mode. Set ${SIGNATURE_CONFIG.taqniatApiKeyEnv}.`,
         { to: message.to, bodyPreview: message.body.substring(0, 50) }

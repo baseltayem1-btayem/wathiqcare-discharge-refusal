@@ -60,6 +60,31 @@ const ACTIVE_STATUSES = ["PENDING", "SENT", "PARTIALLY_SIGNED"];
 const TERMINAL_STATUSES = ["COMPLETED", "EXPIRED", "REVOKED"];
 const MAX_SERIALIZATION_RETRIES = 3;
 
+export type PatientMessageChannel = "SMS" | "EMAIL";
+
+export function resolvePreferredChannel(): PatientMessageChannel {
+  const configured = process.env.PATIENT_MESSAGE_PREFERRED_CHANNEL?.trim().toUpperCase();
+  if (configured === "EMAIL") return "EMAIL";
+  return "SMS";
+}
+
+function resolveFallbackChannel(preferred: PatientMessageChannel): PatientMessageChannel {
+  return preferred === "SMS" ? "EMAIL" : "SMS";
+}
+
+type FallbackDispatchPlan = {
+  channel: PatientMessageChannel;
+  idempotencyKey: string;
+  idempotencyFingerprint: string;
+  recipientHash: string;
+  recipientReference: string;
+  templateKey: string;
+  locale: "ar" | "en";
+  signerRole: string;
+  expiresAt: string;
+  created: boolean;
+};
+
 function isSerializationFailure(error: unknown): boolean {
   return (
     (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034")
@@ -140,6 +165,22 @@ async function revokeActiveSessionsForDocument(
         revokedAt: null,
       },
       data: { revokedAt: now },
+    });
+
+    await writeConsentAuditInTx(tx, {
+      tenantId,
+      actorUserId: revokedBy,
+      actorRole: "system",
+      action: "secure_signing_session_revoked",
+      summary: `Revoked ${sessionIds.length} active signing session(s) for document ${documentId}: ${reason}`,
+      source: "signing-session-service",
+      consentDocumentId: documentId,
+      metadata: {
+        revokedSessions: sessionIds,
+        revokedBy,
+        reason,
+        revokedAt: now.toISOString(),
+      },
     });
 
     for (const sessionId of sessionIds) {
@@ -249,59 +290,94 @@ async function createSessionAndTokens(
   }> = [];
   const rootFingerprint = idempotencyFingerprint ?? computePayloadFingerprint(input);
 
+  const preferredChannel = resolvePreferredChannel();
+  const fallbackPlans: FallbackDispatchPlan[] = [];
+
   for (const signer of input.signers) {
-    const token = tokensByRole[signer.role];
-    const tokenHash = computeTokenHash(token);
+    const locale = (input as { locale?: "ar" | "en" }).locale ?? "ar";
 
-    if (signer.mobile) {
-      const dispatch = await createPatientMessageDispatch(
-        {
-          tenantId: input.tenantId,
-          signingSessionId: session.id,
-          channel: "SMS",
-          idempotencyKey: deriveChildIdempotencyKey(
-            deriveChildIdempotencyKey(idempotencyKey, "PATIENT_MESSAGE_SMS"),
-            signer.role,
+    const smsAvailable = Boolean(signer.mobile);
+    const emailAvailable = Boolean(signer.email);
+
+    const buildInput = (channel: PatientMessageChannel): CreateDispatchInput => {
+      const isSms = channel === "SMS";
+      return {
+        tenantId: input.tenantId,
+        signingSessionId: session.id,
+        channel: channel as unknown as CreateDispatchInput["channel"],
+        idempotencyKey: deriveChildIdempotencyKey(
+          deriveChildIdempotencyKey(
+            idempotencyKey,
+            isSms ? "PATIENT_MESSAGE_SMS" : "PATIENT_MESSAGE_EMAIL",
           ),
-          idempotencyFingerprint: rootFingerprint,
-          recipientHash: hashRecipient(signer.mobile, { tenantId: input.tenantId }),
-          recipientReference: caseId
-            ? `case:${caseId}:mobile`
-            : `consent_document:${input.documentId}:mobile`,
-          templateKey: "secure_signing_link_sms",
-          locale: (input as { locale?: "ar" | "en" }).locale ?? "ar",
-          signerRole: signer.role,
-          expiresAt,
-        } as CreateDispatchInput,
-        tx,
-      );
-      dispatches.push({ id: dispatch.id, channel: "SMS", status: dispatch.status });
+          signer.role,
+        ),
+        idempotencyFingerprint: rootFingerprint,
+        recipientHash: hashRecipient(
+          isSms ? (signer.mobile as string) : (signer.email as string),
+          { tenantId: input.tenantId },
+        ),
+        recipientReference: caseId
+          ? `case:${caseId}:${isSms ? "mobile" : "email"}`
+          : `consent_document:${input.documentId}:${isSms ? "mobile" : "email"}`,
+        templateKey: isSms ? "secure_signing_link_sms" : "secure_signing_link_email",
+        locale,
+        signerRole: signer.role,
+        expiresAt,
+      };
+    };
+
+    let primaryChannel: PatientMessageChannel | null = null;
+    if (smsAvailable && emailAvailable) {
+      primaryChannel = preferredChannel;
+      const fallbackChannel = resolveFallbackChannel(preferredChannel);
+      const fallbackInput = buildInput(fallbackChannel);
+      fallbackPlans.push({
+        channel: fallbackChannel,
+        idempotencyKey: fallbackInput.idempotencyKey,
+        idempotencyFingerprint: fallbackInput.idempotencyFingerprint,
+        recipientHash: fallbackInput.recipientHash,
+        recipientReference: fallbackInput.recipientReference,
+        templateKey: fallbackInput.templateKey,
+        locale: fallbackInput.locale,
+        signerRole: fallbackInput.signerRole,
+        expiresAt: fallbackInput.expiresAt.toISOString(),
+        created: false,
+      });
+    } else if (smsAvailable) {
+      primaryChannel = "SMS";
+    } else if (emailAvailable) {
+      primaryChannel = "EMAIL";
     }
 
-    if (signer.email) {
+    if (primaryChannel) {
       const dispatch = await createPatientMessageDispatch(
-        {
-          tenantId: input.tenantId,
-          signingSessionId: session.id,
-          channel: "EMAIL",
-          idempotencyKey: deriveChildIdempotencyKey(
-            deriveChildIdempotencyKey(idempotencyKey, "PATIENT_MESSAGE_EMAIL"),
-            signer.role,
-          ),
-          idempotencyFingerprint: rootFingerprint,
-          recipientHash: hashRecipient(signer.email, { tenantId: input.tenantId }),
-          recipientReference: caseId
-            ? `case:${caseId}:email`
-            : `consent_document:${input.documentId}:email`,
-          templateKey: "secure_signing_link_email",
-          locale: (input as { locale?: "ar" | "en" }).locale ?? "ar",
-          signerRole: signer.role,
-          expiresAt,
-        } as CreateDispatchInput,
+        buildInput(primaryChannel),
         tx,
       );
-      dispatches.push({ id: dispatch.id, channel: "EMAIL", status: dispatch.status });
+      dispatches.push({
+        id: dispatch.id,
+        channel: primaryChannel,
+        status: dispatch.status,
+      });
     }
+  }
+
+  if (fallbackPlans.length > 0) {
+    const existing = await tx.signingSession.findUnique({
+      where: { id: session.id },
+      select: { metadata: true },
+    });
+    const existingMeta = (existing?.metadata || {}) as Record<string, unknown>;
+    await tx.signingSession.update({
+      where: { id: session.id },
+      data: {
+        metadata: {
+          ...existingMeta,
+          fallbackDispatches: fallbackPlans,
+        },
+      },
+    });
   }
 
   await writeConsentAuditInTx(tx, {

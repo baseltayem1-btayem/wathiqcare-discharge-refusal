@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import {
-  isAllowlistEnforced,
-  isAllowlistedRecipient,
   isPilotPatientSendEnabled,
   normalizePhoneNumber,
   normalizeRecipientEmail,
@@ -18,21 +16,18 @@ export async function POST(request: NextRequest) {
   const recipientEmail = String(body.recipientEmail || "").trim().toLowerCase();
 
   const pilotEnabled = isPilotPatientSendEnabled();
-  const allowlistEnforced = isAllowlistEnforced();
-  const allowlisted = isAllowlistedRecipient(mobileNumber, recipientEmail);
   const hasValidContact = Boolean(normalizePhoneNumber(mobileNumber) || normalizeRecipientEmail(recipientEmail));
 
+  // Production send is never gated by a pilot allowlist. These legacy fields
+  // are kept for API compatibility but always report the non-blocking state.
   return NextResponse.json({
     ok: true,
     pilotEnabled,
-    allowlistEnforced,
-    allowlisted,
-    reason: allowlistEnforced
-      ? allowlisted
-        ? "Recipient is approved for pilot send."
-        : "Recipient is not in the pilot allowlist."
-      : hasValidContact
-        ? "Recipient is eligible for production send."
-        : "A valid patient mobile number or email is required.",
+    allowlistEnforced: false,
+    allowlisted: hasValidContact,
+    eligible: hasValidContact,
+    reason: hasValidContact
+      ? "Recipient is eligible for production send."
+      : "A valid patient mobile number or email is required.",
   });
 }

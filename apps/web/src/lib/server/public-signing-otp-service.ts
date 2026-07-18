@@ -7,6 +7,16 @@ import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { createPublicSigningSessionCookieValue } from "@/lib/server/public-signing-session";
 import {
+  generateOtpCode,
+  getBaseUrl,
+  maskPhone,
+  normalizePhoneNumber,
+  normalizeRecipientEmail,
+  otpHash,
+  parseOtpPayload,
+  type OtpChallengePayload,
+} from "@/lib/server/public-signing-otp-helpers";
+import {
   sendPilotSigningOtpEmail,
   sendSigningOtpEmail,
 } from "@/lib/server/pilot-email-override";
@@ -32,40 +42,15 @@ const OTP_VERIFIED_EVENT = "OTP_VERIFIED";
 const OTP_VERIFY_FAILED_EVENT = "OTP_VERIFY_FAILED";
 const OTP_MAX_ATTEMPTS = 3;
 const OTP_EXPIRY_MINUTES = 10;
+const OTP_RESEND_MIN_INTERVAL_SECONDS = 60;
+const OTP_MAX_RESENDS_PER_SESSION = 5;
 const PUBLIC_SIGNING_SESSION_TTL_MINUTES = 30;
-
-type OtpChallengePayload = {
-  challengeId: string;
-  tokenHash: string;
-  otpHash: string;
-  phoneNumber: string;
-  maskedPhone: string;
-  expiresAt: string;
-  sessionId: string;
-  documentId: string;
-  moduleType: string;
-};
 
 type OtpEventRow = {
   id: string;
   raw_payload: unknown;
   received_at: Date | string;
 };
-
-function normalizePhoneNumber(value: string): string {
-  const compact = value.replace(/[\s\-()]/g, "");
-  if (!compact) return "";
-
-  if (compact.startsWith("+")) return compact;
-  if (compact.startsWith("00")) return `+${compact.slice(2)}`;
-  if (compact.startsWith("966")) return `+${compact}`;
-  if (compact.startsWith("05") && compact.length === 10) return `+966${compact.slice(1)}`;
-  return `+${compact}`;
-}
-
-function normalizeRecipientEmail(value: string): string {
-  return value.trim().toLowerCase();
-}
 
 function isValidRecipientEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(value);
@@ -83,65 +68,6 @@ function getSecureSigningRecipientEmail(metadata: unknown): string | null {
     return null;
   }
   return recipientEmail;
-}
-
-function maskPhone(value: string): string {
-  const trimmed = value.trim();
-  if (trimmed.length <= 4) return "****";
-  return `${"*".repeat(Math.max(0, trimmed.length - 4))}${trimmed.slice(-4)}`;
-}
-
-function otpHash(otpCode: string): string {
-  const pepper = process.env.PUBLIC_SIGNING_OTP_PEPPER?.trim();
-  if (!pepper) {
-    throw new Error("PUBLIC_SIGNING_OTP_PEPPER is required for OTP hashing.");
-  }
-  return crypto.createHmac("sha256", pepper).update(otpCode).digest("hex");
-}
-
-function generateOtpCode(): string {
-  const number = crypto.randomInt(0, 1_000_000);
-  return number.toString().padStart(6, "0");
-}
-
-function safeJsonParse(value: string): unknown {
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
-}
-
-function parseOtpPayload(raw: unknown): OtpChallengePayload | null {
-  if (!raw) return null;
-  const value = typeof raw === "string" ? safeJsonParse(raw) : raw;
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-
-  const payload = value as Partial<OtpChallengePayload>;
-  if (!payload.challengeId || !payload.tokenHash || !payload.otpHash || !payload.expiresAt) {
-    return null;
-  }
-
-  return {
-    challengeId: String(payload.challengeId),
-    tokenHash: String(payload.tokenHash),
-    otpHash: String(payload.otpHash),
-    phoneNumber: String(payload.phoneNumber || ""),
-    maskedPhone: String(payload.maskedPhone || ""),
-    expiresAt: String(payload.expiresAt),
-    sessionId: String(payload.sessionId || ""),
-    documentId: String(payload.documentId || ""),
-    moduleType: String(payload.moduleType || ""),
-  };
-}
-
-function getBaseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_APP_BASE_URL?.trim()
-    || process.env.NEXT_PUBLIC_APP_URL?.trim()
-    || process.env.APP_BASE_URL?.trim()
-    || "https://wathiqcare.online"
-  ).replace(/\/$/, "");
 }
 
 function computePublicSessionExpiry(): string {
@@ -223,14 +149,81 @@ async function markOtpChallengeProcessed(rowId: string, tx?: PrismaClient | Pris
   );
 }
 
+async function getOtpRequestHistory(tokenHashValue: string): Promise<{
+  requestCount: number;
+  latestRequestedAt: Date | null;
+}> {
+  const rows = await prisma().$queryRawUnsafe<
+    Array<{ request_count: number | string; latest_requested_at: Date | string | null }>
+  >(
+    `SELECT COUNT(*)::int AS request_count,
+            MAX(received_at) AS latest_requested_at
+     FROM webhook_events
+     WHERE provider_key = $1
+       AND event_type = $2
+       AND raw_payload ->> 'tokenHash' = $3`,
+    OTP_PROVIDER_KEY,
+    OTP_REQUESTED_EVENT,
+    tokenHashValue,
+  );
+
+  const row = rows[0];
+  if (!row) return { requestCount: 0, latestRequestedAt: null };
+
+  const requestCount =
+    typeof row.request_count === "string"
+      ? Number.parseInt(row.request_count, 10)
+      : Number(row.request_count);
+  const latestRequestedAt = row.latest_requested_at
+    ? (row.latest_requested_at instanceof Date
+        ? row.latest_requested_at
+        : new Date(row.latest_requested_at))
+    : null;
+
+  return { requestCount, latestRequestedAt };
+}
+
+function enforceOtpRateLimit(history: {
+  requestCount: number;
+  latestRequestedAt: Date | null;
+}): void {
+  if (history.requestCount >= OTP_MAX_RESENDS_PER_SESSION) {
+    throw new ApiError(429, "OTP request limit reached. Please try again later.");
+  }
+
+  if (history.latestRequestedAt) {
+    const secondsSinceLastRequest =
+      (Date.now() - history.latestRequestedAt.getTime()) / 1000;
+    if (secondsSinceLastRequest < OTP_RESEND_MIN_INTERVAL_SECONDS) {
+      throw new ApiError(
+        429,
+        "OTP request limit reached. Please try again later.",
+      );
+    }
+  }
+}
+
 export async function requestSigningOtp(args: {
   token: string;
   mobileNumber: string;
   locale?: "ar" | "en";
   request?: NextRequest;
 }) {
-  const context = await getSigningTokenContext(args.token);
-  const doc = await loadPublicDocumentRecord(context.tenantId, context.documentId);
+  let context: Awaited<ReturnType<typeof getSigningTokenContext>>;
+  try {
+    context = await getSigningTokenContext(args.token);
+  } catch {
+    // Generic error: never disclose whether a patient/document exists.
+    throw new ApiError(404, "Signing session not found or has expired");
+  }
+
+  let doc: Awaited<ReturnType<typeof loadPublicDocumentRecord>>;
+  try {
+    doc = await loadPublicDocumentRecord(context.tenantId, context.documentId);
+  } catch {
+    throw new ApiError(404, "Signing session not found or has expired");
+  }
+
   if (doc.status === "SIGNED" || doc.status === "FINALIZED") {
     throw new ApiError(409, "Signing flow already completed for this document");
   }
@@ -241,12 +234,16 @@ export async function requestSigningOtp(args: {
     throw new ApiError(400, "mobileNumber is required");
   }
 
+  const currentTokenHash = tokenHash(args.token);
+  const otpHistory = await getOtpRequestHistory(currentTokenHash);
+  enforceOtpRateLimit(otpHistory);
+
   const challengeId = crypto.randomUUID();
   const code = generateOtpCode();
   const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000).toISOString();
   const payload: OtpChallengePayload = {
     challengeId,
-    tokenHash: tokenHash(args.token),
+    tokenHash: currentTokenHash,
     otpHash: otpHash(code),
     phoneNumber: mobile,
     maskedPhone: maskPhone(mobile),
@@ -399,7 +396,13 @@ export async function verifySigningOtp(args: {
   otpCode: string;
   request?: NextRequest;
 }) {
-  const context = await getSigningTokenContext(args.token);
+  let context: Awaited<ReturnType<typeof getSigningTokenContext>>;
+  try {
+    context = await getSigningTokenContext(args.token);
+  } catch {
+    throw new ApiError(404, "Signing session not found or has expired");
+  }
+
   const active = await getLatestActiveOtpChallenge(args.token);
 
   if (!active) {
@@ -467,7 +470,12 @@ export async function verifySigningOtp(args: {
   }
 
   const verifiedAt = new Date().toISOString();
-  const doc = await loadPublicDocumentRecord(context.tenantId, context.documentId);
+  let doc: Awaited<ReturnType<typeof loadPublicDocumentRecord>>;
+  try {
+    doc = await loadPublicDocumentRecord(context.tenantId, context.documentId);
+  } catch {
+    throw new ApiError(404, "Signing session not found or has expired");
+  }
   const linkedEducationPackage = await getLinkedEducationPackage(
     context.tenantId,
     doc.templateId,
