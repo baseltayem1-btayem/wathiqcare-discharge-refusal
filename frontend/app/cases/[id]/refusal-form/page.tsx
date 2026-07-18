@@ -80,7 +80,7 @@ export default function RefusalFormSignaturePage() {
       const res = await apiFetch<{
         session_id: string;
         verification_status: string;
-        provider_result?: { otp_debug_code?: string };
+        provider_result?: Record<string, unknown>;
       }>(`/api/discharge/cases/${caseId}/acknowledgment/start`, {
         method: "POST",
         body: JSON.stringify({
