@@ -47,60 +47,60 @@
       "role": "SYSTEM",
       "language": "BILINGUAL",
       "type": "/Tx",
-      "flags": 0,
+      "flags": 4096,
       "required": false,
       "applicabilityRule": "always",
       "checkboxOnState": null,
-      "multiline": false,
-      "autofit": false,
+      "multiline": true,
+      "autofit": true,
       "widgets": [
         {
           "page": 1,
           "rect": [
-            421,
-            739,
-            535,
-            757
+            360,
+            730,
+            560,
+            762
           ],
           "appearanceStates": null
         },
         {
           "page": 2,
           "rect": [
-            421,
-            739,
-            535,
-            757
+            360,
+            730,
+            560,
+            762
           ],
           "appearanceStates": null
         },
         {
           "page": 3,
           "rect": [
-            421,
-            739,
-            535,
-            757
+            360,
+            730,
+            560,
+            762
           ],
           "appearanceStates": null
         },
         {
           "page": 4,
           "rect": [
-            421,
-            739,
-            535,
-            757
+            360,
+            730,
+            560,
+            762
           ],
           "appearanceStates": null
         },
         {
           "page": 5,
           "rect": [
-            421,
-            739,
-            535,
-            757
+            360,
+            730,
+            560,
+            762
           ],
           "appearanceStates": null
         }
@@ -431,9 +431,9 @@
           "page": 1,
           "rect": [
             54,
-            450,
+            445,
             286,
-            493
+            470
           ],
           "appearanceStates": null
         }
@@ -458,9 +458,9 @@
           "page": 1,
           "rect": [
             338,
-            451,
+            445,
             560,
-            494
+            470
           ],
           "appearanceStates": null
         }
@@ -485,9 +485,9 @@
           "page": 1,
           "rect": [
             54,
-            367,
+            368,
             286,
-            410
+            393
           ],
           "appearanceStates": null
         }
@@ -514,7 +514,7 @@
             338,
             368,
             560,
-            411
+            393
           ],
           "appearanceStates": null
         }
@@ -539,9 +539,9 @@
           "page": 2,
           "rect": [
             54,
-            60,
+            80,
             291,
-            145
+            150
           ],
           "appearanceStates": null
         }
@@ -566,9 +566,9 @@
           "page": 2,
           "rect": [
             337,
-            61,
+            80,
             560,
-            147
+            150
           ],
           "appearanceStates": null
         }
@@ -593,9 +593,9 @@
           "page": 3,
           "rect": [
             54,
-            623,
+            580,
             291,
-            666
+            630
           ],
           "appearanceStates": null
         }
@@ -620,9 +620,9 @@
           "page": 3,
           "rect": [
             337,
-            602,
+            570,
             560,
-            666
+            630
           ],
           "appearanceStates": null
         }
@@ -647,9 +647,9 @@
           "page": 3,
           "rect": [
             54,
-            456,
+            440,
             291,
-            581
+            560
           ],
           "appearanceStates": null
         }
@@ -674,9 +674,9 @@
           "page": 3,
           "rect": [
             337,
-            436,
+            470,
             560,
-            581
+            570
           ],
           "appearanceStates": null
         }
@@ -703,7 +703,7 @@
             54,
             245,
             292,
-            414
+            390
           ],
           "appearanceStates": null
         }
@@ -728,9 +728,9 @@
           "page": 3,
           "rect": [
             337,
-            229,
+            245,
             560,
-            398
+            390
           ],
           "appearanceStates": null
         }
@@ -883,20 +883,20 @@
         {
           "page": 4,
           "rect": [
-            137,
-            94,
-            287,
-            114
+            130,
+            90,
+            300,
+            118
           ],
           "appearanceStates": null
         },
         {
           "page": 4,
           "rect": [
-            344,
-            106,
-            507,
-            127
+            330,
+            100,
+            520,
+            130
           ],
           "appearanceStates": null
         }
@@ -1288,9 +1288,9 @@
           "page": 5,
           "rect": [
             135,
-            361,
+            370,
             293,
-            381
+            392
           ],
           "appearanceStates": null
         },
@@ -1298,9 +1298,9 @@
           "page": 5,
           "rect": [
             339,
-            355,
-            454,
-            376
+            365,
+            470,
+            388
           ],
           "appearanceStates": null
         }
@@ -1325,9 +1325,9 @@
           "page": 5,
           "rect": [
             124,
-            340,
+            345,
             293,
-            360
+            366
           ],
           "appearanceStates": null
         },
@@ -1335,9 +1335,9 @@
           "page": 5,
           "rect": [
             338,
-            334,
-            507,
-            355
+            340,
+            520,
+            362
           ],
           "appearanceStates": null
         }
@@ -1362,9 +1362,9 @@
           "page": 5,
           "rect": [
             104,
-            319,
+            315,
             293,
-            339
+            340
           ],
           "appearanceStates": null
         }
@@ -1389,9 +1389,9 @@
           "page": 5,
           "rect": [
             337,
-            313,
+            310,
             529,
-            334
+            340
           ],
           "appearanceStates": null
         }
@@ -1905,5 +1905,5 @@
       "renderingStrategy": "TIME"
     }
   ],
-  "manifestHash": "64a2f53f3b3e972a6e77e2feb05961a22f5140e3f523c66470af238e0161588f"
+  "manifestHash": "843fe2af33d866bc640cf2fd4998355faef4887cf6ff4e765b3fb0a410816e47"
 }

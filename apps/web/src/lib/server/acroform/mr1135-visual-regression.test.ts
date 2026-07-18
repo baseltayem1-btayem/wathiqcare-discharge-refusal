@@ -221,24 +221,40 @@ test("governed overlay color is exactly #0066FF and opacity is 1", async () => {
   const width = Math.round((enRect[2] - enRect[0]) * SCALE);
   const height = Math.round((enRect[3] - enRect[1]) * SCALE);
 
-  let blueCount = 0;
+  const target = parseHexColor(GOVERNED_OVERLAY_COLOR);
+  let exactMatchCount = 0;
   let nonWhiteCount = 0;
-  for (let y = top + 2; y < top + height - 2; y++) {
+  let nonBlueCount = 0;
+
+  // Sample the upper two-thirds of the box to avoid printed underlines that
+  // sit below the governed value.
+  const sampleBottom = top + Math.floor(height * 0.65);
+
+  for (let y = top + 2; y < sampleBottom; y++) {
     for (let x = left + 2; x < left + width - 2; x++) {
       const pixel = getPixel(page1, x, y);
-      if (pixel.a > 30 && (pixel.r < 250 || pixel.g < 250 || pixel.b < 250)) {
-        nonWhiteCount++;
-        if (isBlueish(pixel)) {
-          blueCount++;
-        }
+      if (pixel.a <= 30) continue;
+      if (pixel.r > 250 && pixel.g > 250 && pixel.b > 250) continue;
+
+      nonWhiteCount++;
+      if (pixel.r === target.r && pixel.g === target.g && pixel.b === target.b) {
+        exactMatchCount++;
       }
+      if (!isBlueish(pixel)) nonBlueCount++;
     }
   }
 
   assert.ok(nonWhiteCount > 50, `Expected ink pixels in condition_description_en, found ${nonWhiteCount}`);
-  assert.ok(blueCount / nonWhiteCount > 0.55, `Expected ~#0066FF pixels, found ${blueCount}/${nonWhiteCount}`);
+  assert.ok(
+    exactMatchCount > 0,
+    `Expected at least some exact #0066FF pixels in condition_description_en`,
+  );
+  assert.ok(
+    nonBlueCount / nonWhiteCount < 0.15,
+    `Expected no meaningful non-blue pixels, found ${nonBlueCount}/${nonWhiteCount}`,
+  );
 
-  for (let y = top + 2; y < top + height - 2; y++) {
+  for (let y = top + 2; y < sampleBottom; y++) {
     for (let x = left + 2; x < left + width - 2; x++) {
       const pixel = getPixel(page1, x, y);
       if (isBlueish(pixel)) {

@@ -18,18 +18,18 @@ import {
   extractCoverageTestStrings,
   IDENTITY_FIELD_NAMES,
   resolveFieldFitSpec,
+  resolveFieldFontWeight,
 } from "./field-addressed-overlay-helpers";
 import {
   GOVERNED_OVERLAY_COLOR,
-  GOVERNED_OVERLAY_FONT_WEIGHT,
   GOVERNED_OVERLAY_HORIZONTAL_PADDING_PT,
-  GOVERNED_OVERLAY_IDENTITY_FONT_WEIGHT,
   GOVERNED_OVERLAY_OPACITY,
   GOVERNED_OVERLAY_VERTICAL_PADDING_PT,
 } from "./governed-overlay-style";
 
 export type FieldAddressedRenderValue =
   | { kind: "text"; value: string }
+  | { kind: "bilingual_text"; en: string; ar: string }
   | { kind: "checkbox"; checked: boolean }
   | { kind: "signature"; imageDataUrl: string };
 
@@ -79,6 +79,61 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
+function renderTextOverlayDiv(args: {
+  fieldName: string;
+  rawText: string;
+  isArabic: boolean;
+  multiline: boolean;
+  autofit: boolean;
+  cssLeft: number;
+  cssTop: number;
+  cssWidth: number;
+  cssHeight: number;
+}): string {
+  const {
+    fieldName,
+    rawText,
+    isArabic,
+    multiline,
+    autofit,
+    cssLeft,
+    cssTop,
+    cssWidth,
+    cssHeight,
+  } = args;
+  const isIdentity = IDENTITY_FIELD_NAMES.has(fieldName);
+  const fitSpec = resolveFieldFitSpec({
+    fieldName,
+    cssHeight,
+    multiline,
+    autofit,
+    isArabic,
+  });
+  const fontWeight = resolveFieldFontWeight({ fieldName, value: rawText });
+  const fitAttrs = [
+    `data-fit="${fitSpec.mode}"`,
+    `data-min-font-size="${fitSpec.minFontSize}"`,
+    `data-max-font-size="${fitSpec.maxFontSize}"`,
+    `data-line-height="${fitSpec.lineHeight}"`,
+    `data-field-name="${fieldName}"`,
+    fitSpec.maxLines !== undefined ? `data-max-lines="${fitSpec.maxLines}"` : "",
+    isIdentity ? "data-identity=\"true\"" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const langClass = isArabic ? "field-text-ar" : "field-text-en";
+  const identityClass = isIdentity ? "field-text-identity" : "";
+  return `
+    <div
+      class="field-text ${langClass} ${identityClass}"
+      style="left:${cssLeft}px;top:${cssTop}px;width:${cssWidth}px;height:${cssHeight}px;font-size:${fitSpec.maxFontSize}px;font-weight:${fontWeight};"
+      dir="${isArabic ? "rtl" : "ltr"}"
+      lang="${isArabic ? "ar" : "en"}"
+      ${fitAttrs}
+    >${escapeHtml(rawText)}</div>
+  `;
+}
+
 function buildTextOverlayHtml(args: {
   manifest: AcroFormTemplateManifest;
   values: Record<string, FieldAddressedRenderValue>;
@@ -110,39 +165,46 @@ function buildTextOverlayHtml(args: {
             ${CHECKMARK_SVG}
           </div>
         `);
-      } else if (value.kind === "text" && field.type === "/Tx") {
+        continue;
+      }
+
+      if (value.kind === "text" && field.type === "/Tx") {
         const rawText = normalizeArabicText(value.value);
         if (!rawText) continue;
         const isArabic = isArabicText(rawText) || field.language === "AR";
-        const isIdentity = IDENTITY_FIELD_NAMES.has(field.name);
-        const fitSpec = resolveFieldFitSpec({
+        markup.push(renderTextOverlayDiv({
           fieldName: field.name,
-          cssHeight,
+          rawText,
+          isArabic,
           multiline: field.multiline === true,
           autofit: field.autofit === true,
+          cssLeft,
+          cssTop,
+          cssWidth,
+          cssHeight,
+        }));
+        continue;
+      }
+
+      if (value.kind === "bilingual_text" && field.type === "/Tx") {
+        // For bilingual fields, place the English value on the left side of the
+        // page and the Arabic value on the right side. This prevents compressing
+        // mixed Arabic/Latin text into one unreadable line.
+        const isLeftWidget = rect.left < manifest.canonicalApprovedPdf.pageSizePoints.width / 2;
+        const rawText = normalizeArabicText(isLeftWidget ? value.en : value.ar);
+        if (!rawText) continue;
+        const isArabic = !isLeftWidget || isArabicText(rawText) || field.language === "AR";
+        markup.push(renderTextOverlayDiv({
+          fieldName: field.name,
+          rawText,
           isArabic,
-        });
-        const fitAttrs = [
-          `data-fit="${fitSpec.mode}"`,
-          `data-min-font-size="${fitSpec.minFontSize}"`,
-          `data-max-font-size="${fitSpec.maxFontSize}"`,
-          `data-line-height="${fitSpec.lineHeight}"`,
-          fitSpec.maxLines !== undefined ? `data-max-lines="${fitSpec.maxLines}"` : "",
-          isIdentity ? "data-identity=\"true\"" : "",
-        ]
-          .filter(Boolean)
-          .join(" ");
-        const langClass = isArabic ? "field-text-ar" : "field-text-en";
-        const identityClass = isIdentity ? "field-text-identity" : "";
-        markup.push(`
-          <div
-            class="field-text ${langClass} ${identityClass}"
-            style="left:${cssLeft}px;top:${cssTop}px;width:${cssWidth}px;height:${cssHeight}px;font-size:${fitSpec.maxFontSize}px;"
-            dir="${isArabic ? "rtl" : "ltr"}"
-            lang="${isArabic ? "ar" : "en"}"
-            ${fitAttrs}
-          >${escapeHtml(rawText)}</div>
-        `);
+          multiline: field.multiline === true,
+          autofit: field.autofit === true,
+          cssLeft,
+          cssTop,
+          cssWidth,
+          cssHeight,
+        }));
       }
     }
   }
@@ -174,9 +236,7 @@ function buildTextOverlayHtml(args: {
             overflow: hidden;
             padding: ${GOVERNED_OVERLAY_VERTICAL_PADDING_PT}px ${GOVERNED_OVERLAY_HORIZONTAL_PADDING_PT}px;
             color: ${GOVERNED_OVERLAY_COLOR};
-            font-weight: ${GOVERNED_OVERLAY_FONT_WEIGHT};
             opacity: ${GOVERNED_OVERLAY_OPACITY};
-            line-height: 1.25;
             white-space: pre-wrap;
             word-break: normal;
             overflow-wrap: anywhere;
@@ -193,7 +253,7 @@ function buildTextOverlayHtml(args: {
             unicode-bidi: plaintext;
           }
           .field-text-identity {
-            font-weight: ${GOVERNED_OVERLAY_IDENTITY_FONT_WEIGHT};
+            font-weight: 600;
           }
           .field-checkbox {
             position: absolute;
@@ -227,7 +287,10 @@ async function renderOverlayPng(
 ): Promise<Buffer> {
   const page = await browser.newPage();
   try {
-    await page.setViewport({ width: Math.ceil(width), height: Math.ceil(height), deviceScaleFactor: 1 });
+    // Render the overlay at 2x device scale so glyph strokes and the governed
+    // blue color resolve to more solid pixels, improving clinical readability
+    // and visual-regression reliability.
+    await page.setViewport({ width: Math.ceil(width), height: Math.ceil(height), deviceScaleFactor: 2 });
     await page.setContent(html, { waitUntil: "load" });
     await page.emulateMediaType("screen");
 
@@ -295,7 +358,7 @@ async function recolorSignatureToBlue(args: {
   const page = await args.browser.newPage();
   try {
     const recoloredDataUrl = await page.evaluate(
-({ imageDataUrl, blueR, blueG, blueB }) => {
+      ({ imageDataUrl, blueR, blueG, blueB }) => {
         return new Promise<string>((resolve, reject) => {
           const img = new Image();
           img.onload = () => {
@@ -418,9 +481,11 @@ async function drawSignatures(args: {
       const scale = Math.min(effectiveWidth / scaled.width, effectiveHeight / scaled.height);
       if (!Number.isFinite(scale) || scale <= 0) continue;
 
-      const width = scaled.width * scale;
-      const height = scaled.height * scale;
-      const x = rect.left;
+      // Increase signature visual presence while keeping it inside the region.
+      const scaleFactor = Math.min(1, scale);
+      const width = scaled.width * scaleFactor;
+      const height = scaled.height * scaleFactor;
+      const x = rect.left + Math.max(0, (effectiveWidth - width) / 2);
       const y = rect.bottom + Math.max(0, (effectiveHeight - height) / 2);
 
       page.drawImage(img, { x, y, width, height });

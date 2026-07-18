@@ -562,6 +562,8 @@ export function useProductionWorkspace(physician: PhysicianContext) {
           physicianContext: {
             name: physician.name,
             designation: physician.specialty || state.encounter.physicianSpecialty || undefined,
+            designationEn: physician.specialtyEn || state.encounter.physicianSpecialtyEn || undefined,
+            designationAr: physician.specialtyAr || state.encounter.physicianSpecialtyAr || undefined,
           },
           encounterReference: {
             id: state.encounter.id,
@@ -730,6 +732,8 @@ export function useProductionWorkspace(physician: PhysicianContext) {
           physicianContext: {
             name: physician.name,
             designation: physician.specialty || state.encounter.physicianSpecialty || undefined,
+            designationEn: physician.specialtyEn || state.encounter.physicianSpecialtyEn || undefined,
+            designationAr: physician.specialtyAr || state.encounter.physicianSpecialtyAr || undefined,
           },
           encounterReference: {
             id: state.encounter.id,

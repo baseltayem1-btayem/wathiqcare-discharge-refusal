@@ -6,6 +6,14 @@ export type BuildAmputationFieldAddressedValuesInput = {
   patientSignatureDataUrl: string | null | undefined;
   physicianName: string | null | undefined;
   physicianSpecialty: string | null | undefined;
+  /**
+   * Separate English and Arabic physician designations. When both are provided,
+   * each is rendered in its corresponding language-side widget on page 5.
+   * If only a mixed bilingual value is supplied, it is wrapped safely inside
+   * the allowed rectangle rather than compressed.
+   */
+  physicianDesignationEn?: string | null | undefined;
+  physicianDesignationAr?: string | null | undefined;
   patientName: string | null | undefined;
   mrn: string | null | undefined;
   dob: string | null | undefined;
@@ -160,6 +168,8 @@ export function buildAmputationFieldAddressedValues(
     patientSignatureDataUrl,
     physicianName,
     physicianSpecialty,
+    physicianDesignationEn,
+    physicianDesignationAr,
     patientName,
     mrn,
     dob,
@@ -269,8 +279,22 @@ export function buildAmputationFieldAddressedValues(
   const printablePhysicianDesignation =
     rawDesignation && !rawDesignation.includes("@") ? rawDesignation : physicianSpecialty;
 
+  // Use separate English/Arabic designations when both are supplied. Otherwise
+  // fall back to the single bilingual value and let the renderer wrap it safely.
+  const separateDesignationEn = asString(physicianDesignationEn);
+  const separateDesignationAr = asString(physicianDesignationAr);
+  const hasSeparateDesignations = separateDesignationEn && separateDesignationAr;
+
   setValue(values, "doctor_delegate_name", text(printablePhysicianName));
-  setValue(values, "doctor_delegate_designation", text(printablePhysicianDesignation));
+  if (hasSeparateDesignations) {
+    values.doctor_delegate_designation = {
+      kind: "bilingual_text",
+      en: separateDesignationEn,
+      ar: separateDesignationAr,
+    };
+  } else {
+    setValue(values, "doctor_delegate_designation", text(printablePhysicianDesignation));
+  }
   setValue(values, "doctor_delegate_signature_en", signature(physicianSignatureDataUrl));
   setValue(values, "doctor_delegate_signature_ar", signature(physicianSignatureDataUrl));
   setValue(values, "doctor_delegate_date", text(formatDate(signedAt)));

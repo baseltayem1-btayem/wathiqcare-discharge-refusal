@@ -30,6 +30,8 @@ export type DraftPatientDisplay = {
 export type DraftPhysicianContext = {
   name: string;
   designation?: string | null;
+  designationEn?: string | null;
+  designationAr?: string | null;
 };
 
 export type DraftEncounterReference = {
@@ -171,6 +173,8 @@ function buildFieldAddressedDraftValues(args: {
     patientSignatureDataUrl: undefined,
     physicianName: args.physicianContext.name,
     physicianSpecialty: args.physicianContext.designation,
+    physicianDesignationEn: args.physicianContext.designationEn,
+    physicianDesignationAr: args.physicianContext.designationAr,
     patientName: args.patientDisplay.name,
     mrn: args.patientDisplay.mrn,
     dob: args.patientDisplay.dob,
@@ -258,6 +262,8 @@ function buildFieldAddressedPatientCopyValues(args: {
     patientSignatureDataUrl: args.patientSignature?.dataUrl,
     physicianName: args.physicianContext.name,
     physicianSpecialty: args.physicianContext.designation,
+    physicianDesignationEn: args.physicianContext.designationEn,
+    physicianDesignationAr: args.physicianContext.designationAr,
     patientName: args.patientDisplay.name,
     mrn: args.patientDisplay.mrn,
     dob: args.patientDisplay.dob,

@@ -216,6 +216,11 @@ export function ApprovedPdfViewer({
                     </div>
 
                     <div className="space-y-2 bg-slate-900/50 px-5 py-3">
+                      <p id="filled-preview-review-desc" className="sr-only">
+                        {lang === "ar"
+                          ? "يؤكد هذا الزر مراجعة الطبيب للمعاينة المعبأة الحالية."
+                          : "This button confirms the physician has reviewed the current filled draft preview."}
+                      </p>
                       {filledDraftStatus === "loading" ? (
                         <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs font-medium text-blue-800">
                           {lang === "ar" ? "جاري توليد المسودة المعبأة من المصدر المعتمد." : "Generating the filled draft from the approved PDF source."}
@@ -288,8 +293,10 @@ export function ApprovedPdfViewer({
                       variant={filledDraftReviewed ? "outline" : "default"}
                       size="sm"
                       disabled={!isFilledDraftReviewable(filledDraftStatus, draftPdfUrl, filledDraftReviewed)}
-                      className="rounded-xl"
+                      className="rounded-xl focus:ring-2 focus:ring-blue-100"
                       onClick={onMarkFilledDraftReviewed}
+                      aria-label={filledDraftReviewed ? "Filled preview reviewed" : "Mark filled preview reviewed"}
+                      aria-describedby="filled-preview-review-desc"
                     >
                       {filledDraftReviewed
                         ? lang === "ar"

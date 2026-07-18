@@ -7,6 +7,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import type { PhysicianContext } from "./types";
 import { useProductionWorkspace } from "./hooks/useProductionWorkspace";
 import { computeSupportsFilledDraftPreview } from "./utils/filledDraftPreviewCapability";
+import { computeFilledPreviewBlocker } from "./utils/filledPreviewBlocker";
 import { PatientEncounterSelector } from "./components/PatientEncounterSelector";
 import { ConsentPreviewModal } from "./components/ConsentPreviewModal";
 import { SendConfirmationModal } from "./components/SendConfirmationModal";
@@ -123,6 +124,21 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     readiness.patientSignatureMapped &&
     state.filledDraftStatus !== "loading";
 
+  const filledPreviewBlocker = computeFilledPreviewBlocker({
+    supportsFilledDraftPreview,
+    hasApprovedPdfSource,
+    fieldMappingVerified: readiness.fieldMappingVerified,
+    patientReady: readiness.patientReady,
+    patientDob: state.patient?.dateOfBirth,
+    encounterReady: readiness.encounterReady,
+    assemblyReady: readiness.assemblyReady,
+    doctorCompletionReady: readiness.doctorCompletionReady,
+    anesthesiaMappingReady: readiness.anesthesiaMappingReady,
+    patientSignatureMapped: readiness.patientSignatureMapped,
+    filledDraftStatus: state.filledDraftStatus,
+    fieldMappingReadiness: state.fieldMappingReadiness,
+  });
+
   const effectivePreviewReviewed = supportsFilledDraftPreview ? state.filledDraftReviewed : state.previewReviewed;
 
   const sendReason = (() => {
@@ -201,6 +217,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
               onValueChange={setDoctorCompletionValue}
               onPhysicianSignatureChange={setPhysicianSignatureDataUrl}
               disabled={sendLoading}
+              filledPreviewBlocker={filledPreviewBlocker}
             />
 
             {supportsFilledDraftPreview ? (
@@ -220,10 +237,22 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
                       {state.filledDraftError}
                     </div>
                   ) : null}
+                  {filledPreviewBlocker ? (
+                    <div
+                      id="filled-preview-blocker"
+                      className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800"
+                      role="status"
+                      aria-live="polite"
+                      data-filled-preview-blocker="true"
+                    >
+                      {filledPreviewBlocker}
+                    </div>
+                  ) : null}
                   <Button
                     className="h-11 w-full rounded-2xl"
                     disabled={!canGenerateFilledPreview}
                     onClick={() => void generateFilledDraftPreview()}
+                    aria-describedby={filledPreviewBlocker ? "filled-preview-blocker" : undefined}
                   >
                     {state.filledDraftStatus === "loading" ? (
                       <Loader2 className="mr-1 size-4 animate-spin" />

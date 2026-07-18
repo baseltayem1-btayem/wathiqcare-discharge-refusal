@@ -746,6 +746,8 @@ export type AcroFormFilledDraftPreviewInput = {
   physicianContext: {
     name: string;
     designation?: string | null;
+    designationEn?: string | null;
+    designationAr?: string | null;
   };
   encounterReference?: {
     id?: string;

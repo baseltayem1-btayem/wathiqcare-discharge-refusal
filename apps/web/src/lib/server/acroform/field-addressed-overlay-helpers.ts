@@ -11,6 +11,12 @@ import {
   TAJAWAL_LATIN_400_WOFF2,
   TAJAWAL_LATIN_700_WOFF2,
 } from "./fonts/bundled-font-data";
+import {
+  GOVERNED_OVERLAY_MIN_CLINICAL_FONT_SIZE_PT,
+  GOVERNED_OVERLAY_MIN_IDENTITY_FONT_SIZE_PT,
+  GOVERNED_OVERLAY_MULTILINE_LINE_HEIGHT,
+  GOVERNED_OVERLAY_SINGLE_LINE_HEIGHT,
+} from "./governed-overlay-style";
 
 export const ARABIC_FONT_FAMILY = '"WathiqOverlayArabic"';
 export const LATIN_FONT_FAMILY = '"WathiqOverlaySans"';
@@ -150,11 +156,12 @@ export function buildOverlayPrepareScript(args: {
       for (const el of fitElements) {
         const element = el;
         const mode = element.getAttribute("data-fit");
-        const minFontSize = parseFloat(element.getAttribute("data-min-font-size") || "7");
+        const minFontSize = parseFloat(element.getAttribute("data-min-font-size") || "${GOVERNED_OVERLAY_MIN_CLINICAL_FONT_SIZE_PT}");
         const maxFontSize = parseFloat(element.getAttribute("data-max-font-size") || "11");
-        const lineHeight = parseFloat(element.getAttribute("data-line-height") || "1.25");
+        const lineHeight = parseFloat(element.getAttribute("data-line-height") || "${GOVERNED_OVERLAY_MULTILINE_LINE_HEIGHT}");
         const maxLinesAttr = element.getAttribute("data-max-lines");
         const maxLines = maxLinesAttr ? parseInt(maxLinesAttr, 10) : undefined;
+        const fieldName = element.getAttribute("data-field-name") || "";
 
         const style = window.getComputedStyle(element);
         const paddingLeft = parseFloat(style.paddingLeft) || 0;
@@ -169,6 +176,7 @@ export function buildOverlayPrepareScript(args: {
         let low = minFontSize;
         let high = maxFontSize;
         let chosen = minFontSize;
+        let fits = false;
 
         if (mode === "single") {
           // Measure as a single unwrapped line so the width check is accurate.
@@ -188,9 +196,12 @@ export function buildOverlayPrepareScript(args: {
             } else {
               chosen = mid;
               low = mid;
+              fits = true;
             }
           }
           element.style.fontSize = chosen + "px";
+          // Final verification at the chosen size.
+          fits = element.scrollWidth <= widthLimit;
         } else if (mode === "multi") {
           // Binary search the largest font size that fits vertically within the
           // box, respecting max-lines if specified.
@@ -212,10 +223,21 @@ export function buildOverlayPrepareScript(args: {
               high = mid;
             } else {
               low = mid;
+              fits = true;
             }
           }
           chosen = low;
           element.style.fontSize = chosen + "px";
+          // Final verification at the chosen size.
+          const finalHeight = measureHeight();
+          fits = finalHeight <= availableHeight;
+        }
+
+        // Fail closed: if the value does not fit at the governed minimum font
+        // size, the renderer must not silently clip, truncate, or ellipsize
+        // legal/clinical content.
+        if (!fits) {
+          exposeError("overlay-overflow-failure:" + fieldName + ":" + minFontSize);
         }
       }
 
@@ -245,7 +267,7 @@ function mergeUniqueTestStrings(values: string[]): string {
  * font coverage validation. PHI is never logged; only a deduplicated character
  * set is passed to the browser for coverage checking.
  */
-export function extractCoverageTestStrings(values: Record<string, { kind: "text"; value: string } | unknown>): {
+export function extractCoverageTestStrings(values: Record<string, { kind: string } | unknown>): {
   arabic: string[];
   latin: string[];
 } {
@@ -253,11 +275,17 @@ export function extractCoverageTestStrings(values: Record<string, { kind: "text"
   const latin: string[] = [];
 
   for (const entry of Object.values(values)) {
-    if (!entry || typeof entry !== "object" || !("kind" in entry) || (entry as { kind: string }).kind !== "text") {
+    if (!entry || typeof entry !== "object" || !("kind" in entry)) {
       continue;
     }
-    const textEntry = entry as { kind: "text"; value: string };
-    const value = textEntry.value;
+    const kind = (entry as { kind: string }).kind;
+    let value = "";
+    if (kind === "text") {
+      value = (entry as { kind: "text"; value: string }).value;
+    } else if (kind === "bilingual_text") {
+      const bilingual = entry as { kind: "bilingual_text"; en: string; ar: string };
+      value = `${bilingual.en} ${bilingual.ar}`;
+    }
     if (!value) continue;
     if (/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(value)) {
       arabic.push(value);
@@ -298,6 +326,11 @@ export const IDENTITY_FIELD_NAMES = new Set([
   "substitute_contact",
 ]);
 
+export const SHORT_IDENTITY_FIELD_NAMES = new Set([
+  "mrn",
+  "date_of_birth",
+]);
+
 /**
  * Compute default fit specs for a field based on its manifest properties.
  */
@@ -309,18 +342,24 @@ export function resolveFieldFitSpec(args: {
   isArabic: boolean;
 }): FieldFitSpec {
   const { fieldName, cssHeight, multiline, autofit } = args;
-  const maxFontSize = Math.max(7, Math.min(11, cssHeight * 0.55));
+  const isIdentity = IDENTITY_FIELD_NAMES.has(fieldName);
+  const maxFontSize = Math.max(
+    isIdentity ? GOVERNED_OVERLAY_MIN_IDENTITY_FONT_SIZE_PT : GOVERNED_OVERLAY_MIN_CLINICAL_FONT_SIZE_PT,
+    Math.min(11, cssHeight * 0.55),
+  );
   // Identity fields may need to compress more to fit long legal names without
   // active ellipsis truncation, but never below a governed minimum.
-  const minFontSize = IDENTITY_FIELD_NAMES.has(fieldName) ? 4.5 : 6;
+  const minFontSize = isIdentity
+    ? GOVERNED_OVERLAY_MIN_IDENTITY_FONT_SIZE_PT
+    : GOVERNED_OVERLAY_MIN_CLINICAL_FONT_SIZE_PT;
 
   if (multiline) {
     return {
       mode: "multi",
       minFontSize,
       maxFontSize,
-      lineHeight: 1.25,
-      maxLines: autofit ? undefined : Math.max(2, Math.floor(cssHeight / (maxFontSize * 1.25))),
+      lineHeight: GOVERNED_OVERLAY_MULTILINE_LINE_HEIGHT,
+      maxLines: autofit ? undefined : Math.max(2, Math.floor(cssHeight / (maxFontSize * GOVERNED_OVERLAY_MULTILINE_LINE_HEIGHT))),
     };
   }
 
@@ -328,6 +367,24 @@ export function resolveFieldFitSpec(args: {
     mode: "single",
     minFontSize,
     maxFontSize,
-    lineHeight: 1.25,
+    lineHeight: GOVERNED_OVERLAY_SINGLE_LINE_HEIGHT,
   };
+}
+
+/**
+ * Determine the governed font weight for a field. Clinical/long values use 500;
+ * identity values use 600; very short identity values may use 700 only when the
+ * value is short enough that the heavier weight remains readable.
+ */
+export function resolveFieldFontWeight(args: { fieldName: string; value: string }): number {
+  const { fieldName, value } = args;
+  const isIdentity = IDENTITY_FIELD_NAMES.has(fieldName);
+  if (!isIdentity) {
+    return 500;
+  }
+  const isShortIdentity = SHORT_IDENTITY_FIELD_NAMES.has(fieldName);
+  if (isShortIdentity && value.length <= 12) {
+    return 700;
+  }
+  return 600;
 }

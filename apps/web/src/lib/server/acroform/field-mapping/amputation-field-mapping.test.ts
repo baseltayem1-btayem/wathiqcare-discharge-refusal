@@ -260,6 +260,56 @@ test("buildAmputationFieldAddressedValues passes physician signature to both lan
   assert.equal(values.patient_signature_ar, undefined, "Patient signature must remain untouched");
 });
 
+test("buildAmputationFieldAddressedValues renders separate English and Arabic designations when available", () => {
+  const values = buildAmputationFieldAddressedValues({
+    doctorCompletionValues: {},
+    physicianSignatureDataUrl: undefined,
+    patientSignatureDataUrl: undefined,
+    physicianName: "Dr. Ahmed",
+    physicianSpecialty: "Orthopedic Surgery",
+    physicianDesignationEn: "Consultant Orthopedic Surgeon",
+    physicianDesignationAr: "استشاري جراحة العظام",
+    patientName: "Najib Al-Rashid",
+    mrn: "IMC-2026-02000",
+    dob: "1985-03-15",
+    signedAt: null,
+  });
+
+  assert.equal(values.doctor_delegate_designation?.kind, "bilingual_text");
+  assert.equal(
+    (values.doctor_delegate_designation as { kind: "bilingual_text"; en: string; ar: string }).en,
+    "Consultant Orthopedic Surgeon",
+  );
+  assert.equal(
+    (values.doctor_delegate_designation as { kind: "bilingual_text"; en: string; ar: string }).ar,
+    "استشاري جراحة العظام",
+  );
+});
+
+test("buildAmputationFieldAddressedValues wraps a mixed bilingual designation safely when separate values are unavailable", () => {
+  const values = buildAmputationFieldAddressedValues({
+    doctorCompletionValues: {
+      physician_designation: "Consultant Surgeon / استشاري جراحة",
+    },
+    physicianSignatureDataUrl: undefined,
+    patientSignatureDataUrl: undefined,
+    physicianName: "Dr. Ahmed",
+    physicianSpecialty: "Orthopedic Surgery",
+    patientName: "Najib Al-Rashid",
+    mrn: "IMC-2026-02000",
+    dob: "1985-03-15",
+    signedAt: null,
+  });
+
+  assert.equal(values.doctor_delegate_designation?.kind, "text");
+  assert.ok(
+    (values.doctor_delegate_designation as { kind: "text"; value: string }).value.includes("Consultant Surgeon"),
+  );
+  assert.ok(
+    /[\u0600-\u06FF]/.test((values.doctor_delegate_designation as { kind: "text"; value: string }).value),
+  );
+});
+
 test("buildAmputationFieldAddressedValues defers physician date/time until finalization", () => {
   const values = buildAmputationFieldAddressedValues({
     doctorCompletionValues: {},
