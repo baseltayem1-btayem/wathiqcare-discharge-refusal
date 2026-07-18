@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import fs from "node:fs/promises";
 import { NextRequest, NextResponse } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
@@ -119,11 +119,12 @@ function isBlankLineText(value: string) {
 
 async function extractPdfTextItems(pdfBytes: Uint8Array): Promise<DetectedTextItem[]> {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  const loadingTask = pdfjs.getDocument({
+  const docParams = {
     data: pdfBytes,
     disableWorker: true,
     isEvalSupported: false,
-  });
+  } as { data: Uint8Array; disableWorker?: boolean; isEvalSupported?: boolean };
+  const loadingTask = pdfjs.getDocument(docParams);
 
   const pdf = await loadingTask.promise;
   const detected: DetectedTextItem[] = [];
@@ -415,8 +416,7 @@ function buildRecommendedMapping(formId: string, detectedFields: DetectedField[]
 }
 
 async function handleAutoFieldMappingPost(request: NextRequest, context: RouteContext) {
-  const auth = await requireModuleOperationalAccess(request, "informed-consents");
-  if (!auth.ok) return auth.response;
+  await requireModuleOperationalAccess(request, "informed-consents");
 
   const params = await context.params;
   const formId = params.formId;

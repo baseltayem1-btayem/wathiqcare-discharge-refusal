@@ -25,6 +25,7 @@
     "validate:live:3111": "node scripts/live-validation-3111.cjs",
     "validate:pilot-uat": "node scripts/validate-pilot-uat-readiness.mjs",
     "calibration:dry-run": "tsx -r dotenv/config scripts/form-calibration-dry-run.ts",
+    "consent:calibration:dry-run": "npm run calibration:dry-run",
     "db:backfill:missing-tables": "npx prisma db execute --schema=./prisma/schema.prisma --file=./prisma/migrations/0014_production_backfill_missing_tables.sql",
     "test:magic-link": "node --test --experimental-strip-types src/lib/server/magic-link-route-flow.test.mjs"
   },

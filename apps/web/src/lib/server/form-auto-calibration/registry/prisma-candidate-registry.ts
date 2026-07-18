@@ -2,7 +2,7 @@
  * Prisma-backed candidate registry.
  */
 
-import type { PrismaClient, CalibrationCandidateStatus } from "@prisma/client";
+import type { PrismaClient, CalibrationCandidateStatus, Prisma, FormCalibrationCandidate } from "@prisma/client";
 import type { CalibrationCandidate, CandidateRegistry } from "./candidate-registry";
 import type { CandidateFieldMapping } from "../geometry/candidate-rectangle-generator";
 import type { CalibrationQualityReport } from "../mapping/mapping-schema";
@@ -26,9 +26,9 @@ export class PrismaCandidateRegistry implements CandidateRegistry {
         sourceFileName: candidate.sourceFileName,
         status: mapStatus(candidate.status),
         qualityScore: candidate.qualityReport.score,
-        qualityReport: candidate.qualityReport as any,
-        confidence: candidate.confidence as any,
-        mappings: candidate.mappings as any,
+        qualityReport: candidate.qualityReport as Prisma.InputJsonValue,
+        confidence: candidate.confidence as Prisma.InputJsonValue | undefined,
+        mappings: candidate.mappings as Prisma.InputJsonValue,
       },
     });
 
@@ -48,9 +48,9 @@ export class PrismaCandidateRegistry implements CandidateRegistry {
       where: { id },
       data: {
         ...(patch.status ? { status: mapStatus(patch.status) } : {}),
-        ...(patch.qualityReport ? { qualityScore: patch.qualityReport.score, qualityReport: patch.qualityReport as any } : {}),
-        ...(patch.confidence ? { confidence: patch.confidence as any } : {}),
-        ...(patch.mappings ? { mappings: patch.mappings as any } : {}),
+        ...(patch.qualityReport ? { qualityScore: patch.qualityReport.score, qualityReport: patch.qualityReport as Prisma.InputJsonValue } : {}),
+        ...(patch.confidence ? { confidence: patch.confidence as Prisma.InputJsonValue } : {}),
+        ...(patch.mappings ? { mappings: patch.mappings as Prisma.InputJsonValue } : {}),
         ...(patch.syntheticRenderUrl ? { syntheticRenderUrl: patch.syntheticRenderUrl } : {}),
         ...(patch.reviewDecision ? { reviewDecision: mapReviewDecision(patch.reviewDecision) } : {}),
         ...(patch.reviewNotes ? { reviewNotes: patch.reviewNotes } : {}),
@@ -118,7 +118,7 @@ function reverseStatus(status: CalibrationCandidateStatus): CalibrationCandidate
   }
 }
 
-function mapToDomain(row: any): CalibrationCandidate {
+function mapToDomain(row: FormCalibrationCandidate): CalibrationCandidate {
   return {
     id: row.id,
     sourceFormId: row.sourceFormId,

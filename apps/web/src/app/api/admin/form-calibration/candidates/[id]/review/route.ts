@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requirePlatformAccess } from "@/lib/server/auth";
 import { getPrisma } from "@/lib/server/prisma";
 import type { NextRequest } from "next/server";
+import type { CalibrationCandidateStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -40,15 +41,42 @@ export async function POST(
     return NextResponse.json({ ok: false, error: "Candidate not found" }, { status: 404 });
   }
 
-  const candidate = await prisma.formCalibrationCandidate.update({
-    where: { id },
-    data: {
-      status: statusFromDecision[body.decision] as any,
-      reviewDecision: body.decision,
-      reviewNotes: body.notes ?? null,
-      reviewedByUserId: auth.sub,
-    },
+  const updated = await prisma.$transaction(async (tx) => {
+    const candidate = await tx.formCalibrationCandidate.update({
+      where: { id },
+      data: {
+        status: statusFromDecision[body.decision] as CalibrationCandidateStatus,
+        reviewDecision: body.decision,
+        reviewNotes: body.notes ?? null,
+        reviewedByUserId: auth.sub,
+      },
+    });
+
+    // Human approval creates a new versioned manifest record; it never updates
+    // an existing approved manifest in place.
+    let manifest = null;
+    if (body.decision === "APPROVE") {
+      manifest = await tx.formCalibrationManifest.create({
+        data: {
+          tenantId,
+          name: `Auto-calibrated ${candidate.sourceFormId} (${candidate.id.slice(0, 8)})`,
+          description: body.notes ?? `Approved calibration manifest for ${candidate.sourceFormId}`,
+          sourceFormIds: [candidate.sourceFormId],
+          isActive: true,
+          metadata: {
+            candidateId: candidate.id,
+            sourceFileName: candidate.sourceFileName,
+            approvedByUserId: auth.sub,
+            approvedAt: new Date().toISOString(),
+            mappings: candidate.mappings ?? [],
+            qualityScore: candidate.qualityScore,
+          },
+        },
+      });
+    }
+
+    return { candidate, manifest };
   });
 
-  return NextResponse.json({ ok: true, candidate });
+  return NextResponse.json({ ok: true, candidate: updated.candidate, manifest: updated.manifest });
 }

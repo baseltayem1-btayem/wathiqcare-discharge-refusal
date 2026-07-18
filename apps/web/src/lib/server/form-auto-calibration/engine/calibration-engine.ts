@@ -38,6 +38,10 @@ export type CalibrationEngineResult = {
   status: "auto_review_candidate" | "assisted_review" | "manual_calibration_required";
   score: number;
   unmappedRequiredKeys: string[];
+  layoutFamily: string;
+  mappedKeys: string[];
+  proposedFields: number;
+  qualityGateResult: "AUTO_REVIEW_CANDIDATE" | "ASSISTED_REVIEW" | "MANUAL_CALIBRATION_REQUIRED";
 };
 
 export class CalibrationEngine {
@@ -92,6 +96,10 @@ export class CalibrationEngine {
         status: "manual_calibration_required",
         score: qualityReport.score,
         unmappedRequiredKeys: semanticResult.unmappedRequiredKeys,
+        layoutFamily: classification.family,
+        mappedKeys: [],
+        proposedFields: mappings.length,
+        qualityGateResult: qualityReport.status,
       };
     }
 
@@ -195,6 +203,10 @@ export class CalibrationEngine {
       status,
       score: qualityReport.score,
       unmappedRequiredKeys,
+      layoutFamily: classification.family,
+      mappedKeys: Array.from(mappedKeys),
+      proposedFields: mappings.length,
+      qualityGateResult: qualityReport.status,
     };
   }
 

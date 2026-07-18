@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requirePlatformAccess } from "@/lib/server/auth";
 import { getPrisma } from "@/lib/server/prisma";
 import { CalibrationEngine } from "@/lib/server/form-auto-calibration/engine/calibration-engine";
+import { PrismaCandidateRegistry } from "@/lib/server/form-auto-calibration/registry/prisma-candidate-registry";
 import { IMC_APPROVED_CONSENT_FORMS_MANIFEST } from "@/lib/server/imc-approved-consent-forms.manifest";
 import fs from "fs/promises";
 import path from "path";
@@ -51,7 +52,8 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  const engine = new CalibrationEngine();
+  const registry = new PrismaCandidateRegistry(prisma, tenantId, job.id);
+  const engine = new CalibrationEngine({ registry });
   const results: Array<{
     sourceFormId: string;
     candidateId: string;
@@ -96,17 +98,6 @@ export async function POST(request: NextRequest) {
         sourceFormId,
         sourceFileName: manifestItem.sourceFile,
         pdfBuffer: buffer,
-      });
-
-      await prisma.formCalibrationCandidate.create({
-        data: {
-          tenantId,
-          jobId: job.id,
-          sourceFormId,
-          sourceFileName: manifestItem.sourceFile,
-          status: result.status.toUpperCase() as any,
-          qualityScore: result.score,
-        },
       });
 
       results.push({ ...result, sourceFormId });

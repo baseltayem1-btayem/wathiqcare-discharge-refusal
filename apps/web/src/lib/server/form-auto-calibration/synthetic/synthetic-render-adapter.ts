@@ -6,7 +6,7 @@
  * comparison.
  */
 
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, PDFTextField, PDFCheckBox, PDFOptionList } from "pdf-lib";
 import type { CandidateFieldMapping } from "../geometry/candidate-rectangle-generator";
 
 export async function fillCandidateWithSyntheticData(
@@ -36,14 +36,14 @@ export async function fillCandidateWithSyntheticData(
 
     if (target) {
       try {
-        if ((target as any).setText) {
-          (target as any).setText(text);
-        } else if ((target as any).select) {
-          (target as any).select(text);
-        } else if ((target as any).check) {
-          (target as any).check();
+        if (target instanceof PDFTextField) {
+          target.setText(text);
+        } else if (target instanceof PDFOptionList) {
+          target.select(text);
+        } else if (target instanceof PDFCheckBox) {
+          target.check();
         }
-      } catch (err) {
+      } catch {
         // Some fields may be signatures or read-only.
       }
     }

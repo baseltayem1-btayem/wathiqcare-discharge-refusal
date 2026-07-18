@@ -3,6 +3,7 @@ import assert from "node:assert";
 import { runCalibrationQualityGate } from "./calibration-quality-gate";
 import type { CandidateFieldMapping } from "../geometry/candidate-rectangle-generator";
 import type { LayoutFamilyClassification } from "../fingerprint/layout-family-classifier";
+import type { ConsentWidgetType } from "../ontology/consent-field-ontology";
 
 function makeField(key: string, widgets: string[] = ["TEXT"]): CandidateFieldMapping["field"] {
   return {
@@ -14,7 +15,7 @@ function makeField(key: string, widgets: string[] = ["TEXT"]): CandidateFieldMap
     role: "PATIENT",
     sensitivity: "OPERATIONAL",
     requiredness: "ALWAYS",
-    supportedWidgets: widgets as any,
+    supportedWidgets: widgets as ConsentWidgetType[],
     aliasesEn: [],
     aliasesAr: [],
     printable: "RENDER_OVERLAY",

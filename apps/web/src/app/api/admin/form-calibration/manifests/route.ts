@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requirePlatformAccess } from "@/lib/server/auth";
 import { getPrisma } from "@/lib/server/prisma";
 import type { NextRequest } from "next/server";
+import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       name: body.name,
       description: body.description ?? null,
       sourceFormIds: body.sourceFormIds,
-      metadata: (body.metadata ?? null) as any,
+      ...(body.metadata ? { metadata: body.metadata as Prisma.InputJsonValue } : {}),
     },
   });
 

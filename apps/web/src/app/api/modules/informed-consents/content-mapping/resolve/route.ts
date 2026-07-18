@@ -1,4 +1,4 @@
-﻿import type { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +8,26 @@ function normalize(value: string | null): string {
   return (value || "").trim().toLowerCase();
 }
 
-async function readForms(request: NextRequest) {
+type FormTemplate = {
+  id: string;
+  procedure: string;
+  titleEn: string;
+  titleAr?: string;
+  specialty: string;
+  category?: string;
+  riskLevel?: string;
+  approvalStatus?: string;
+  version?: string;
+  pdfUrl?: string;
+  education?: unknown;
+  illustrations?: unknown[];
+  risks?: unknown[];
+  alternatives?: unknown[];
+  requiresWitness?: boolean;
+  requiresInterpreter?: boolean;
+};
+
+async function readForms(request: NextRequest): Promise<FormTemplate[]> {
   const origin = new URL(request.url).origin;
   const response = await fetch(`${origin}/api/modules/informed-consents/forms`, {
     headers: { Accept: "application/json" },
@@ -18,7 +37,7 @@ async function readForms(request: NextRequest) {
   if (!response.ok) return [];
 
   const payload = await response.json();
-  return Array.isArray(payload?.templates) ? payload.templates : [];
+  return Array.isArray(payload?.templates) ? (payload.templates as FormTemplate[]) : [];
 }
 
 export async function GET(request: NextRequest) {
@@ -46,10 +65,10 @@ export async function GET(request: NextRequest) {
     const specialtyKey = normalize(specialty);
 
     const selected =
-      forms.find((form: any) => templateKey && normalize(form.id) === templateKey) ||
-      forms.find((form: any) => procedureKey && normalize(form.procedure).includes(procedureKey)) ||
-      forms.find((form: any) => procedureKey && normalize(form.titleEn).includes(procedureKey)) ||
-      forms.find((form: any) => specialtyKey && normalize(form.specialty) === specialtyKey) ||
+      forms.find((form) => templateKey && normalize(form.id) === templateKey) ||
+      forms.find((form) => procedureKey && normalize(form.procedure).includes(procedureKey)) ||
+      forms.find((form) => procedureKey && normalize(form.titleEn).includes(procedureKey)) ||
+      forms.find((form) => specialtyKey && normalize(form.specialty) === specialtyKey) ||
       forms[0] ||
       null;
 
