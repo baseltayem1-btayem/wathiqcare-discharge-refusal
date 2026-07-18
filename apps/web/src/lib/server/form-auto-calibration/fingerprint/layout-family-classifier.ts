@@ -153,6 +153,16 @@ const HIGH_CONFIDENCE_THRESHOLD = 0.75;
 export function classifyLayoutFamily(
   fingerprint: LayoutFingerprint,
 ): LayoutFamilyClassification {
+  if (!fingerprint || !fingerprint.summary) {
+    return {
+      family: "UNKNOWN",
+      confidence: 0,
+      matchingTemplateIds: [],
+      reasons: ["Missing fingerprint summary"],
+      manualReviewMandatory: true,
+    };
+  }
+
   const summary = fingerprint.summary;
 
   let bestFamily: LayoutFamily = "UNKNOWN";

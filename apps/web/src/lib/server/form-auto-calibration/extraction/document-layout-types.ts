@@ -28,6 +28,7 @@ export type TextBlock = {
   xNorm: number;
   yNorm: number;
   widthNorm: number;
+  heightNorm: number;
   fontName?: string;
   fontSize?: number;
 };

@@ -59,6 +59,7 @@ export async function extractTextBlocksFromPdf(
         xNorm: clamp(x / viewport.width),
         yNorm: clamp(y / viewport.height),
         widthNorm: clamp(width / viewport.width),
+        heightNorm: clamp(height / viewport.height),
         fontName: typeof rawItem.fontName === "string" ? rawItem.fontName : undefined,
         fontSize: typeof rawItem.height === "number" ? height : undefined,
       });
