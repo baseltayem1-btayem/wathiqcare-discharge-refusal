@@ -279,7 +279,7 @@ function hasHallucinationSignal(value: string | null | undefined): boolean {
   return /\b(as an ai|language model|cannot provide|i (?:cannot|can'?t) verify|placeholder)\b/.test(normalized);
 }
 
-function computeFixedClauseChecksum(input: Record<string, unknown>): string {
+export function computeFixedClauseChecksum(input: Record<string, unknown>): string {
   const payload: Record<string, string> = {};
   for (const field of FIXED_CLAUSE_FIELDS) {
     payload[field] = normalizeText(input[field] as string | null | undefined);

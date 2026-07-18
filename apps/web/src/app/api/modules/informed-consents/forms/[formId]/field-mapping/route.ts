@@ -1,19 +1,14 @@
-﻿import { NextRequest, NextResponse } from "next/server";
-import { getConsentFieldMappingReadiness } from "@/lib/server/consent-field-mappings";
+import type { NextRequest } from "next/server";
+import { requireModuleOperationalAccess } from "@/lib/server/auth";
+import { getPrisma } from "@/lib/server/prisma";
+import { createFieldMappingRouteHandlers } from "@/lib/server/field-mapping-route-handler";
 
-type RouteContext = {
-  params: Promise<{
-    formId: string;
-  }>;
-};
+const handlers = createFieldMappingRouteHandlers({
+  requireModuleOperationalAccess,
+  getPrisma,
+});
 
-export async function GET(_request: NextRequest, context: RouteContext) {
-  const { formId } = await context.params;
-  const readiness = getConsentFieldMappingReadiness(decodeURIComponent(formId));
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-  return NextResponse.json({
-    ok: true,
-    source: "consent-field-mapping-foundation",
-    ...readiness,
-  });
-}
+export const { GET, POST } = handlers;
