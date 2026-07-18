@@ -255,3 +255,4 @@ backups/figma-restore-20260608/
 .env.staging
 .env.vercel.prod.readonly
 .env.production*
+worktrees/
