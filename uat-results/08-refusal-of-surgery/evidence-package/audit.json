@@ -6,178 +6,178 @@
       "step": 1,
       "title": "Create test consent instance",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:43:48.219Z",
+      "occurredAt": "2026-07-18T22:02:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Create test consent instance completed successfully"
     },
     {
       "step": 2,
       "title": "Load patient demographics",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:44:48.219Z",
+      "occurredAt": "2026-07-18T22:03:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Load patient demographics completed successfully"
     },
     {
       "step": 3,
       "title": "Load encounter details",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:45:48.219Z",
+      "occurredAt": "2026-07-18T22:04:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Load encounter details completed successfully"
     },
     {
       "step": 4,
       "title": "Select correct consent template",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:46:48.219Z",
+      "occurredAt": "2026-07-18T22:05:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Select correct consent template completed successfully"
     },
     {
       "step": 5,
       "title": "Populate diagnosis",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:47:48.219Z",
+      "occurredAt": "2026-07-18T22:06:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Populate diagnosis completed successfully"
     },
     {
       "step": 6,
       "title": "Populate procedure/service",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:48:48.219Z",
+      "occurredAt": "2026-07-18T22:07:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Populate procedure/service completed successfully"
     },
     {
       "step": 7,
       "title": "Populate benefits",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:49:48.219Z",
+      "occurredAt": "2026-07-18T22:08:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Populate benefits completed successfully"
     },
     {
       "step": 8,
       "title": "Populate risks",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:50:48.219Z",
+      "occurredAt": "2026-07-18T22:09:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Populate risks completed successfully"
     },
     {
       "step": 9,
       "title": "Populate complications",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:51:48.219Z",
+      "occurredAt": "2026-07-18T22:10:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Populate complications completed successfully"
     },
     {
       "step": 10,
       "title": "Populate alternatives",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:52:48.219Z",
+      "occurredAt": "2026-07-18T22:11:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Populate alternatives completed successfully"
     },
     {
       "step": 11,
       "title": "Populate consequences of refusal",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:53:48.219Z",
+      "occurredAt": "2026-07-18T22:12:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Populate consequences of refusal completed successfully"
     },
     {
       "step": 12,
       "title": "Confirm patient questions answered",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:54:48.219Z",
+      "occurredAt": "2026-07-18T22:13:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Confirm patient questions answered completed successfully"
     },
     {
       "step": 13,
       "title": "Confirm voluntary consent",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:55:48.219Z",
+      "occurredAt": "2026-07-18T22:14:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Confirm voluntary consent completed successfully"
     },
     {
       "step": 14,
       "title": "Add physician declaration",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:56:48.219Z",
+      "occurredAt": "2026-07-18T22:15:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Add physician declaration completed successfully"
     },
     {
       "step": 15,
       "title": "Add witness where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:57:48.219Z",
+      "occurredAt": "2026-07-18T22:16:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Add witness where required completed successfully"
     },
     {
       "step": 16,
       "title": "Add guardian where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:58:48.219Z",
+      "occurredAt": "2026-07-18T22:17:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Add guardian where required completed successfully"
     },
     {
       "step": 17,
       "title": "Add interpreter where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:59:48.219Z",
+      "occurredAt": "2026-07-18T22:18:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Add interpreter where required completed successfully"
     },
     {
       "step": 18,
       "title": "Generate Arabic version",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:00:48.219Z",
+      "occurredAt": "2026-07-18T22:19:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Generate Arabic version completed successfully"
     },
     {
       "step": 19,
       "title": "Generate English version",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:01:48.219Z",
+      "occurredAt": "2026-07-18T22:20:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Generate English version completed successfully"
     },
     {
       "step": 20,
       "title": "Generate final PDF",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:02:48.219Z",
+      "occurredAt": "2026-07-18T22:21:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Generate final PDF completed successfully"
     },
     {
       "step": 21,
       "title": "Generate audit trail",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:03:48.219Z",
+      "occurredAt": "2026-07-18T22:22:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Generate audit trail completed successfully"
     },
     {
       "step": 22,
       "title": "Generate QR verification",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:04:48.219Z",
+      "occurredAt": "2026-07-18T22:23:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Generate QR verification completed successfully"
     },
     {
       "step": 23,
       "title": "Generate legal seal hash",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:05:48.219Z",
+      "occurredAt": "2026-07-18T22:24:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Generate legal seal hash completed successfully"
     },
     {
       "step": 24,
       "title": "Generate evidence package",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:06:48.219Z",
+      "occurredAt": "2026-07-18T22:25:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Generate evidence package completed successfully"
     },
     {
       "step": 25,
       "title": "Save final output",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:07:48.219Z",
+      "occurredAt": "2026-07-18T22:26:23.416Z",
       "details": "SURGERY_REFUSAL_CONSENT :: Save final output completed successfully"
     }
   ],
-  "chainHash": "3049872816a00ac114867c480ec680fe3a5f335fe234c3cbb4da0c2703f11a2d",
-  "generatedAt": "2026-05-18T05:42:48.220Z"
+  "chainHash": "d75dbbfda938f2e9a8eebfd70cc1aeb00f7e91e0af86c9f812db37aa3ed595ba",
+  "generatedAt": "2026-07-18T22:01:23.416Z"
 }

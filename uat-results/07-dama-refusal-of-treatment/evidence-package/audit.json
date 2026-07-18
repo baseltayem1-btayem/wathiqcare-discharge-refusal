@@ -6,178 +6,178 @@
       "step": 1,
       "title": "Create test consent instance",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:43:46.002Z",
+      "occurredAt": "2026-07-18T22:02:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Create test consent instance completed successfully"
     },
     {
       "step": 2,
       "title": "Load patient demographics",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:44:46.002Z",
+      "occurredAt": "2026-07-18T22:03:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Load patient demographics completed successfully"
     },
     {
       "step": 3,
       "title": "Load encounter details",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:45:46.002Z",
+      "occurredAt": "2026-07-18T22:04:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Load encounter details completed successfully"
     },
     {
       "step": 4,
       "title": "Select correct consent template",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:46:46.002Z",
+      "occurredAt": "2026-07-18T22:05:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Select correct consent template completed successfully"
     },
     {
       "step": 5,
       "title": "Populate diagnosis",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:47:46.002Z",
+      "occurredAt": "2026-07-18T22:06:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Populate diagnosis completed successfully"
     },
     {
       "step": 6,
       "title": "Populate procedure/service",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:48:46.002Z",
+      "occurredAt": "2026-07-18T22:07:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Populate procedure/service completed successfully"
     },
     {
       "step": 7,
       "title": "Populate benefits",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:49:46.002Z",
+      "occurredAt": "2026-07-18T22:08:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Populate benefits completed successfully"
     },
     {
       "step": 8,
       "title": "Populate risks",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:50:46.002Z",
+      "occurredAt": "2026-07-18T22:09:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Populate risks completed successfully"
     },
     {
       "step": 9,
       "title": "Populate complications",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:51:46.002Z",
+      "occurredAt": "2026-07-18T22:10:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Populate complications completed successfully"
     },
     {
       "step": 10,
       "title": "Populate alternatives",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:52:46.002Z",
+      "occurredAt": "2026-07-18T22:11:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Populate alternatives completed successfully"
     },
     {
       "step": 11,
       "title": "Populate consequences of refusal",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:53:46.002Z",
+      "occurredAt": "2026-07-18T22:12:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Populate consequences of refusal completed successfully"
     },
     {
       "step": 12,
       "title": "Confirm patient questions answered",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:54:46.002Z",
+      "occurredAt": "2026-07-18T22:13:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Confirm patient questions answered completed successfully"
     },
     {
       "step": 13,
       "title": "Confirm voluntary consent",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:55:46.002Z",
+      "occurredAt": "2026-07-18T22:14:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Confirm voluntary consent completed successfully"
     },
     {
       "step": 14,
       "title": "Add physician declaration",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:56:46.002Z",
+      "occurredAt": "2026-07-18T22:15:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Add physician declaration completed successfully"
     },
     {
       "step": 15,
       "title": "Add witness where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:57:46.002Z",
+      "occurredAt": "2026-07-18T22:16:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Add witness where required completed successfully"
     },
     {
       "step": 16,
       "title": "Add guardian where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:58:46.002Z",
+      "occurredAt": "2026-07-18T22:17:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Add guardian where required completed successfully"
     },
     {
       "step": 17,
       "title": "Add interpreter where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:59:46.002Z",
+      "occurredAt": "2026-07-18T22:18:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Add interpreter where required completed successfully"
     },
     {
       "step": 18,
       "title": "Generate Arabic version",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:00:46.002Z",
+      "occurredAt": "2026-07-18T22:19:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Generate Arabic version completed successfully"
     },
     {
       "step": 19,
       "title": "Generate English version",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:01:46.002Z",
+      "occurredAt": "2026-07-18T22:20:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Generate English version completed successfully"
     },
     {
       "step": 20,
       "title": "Generate final PDF",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:02:46.002Z",
+      "occurredAt": "2026-07-18T22:21:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Generate final PDF completed successfully"
     },
     {
       "step": 21,
       "title": "Generate audit trail",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:03:46.002Z",
+      "occurredAt": "2026-07-18T22:22:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Generate audit trail completed successfully"
     },
     {
       "step": 22,
       "title": "Generate QR verification",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:04:46.002Z",
+      "occurredAt": "2026-07-18T22:23:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Generate QR verification completed successfully"
     },
     {
       "step": 23,
       "title": "Generate legal seal hash",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:05:46.002Z",
+      "occurredAt": "2026-07-18T22:24:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Generate legal seal hash completed successfully"
     },
     {
       "step": 24,
       "title": "Generate evidence package",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:06:46.002Z",
+      "occurredAt": "2026-07-18T22:25:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Generate evidence package completed successfully"
     },
     {
       "step": 25,
       "title": "Save final output",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:07:46.002Z",
+      "occurredAt": "2026-07-18T22:26:18.335Z",
       "details": "DAMA_REFUSAL_CONSENT :: Save final output completed successfully"
     }
   ],
-  "chainHash": "bde885a0bf75441626aa2b4e6b898fdd4ec3c7673d524e229aa7e27726f9c6af",
-  "generatedAt": "2026-05-18T05:42:46.002Z"
+  "chainHash": "e11b15d6658dd5f85ecba09f4fcd184788e173dbb2d442ff664bd5fd820bb859",
+  "generatedAt": "2026-07-18T22:01:18.335Z"
 }
