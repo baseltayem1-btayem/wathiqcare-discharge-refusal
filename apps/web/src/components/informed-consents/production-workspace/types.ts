@@ -34,6 +34,8 @@ export type ProductionEncounter = {
   allergies?: string | null;
   currentMedications?: string | null;
   physicianSpecialty?: string | null;
+  physicianSpecialtyEn?: string | null;
+  physicianSpecialtyAr?: string | null;
   caseNumber?: string | null;
   syncStatus?: "SYNCED" | "CACHED" | "UAT_MOCK";
   isMock?: boolean;
@@ -64,6 +66,8 @@ export type PhysicianContext = {
   tenantId: string;
   licenseNumber?: string;
   specialty?: string;
+  specialtyEn?: string;
+  specialtyAr?: string;
   department?: string;
 };
 

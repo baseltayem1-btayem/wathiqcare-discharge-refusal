@@ -259,69 +259,75 @@ export function DoctorCompletionPanel({
                       </div>
                     ) : null}
 
-                    {pair.en && pair.en.type !== "SIGNATURE" ? (
-                      <div>
-                        <label htmlFor={pair.en.key} className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">
-                          English
-                        </label>
-                        {pair.en.type === "CHECKBOX" ? (
-                          <select
-                            id={pair.en.key}
-                            value={values[pair.en.key] ?? ""}
-                            disabled={disabled}
-                            onChange={(event) => onValueChange(pair.en.key, event.target.value)}
-                            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                          >
-                            <option value="">Select applicability</option>
-                            <option value="true">Yes / applies</option>
-                            <option value="false">No / not applicable</option>
-                          </select>
-                        ) : (
-                          <textarea
-                            id={pair.en.key}
-                            value={values[pair.en.key] ?? ""}
-                            disabled={disabled}
-                            onChange={(event) => onValueChange(pair.en.key, event.target.value)}
-                            placeholder="Enter physician completion value"
-                            rows={pair.en.type === "MULTILINE_TEXT" ? 3 : 2}
-                            className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                          />
-                        )}
-                      </div>
-                    ) : null}
+                    {(() => {
+                      const enField = pair.en;
+                      return enField && enField.type !== "SIGNATURE" ? (
+                        <div>
+                          <label htmlFor={enField.key} className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                            English
+                          </label>
+                          {enField.type === "CHECKBOX" ? (
+                            <select
+                              id={enField.key}
+                              value={values[enField.key] ?? ""}
+                              disabled={disabled}
+                              onChange={(event) => onValueChange(enField.key, event.target.value)}
+                              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            >
+                              <option value="">Select applicability</option>
+                              <option value="true">Yes / applies</option>
+                              <option value="false">No / not applicable</option>
+                            </select>
+                          ) : (
+                            <textarea
+                              id={enField.key}
+                              value={values[enField.key] ?? ""}
+                              disabled={disabled}
+                              onChange={(event) => onValueChange(enField.key, event.target.value)}
+                              placeholder="Enter physician completion value"
+                              rows={enField.type === "MULTILINE_TEXT" ? 3 : 2}
+                              className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            />
+                          )}
+                        </div>
+                      ) : null;
+                    })()}
 
-                    {pair.ar && pair.ar.type !== "SIGNATURE" ? (
-                      <div>
-                        <label htmlFor={pair.ar.key} className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500" dir="rtl" lang="ar">
-                          العربية
-                        </label>
-                        {pair.ar.type === "CHECKBOX" ? (
-                          <select
-                            id={pair.ar.key}
-                            value={values[pair.ar.key] ?? ""}
-                            disabled={disabled}
-                            onChange={(event) => onValueChange(pair.ar.key, event.target.value)}
-                            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                          >
-                            <option value="">Select applicability</option>
-                            <option value="true">Yes / applies</option>
-                            <option value="false">No / not applicable</option>
-                          </select>
-                        ) : (
-                          <textarea
-                            id={pair.ar.key}
-                            value={values[pair.ar.key] ?? ""}
-                            disabled={disabled}
-                            onChange={(event) => onValueChange(pair.ar.key, event.target.value)}
-                            placeholder="أدخل القيمة بالعربية"
-                            rows={pair.ar.type === "MULTILINE_TEXT" ? 3 : 2}
-                            className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                            dir="rtl"
-                            lang="ar"
-                          />
-                        )}
-                      </div>
-                    ) : null}
+                    {(() => {
+                      const arField = pair.ar;
+                      return arField && arField.type !== "SIGNATURE" ? (
+                        <div>
+                          <label htmlFor={arField.key} className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500" dir="rtl" lang="ar">
+                            العربية
+                          </label>
+                          {arField.type === "CHECKBOX" ? (
+                            <select
+                              id={arField.key}
+                              value={values[arField.key] ?? ""}
+                              disabled={disabled}
+                              onChange={(event) => onValueChange(arField.key, event.target.value)}
+                              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            >
+                              <option value="">Select applicability</option>
+                              <option value="true">Yes / applies</option>
+                              <option value="false">No / not applicable</option>
+                            </select>
+                          ) : (
+                            <textarea
+                              id={arField.key}
+                              value={values[arField.key] ?? ""}
+                              disabled={disabled}
+                              onChange={(event) => onValueChange(arField.key, event.target.value)}
+                              placeholder="أدخل القيمة بالعربية"
+                              rows={arField.type === "MULTILINE_TEXT" ? 3 : 2}
+                              className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                              dir="rtl"
+                              lang="ar"
+                            />
+                          )}
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
               );
