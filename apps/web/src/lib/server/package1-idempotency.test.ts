@@ -2140,7 +2140,7 @@ test("migration creates real unique signing idempotency index", () => {
   const content = fs.readFileSync(
     path.resolve("prisma/migrations/0030_package1_idempotency_outbox.sql"),
     "utf8",
-  );
+  ).replace(/\r\n/g, "\n");
 
   assert.ok(
     content.includes("CREATE UNIQUE INDEX IF NOT EXISTS uq_signing_sessions_tenant_idempotency_key_v1"),

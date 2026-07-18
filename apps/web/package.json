@@ -15,7 +15,7 @@
     "auth:ensure-user": "tsx -r dotenv/config scripts/ensure-auth-user.ts",
     "lint": "eslint",
     "check:lightningcss-native": "node -e \"require('lightningcss'); console.log('lightningcss native package loaded')\"",
-    "test": "tsx --test src/lib/server/*.test.ts src/components/cases/*.test.ts src/components/approved-design/patient/*.test.ts",
+    "test": "tsx --test src/lib/server/*.test.ts src/lib/server/form-auto-calibration/**/*.test.ts src/lib/server/form-auto-calibration/**/**/*.test.ts src/components/cases/*.test.ts src/components/approved-design/patient/*.test.ts",
     "test:promissory-pdf": "tsx --tsconfig tsconfig.json --test src/lib/server/promissory-note-pdf.test.ts",
     "test:calibration": "tsx --test src/lib/server/form-auto-calibration/**/*.test.ts src/lib/server/form-auto-calibration/**/**/*.test.ts",
     "prisma:generate": "npx prisma generate --schema=./prisma/schema.prisma",

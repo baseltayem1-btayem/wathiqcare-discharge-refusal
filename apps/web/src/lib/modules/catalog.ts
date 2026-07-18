@@ -1,4 +1,4 @@
-﻿import { canonicalizeUserRole } from "@/lib/server/roles";
+import { canonicalizeUserRole } from "@/lib/server/roles";
 import { INFORMED_CONSENTS_ALLOWED_ROLES } from "@/lib/modules/informed-consents-release";
 
 export type ModuleKey = "informed-consents" | "promissory-notes" | "discharge-refusal" | "wathiqnote";
@@ -142,7 +142,7 @@ export function canAccessModule(moduleKey: ModuleKey, access: ModuleAccessContex
 }
 
 export function getAccessibleModules(access: ModuleAccessContext): ModuleDefinition[] {
-  return MODULE_DEFINITIONS.filter((moduleDefinition) => moduleDefinition.key !== "promissory-notes" && canAccessModule(moduleDefinition.key, access));
+  return MODULE_DEFINITIONS.filter((moduleDefinition) => canAccessModule(moduleDefinition.key, access));
 }
 
 export function resolveModuleKeyFromPath(pathname: string): ModuleKey | null {
@@ -152,7 +152,7 @@ export function resolveModuleKeyFromPath(pathname: string): ModuleKey | null {
   if (pathname.startsWith("/modules/wathiqnote")) {
     return "wathiqnote";
   }
-  if (pathname.startsWith("/modules/promissory-notes")) { return "wathiqnote"; }
+  if (pathname.startsWith("/modules/promissory-notes")) { return "promissory-notes"; }
   if (pathname.startsWith("/modules/discharge-refusal")) {
     return "discharge-refusal";
   }
