@@ -1,4 +1,4 @@
-﻿import type { ConsentFieldMapping } from "@/lib/consents/field-mapping/types";
+import type { ConsentFieldMapping } from "@/lib/consents/field-mapping/types";
 import { ADENOTONSILLECTOMY_FIELD_MAPPING } from "./adenotonsillectomy.mapping";
 import { ARTHROGRAM_FIELD_MAPPING } from "./arthrogram.mapping";
 
@@ -7,7 +7,7 @@ const CONSENT_FIELD_MAPPINGS: ConsentFieldMapping[] = [
   ARTHROGRAM_FIELD_MAPPING,
 ];
 
-const IMC_APPROVED_FORM_ID_PREFIX = "imc-approved-";
+const IMC_APPROVED_FORM_ID_PREFIX = "imc-";
 
 function toTitleCaseFromSlug(slug: string): string {
   return slug
