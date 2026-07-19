@@ -211,7 +211,7 @@ async function main(): Promise<void> {
       canonicalPdfHash,
     });
 
-    const pdfPath = path.join(OUTPUT_DIR, "MR1135-Final-Acceptance-Test.pdf");
+    const pdfPath = path.join(OUTPUT_DIR, "MR1135-Production-Acceptance-Test.pdf");
     fs.writeFileSync(pdfPath, Buffer.from(result.bytes));
 
     const reopened = await PDFDocument.load(result.bytes);
@@ -232,7 +232,7 @@ async function main(): Promise<void> {
     for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
       const pngBytes = await renderPdfPageToPng({ pdfBytes: result.bytes, pageIndex, scale: SCALE });
       const png = PNG.sync.read(Buffer.from(pngBytes));
-      const pngPath = path.join(OUTPUT_DIR, `MR1135-Final-Acceptance-Test-page-${pageIndex + 1}.png`);
+      const pngPath = path.join(OUTPUT_DIR, `MR1135-Production-Acceptance-Test-page-${pageIndex + 1}.png`);
       fs.writeFileSync(pngPath, Buffer.from(pngBytes));
 
       const regions: Array<{ field: string; bluePixels: number; rect: [number, number, number, number] }> = [];
@@ -300,7 +300,7 @@ async function main(): Promise<void> {
 
     console.log(`Wrote ${pdfPath}`);
     for (let i = 1; i <= pageCount; i++) {
-      console.log(`Wrote ${path.join(OUTPUT_DIR, `MR1135-Final-Acceptance-Test-page-${i}.png`)}`);
+      console.log(`Wrote ${path.join(OUTPUT_DIR, `MR1135-Production-Acceptance-Test-page-${i}.png`)}`);
     }
     console.log(`Wrote ${path.join(OUTPUT_DIR, "field-binding-report.json")}`);
     console.log(`Wrote ${path.join(OUTPUT_DIR, "visual-qa-report.json")}`);

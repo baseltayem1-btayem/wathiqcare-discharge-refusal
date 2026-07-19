@@ -325,6 +325,73 @@ test("f. physician name, designation, signature, date and time appear on page 5"
   }
 });
 
+test("f+. Arabic patient signature ink bounding box has zero intersection with Arabic patient date and time", async () => {
+  const { pages } = await getSharedContext();
+  const page4 = pages[3];
+
+  const sigField = amputationManifest.fields.find((f) => f.name === "patient_signature_ar")!;
+  const sigWidget = sigField.widgets.find((w) => w.page === 4)!;
+
+  // Compute the actual ink bounding box for the Arabic patient signature.
+  const sigLeft = Math.round(sigWidget.rect[0] * SCALE);
+  const sigTop = Math.round((PAGE_HEIGHT_PT - sigWidget.rect[3]) * SCALE);
+  const sigRight = Math.round(sigWidget.rect[2] * SCALE);
+  const sigBottom = Math.round((PAGE_HEIGHT_PT - sigWidget.rect[1]) * SCALE);
+
+  let minX = sigRight;
+  let minY = sigBottom;
+  let maxX = sigLeft;
+  let maxY = sigTop;
+  let inkFound = false;
+
+  for (let y = sigTop; y < sigBottom; y++) {
+    for (let x = sigLeft; x < sigRight; x++) {
+      if (isBlueish(getPixel(page4, x, y))) {
+        inkFound = true;
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+      }
+    }
+  }
+
+  assert.ok(inkFound, "Arabic patient signature ink must be present on page 4");
+
+  const inkBoundingBox: [number, number, number, number] = [minX, minY, maxX + 1, maxY + 1];
+
+  const dateField = amputationManifest.fields.find((f) => f.name === "consent_date")!;
+  const dateWidget = dateField.widgets.find((w) => w.page === 4 && w.rect[0] > 300)!;
+  const dateRect: [number, number, number, number] = [
+    Math.round(dateWidget.rect[0] * SCALE),
+    Math.round((PAGE_HEIGHT_PT - dateWidget.rect[3]) * SCALE),
+    Math.round(dateWidget.rect[2] * SCALE),
+    Math.round((PAGE_HEIGHT_PT - dateWidget.rect[1]) * SCALE),
+  ];
+
+  const timeField = amputationManifest.fields.find((f) => f.name === "consent_time")!;
+  const timeWidget = timeField.widgets.find((w) => w.page === 4 && w.rect[0] > 300)!;
+  const timeRect: [number, number, number, number] = [
+    Math.round(timeWidget.rect[0] * SCALE),
+    Math.round((PAGE_HEIGHT_PT - timeWidget.rect[3]) * SCALE),
+    Math.round(timeWidget.rect[2] * SCALE),
+    Math.round((PAGE_HEIGHT_PT - timeWidget.rect[1]) * SCALE),
+  ];
+
+  function rectIntersects(a: [number, number, number, number], b: [number, number, number, number]): boolean {
+    return a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+  }
+
+  assert.ok(
+    !rectIntersects(inkBoundingBox, dateRect),
+    "Arabic patient signature ink must not intersect Arabic patient date rectangle",
+  );
+  assert.ok(
+    !rectIntersects(inkBoundingBox, timeRect),
+    "Arabic patient signature ink must not intersect Arabic patient time rectangle",
+  );
+});
+
 test("g. no overlay intersects Section A header/interpreter region on page 1", async () => {
   // Section A is the top header + interpreter checkbox band (y > 650 pt on page 1).
   const sectionA: [number, number, number, number] = [0, 650, 612, PAGE_HEIGHT_PT];

@@ -948,9 +948,9 @@
           "page": 4,
           "rect": [
             346,
-            68,
+            88,
             529,
-            90
+            106
           ],
           "appearanceStates": null
         }
@@ -1905,5 +1905,5 @@
       "renderingStrategy": "TIME"
     }
   ],
-  "manifestHash": "d02df90651db75fe366dc866b7bef2bf175e7e62581f872c8c23834048b99a61"
+  "manifestHash": "e692743309bdb0d35913236ae378822fe857f2a3bfa708cf3e7a05e847fc2317"
 }
