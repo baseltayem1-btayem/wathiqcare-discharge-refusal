@@ -278,8 +278,9 @@ export async function renderAcroFormPatientCopy(args: {
   browser: Browser;
   canonicalPdfBytes: Uint8Array;
   canonicalPdfHash: string;
+  strict?: boolean;
 }): Promise<AcroFormPatientCopyResult> {
-  const { request, browser, canonicalPdfBytes, canonicalPdfHash } = args;
+  const { request, browser, canonicalPdfBytes, canonicalPdfHash, strict = true } = args;
 
   const identity = resolveCanonicalAcroFormTemplateId(request.formId);
   if (!identity) {
@@ -321,6 +322,7 @@ export async function renderAcroFormPatientCopy(args: {
     manifest,
     input: { values },
     browser,
+    strict,
   });
 
   const fingerprint = computeDraftFingerprint({

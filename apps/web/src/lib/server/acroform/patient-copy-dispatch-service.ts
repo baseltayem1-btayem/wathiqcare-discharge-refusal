@@ -252,7 +252,9 @@ export async function generateGovernedPatientCopy(args: {
   document: ConsentDocumentForPatientCopy;
   browser?: Browser;
   patientSignature?: AcroFormPatientCopyRequest["patientSignature"];
+  strict?: boolean;
 }): Promise<GovernedPatientCopy> {
+  const { strict = true } = args;
   const inputs = resolveAcroFormPatientCopyInputs(args.document);
 
   if (!inputs.formId) {
@@ -290,6 +292,7 @@ export async function generateGovernedPatientCopy(args: {
       browser,
       canonicalPdfBytes,
       canonicalPdfHash,
+      strict,
     });
 
     return {

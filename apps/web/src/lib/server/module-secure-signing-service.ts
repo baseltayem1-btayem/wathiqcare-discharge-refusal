@@ -603,6 +603,7 @@ export async function sendModuleSecureSigningLink(
       const governed = await generateGovernedPatientCopy({
         document: acroFormDocument,
         browser: args.browser,
+        strict: false,
       });
       pdfBytes = Buffer.from(governed.bytes);
       sessionMetadataOverride = {

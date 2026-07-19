@@ -47,6 +47,14 @@ function loadCanonicalAmputationPdf(): Uint8Array {
   throw new Error("Canonical amputation PDF not found for test");
 }
 
+function buildPatientSignature(): { dataUrl: string; signerName: string; signedAt: Date } {
+  return {
+    dataUrl: `data:image/png;base64,${TINY_PNG_BASE64}`,
+    signerName: "SYNTHETIC PATIENT",
+    signedAt: new Date("2026-07-16T10:00:00Z"),
+  };
+}
+
 function buildDoctorValues(): Record<string, string> {
   return {
     condition_description_en: "TEST CONDITION EN",
@@ -55,13 +63,20 @@ function buildDoctorValues(): Record<string, string> {
     proposed_procedure_ar: "إجراء تجريبي",
     significant_risks_options_en: "TEST RISKS EN",
     significant_risks_options_ar: "مخاطر تجريبية",
+    significant_risks_options_cont_en: "TEST RISKS CONT EN",
+    significant_risks_options_cont_ar: "مخاطر تجريبية إضافية",
     risks_without_procedure_en: "TEST NON PROCEDURE RISKS EN",
     risks_without_procedure_ar: "مخاطر عدم الإجراء",
+    anaesthetic_discussed_en: "GENERAL ANAESTHESIA",
+    anaesthetic_discussed_ar: "تخدير عام",
     physician_name: "SYNTHETIC PHYSICIAN",
     physician_designation: "TEST DESIGNATION",
+    "physician.signature": `data:image/png;base64,${TINY_PNG_BASE64}`,
+    "physician.date": "2026-07-16",
+    "physician.time": "10:00",
     interpreter_required: "false",
     interpreter_present: "false",
-    anesthesia_applies: "false",
+    anesthesia_applies: "true",
     education_amputation_sheet_provided: "true",
   };
 }
@@ -192,8 +207,9 @@ test("verifyFilledDraftFingerprint rejects stale fingerprint", () => {
 test("generateGovernedPatientCopy produces a 5-page filled PDF that is not the blank source", async () => {
   const browser = createMockBrowser();
   const document = buildDocument();
+  const patientSignature = buildPatientSignature();
 
-  const result = await generateGovernedPatientCopy({ document, browser });
+  const result = await generateGovernedPatientCopy({ document, browser, patientSignature });
 
   assert.ok(result.bytes.length > 0);
   assert.ok(result.pdfHash.length > 0);
@@ -208,8 +224,9 @@ test("generateGovernedPatientCopy produces a 5-page filled PDF that is not the b
 test("generateGovernedPatientCopy renders the same physician values as the preview", async () => {
   const browser = createMockBrowser();
   const document = buildDocument();
+  const patientSignature = buildPatientSignature();
 
-  const result = await generateGovernedPatientCopy({ document, browser });
+  const result = await generateGovernedPatientCopy({ document, browser, patientSignature });
   const rendered = new Set(result.summary.fieldsRendered);
 
   assert.ok(rendered.has("patient_name"));
@@ -228,15 +245,14 @@ test("generateGovernedPatientCopy renders the same physician values as the previ
   assert.ok(rendered.has("info_sheet_amputation"));
 });
 
-test("generateGovernedPatientCopy keeps patient signature blank before signing", async () => {
+test("generateGovernedPatientCopy rejects patient copy without required patient signature", async () => {
   const browser = createMockBrowser();
   const document = buildDocument();
 
-  const result = await generateGovernedPatientCopy({ document, browser });
-
-  assert.equal(result.summary.signaturesRendered.length, 0);
-  assert.ok(!result.summary.fieldsRendered.includes("patient_signature_en"));
-  assert.ok(!result.summary.fieldsRendered.includes("patient_signature_ar"));
+  await assert.rejects(
+    async () => generateGovernedPatientCopy({ document, browser }),
+    /Required manifest fields are missing/,
+  );
 });
 
 test("generateGovernedPatientCopy adds patient signature without removing physician values", async () => {
@@ -262,8 +278,9 @@ test("generateGovernedPatientCopy adds patient signature without removing physic
 test("generateGovernedPatientCopy preserves Arabic values without mojibake", async () => {
   const browser = createMockBrowser();
   const document = buildDocument();
+  const patientSignature = buildPatientSignature();
 
-  const result = await generateGovernedPatientCopy({ document, browser });
+  const result = await generateGovernedPatientCopy({ document, browser, patientSignature });
   const metadata = document.metadata as Record<string, unknown>;
   const doctorCompletionValues = (metadata?.doctorCompletionValues ?? {}) as Record<string, unknown>;
   const arabicFields = result.summary.fieldsRendered.filter((key) => {
@@ -277,9 +294,10 @@ test("generateGovernedPatientCopy preserves Arabic values without mojibake", asy
 test("generateGovernedPatientCopy returns a deterministic fingerprint for the same values", async () => {
   const browser = createMockBrowser();
   const document = buildDocument();
+  const patientSignature = buildPatientSignature();
 
-  const a = await generateGovernedPatientCopy({ document, browser });
-  const b = await generateGovernedPatientCopy({ document, browser });
+  const a = await generateGovernedPatientCopy({ document, browser, patientSignature });
+  const b = await generateGovernedPatientCopy({ document, browser, patientSignature });
 
   assert.equal(a.fingerprint, b.fingerprint);
 });
