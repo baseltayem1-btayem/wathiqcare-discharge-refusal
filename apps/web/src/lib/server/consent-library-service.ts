@@ -21,7 +21,6 @@ import { getPrisma } from "@/lib/server/prisma";
 import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { hasInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
-import { computeFinalConsentPdfByteHash } from "@/lib/server/informed-consents-final-pdf-payload";
 import { logRuntimeIncident } from "@/lib/server/runtime-observability";
 
 const prisma = () => getPrisma();
