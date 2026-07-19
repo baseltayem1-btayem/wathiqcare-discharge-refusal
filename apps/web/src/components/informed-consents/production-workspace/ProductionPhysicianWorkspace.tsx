@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { Stethoscope, Search } from "lucide-react";
-import { Button, Card, CardContent, CardHeader, CardTitle, Checkbox, Input, Stack } from "@/components/design-system";
+import { isAssemblyApprovedPdfSourceVerified, resolveAssemblyApprovedPdfUrl } from "./utils/approvedPdfSource";
+import { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/design-system";
+import { useI18n } from "@/i18n/I18nProvider";
 import type { PhysicianContext } from "./types";
 import { useProductionWorkspace } from "./hooks/useProductionWorkspace";
+import { createDoctorCompletedDraftPdfPreview } from "./lib/api";
 import { PatientEncounterSelector } from "./components/PatientEncounterSelector";
-import { SendRecipientCard } from "./components/SendRecipientCard";
+import { ConsentPreviewModal } from "./components/ConsentPreviewModal";
 import { SendConfirmationModal } from "./components/SendConfirmationModal";
-import { CanvaWorkspaceShell } from "./components/canva/CanvaWorkspaceShell";
-import { CanvaTopBar } from "./components/canva/CanvaTopBar";
-import { CanvaWorkspacePage } from "./components/canva/CanvaWorkspacePage";
+import { WorkflowStepper } from "./components/WorkflowStepper";
+import { WorkspaceSectionLabel } from "./components/WorkspaceAtoms";
 import {
   PatientsPage,
   EncountersPage,
@@ -22,6 +23,17 @@ import {
   SettingsPage,
 } from "./components/canva/pages";
 import type { WorkspacePageId } from "./components/canva/CanvaWorkspaceNav";
+import { AuditEvidenceTimeline } from "./components/enterprise/AuditEvidenceTimeline";
+import { ApprovedPdfViewer } from "./components/enterprise/ApprovedPdfViewer";
+import { ComplianceReadinessPanel } from "./components/enterprise/ComplianceReadinessPanel";
+import { DoctorCompletionPanel } from "./components/enterprise/DoctorCompletionPanel";
+import { EnterpriseSidebar } from "./components/enterprise/EnterpriseSidebar";
+import { PatientContextRibbon } from "./components/enterprise/PatientContextRibbon";
+import { PhysicianWorkspaceHeader } from "./components/enterprise/PhysicianWorkspaceHeader";
+import { ProcedureSelectionPanel } from "./components/enterprise/ProcedureSelectionPanel";
+import { ReadinessChecklist } from "./components/enterprise/ReadinessChecklist";
+import { SendToPatientPanel } from "./components/enterprise/SendToPatientPanel";
+
 import "./workspace.css";
 
 interface ProductionPhysicianWorkspaceProps {
@@ -29,6 +41,7 @@ interface ProductionPhysicianWorkspaceProps {
 }
 
 export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianWorkspaceProps) {
+  const { lang } = useI18n();
   const {
     state,
     patients,
@@ -54,13 +67,19 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     setRecipientMobile,
     setRecipientEmail,
     setPreviewReviewed,
+    setDoctorCompletionValue,
+    setPhysicianSignatureDataUrl,
     approveDraft,
     send,
     sendDryRun,
   } = useProductionWorkspace(physician);
 
   const [activePage, setActivePage] = useState<WorkspacePageId>("workspace");
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [sendModalOpen, setSendModalOpen] = useState(false);
+  const [draftPdfUrl, setDraftPdfUrl] = useState<string>();
+  const [draftPdfLoading, setDraftPdfLoading] = useState(false);
+  const [draftPdfError, setDraftPdfError] = useState<string>();
 
   function handleApprove() {
     approveDraft();
@@ -80,8 +99,105 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     setSendModalOpen(false);
   }
 
+  const hasApprovedPdfSource = isAssemblyApprovedPdfSourceVerified(state.assembly);
+
+
+  useEffect(() => {
+    const formId = state.fieldMappingReadiness?.formId || state.assembly?.consentForm?.id || "";
+    const approvedPdfUrl = resolveAssemblyApprovedPdfUrl(state.assembly);
+    const values = state.doctorCompletionValues || {};
+    const hasDoctorValues = Object.values(values).some((value) => String(value || "").trim().length > 0);
+    const hasPhysicianSignature =
+      Boolean(
+        state.physicianSignatureDataUrl
+          .trim(),
+      );
+
+    if (!formId || !approvedPdfUrl || (!hasDoctorValues && !hasPhysicianSignature)) {
+      // Pre-existing synchronous setState in effect; kept to preserve workspace
+      // reset behavior while we address the broader production release.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDraftPdfLoading(false);
+      setDraftPdfError(undefined);
+      setDraftPdfUrl((previous) => {
+        if (previous) URL.revokeObjectURL(previous);
+        return undefined;
+      });
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      setDraftPdfLoading(true);
+      setDraftPdfError(undefined);
+
+      createDoctorCompletedDraftPdfPreview(
+        {
+          formId,
+          approvedPdfUrl,
+          doctorCompletionValues: values,
+          physicianSignatureDataUrl:
+            state.physicianSignatureDataUrl,
+        },
+        controller.signal,
+      )
+        .then((url) => {
+          setDraftPdfUrl((previous) => {
+            if (previous) URL.revokeObjectURL(previous);
+            return url;
+          });
+        })
+        .catch((error) => {
+          if (controller.signal.aborted) return;
+          setDraftPdfError(
+            error instanceof Error
+              ? error.message
+              : "Doctor-completed draft PDF preview could not be generated.",
+          );
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) {
+            setDraftPdfLoading(false);
+          }
+        });
+    }, 650);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [
+    state.assembly,
+    state.fieldMappingReadiness?.formId,
+    state.doctorCompletionValues,
+    state.physicianSignatureDataUrl,
+  ]);
+
+  const sendReason = (() => {
+    if (sendLoading) return "Sending…";
+    if (!readiness.patientReady) return "Select a patient first";
+    if (!readiness.encounterReady) return "Select an encounter first";
+    if (!readiness.procedureSelected) return "Select a procedure first";
+    if (!readiness.assemblyReady) return "Load the package first";
+    if (!hasApprovedPdfSource) return "Approved PDF source is required";
+    if (!readiness.fieldMappingReadiness) return "Consent field mapping is loading";
+    if (!readiness.patientSignatureMapped) return "Patient signature field is not mapped";
+    if (!readiness.doctorCompletionReady) return "Complete required physician fields";
+    if (!readiness.anesthesiaMappingReady) return "Complete anesthesia review when applicable";
+    if (!readiness.fieldMappingVerified) return "Consent field mapping must be verified";
+    if (!readiness.educationReady) return "Education material missing";
+    if (!readiness.previewReviewed) return "Mark Preview Reviewed first";
+    if (!readiness.contactAvailable) return "Enter patient contact";
+    if (!readiness.allowlisted) return "Recipient is not allowlisted";
+    if (!readiness.draftApproved) return "Approve the draft first";
+    if (!readiness.blockersResolved) return "Resolve blockers first";
+    return undefined;
+  })();
+
   const renderWorkspaceContent = () => (
-    <div className="space-y-3">
+    <div className="space-y-6" dir={lang === "ar" ? "rtl" : "ltr"}>
+      <WorkflowStepper currentStep={state.step} readiness={readiness} lang={lang} />
+
       <PatientEncounterSelector
         selectedPatient={state.patient}
         selectedEncounter={state.encounter}
@@ -98,102 +214,79 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
         }}
       />
 
-      <SendRecipientCard
-        mobile={state.recipientMobile}
-        email={state.recipientEmail}
-        allowlisted={state.sendEligibility?.allowlisted}
-        pilotEnabled={state.sendEligibility?.pilotEnabled}
-        reason={state.sendEligibility?.reason}
-        onMobileChange={setRecipientMobile}
-        onEmailChange={setRecipientEmail}
-        disabled={sendLoading}
-      />
+      <PatientContextRibbon patient={state.patient} encounter={state.encounter} />
 
-      {/* Procedure resolver */}
-      <Card className="overflow-hidden" id="section-procedure">
-        <CardHeader className="workspace-card-header">
-          <Stack direction="row" align="center" gap={2}>
-            <Stethoscope className="w-5 h-5 text-[var(--wc-blue)]" />
-            <CardTitle className="workspace-section-title">Procedure</CardTitle>
-          </Stack>
-        </CardHeader>
-        <CardContent className="p-5 space-y-4">
-          <div className="space-y-3">
-            <div className="flex gap-2">
-              <select
-                value={state.selectedProcedureId || ""}
-                onChange={(e) => selectProcedure(e.target.value)}
-                disabled={!state.encounter || proceduresLoading || assemblyLoading}
-                className="flex-1 h-10 rounded-md border border-[var(--wc-border)] bg-[var(--wc-surface)] px-3 text-sm text-[var(--wc-text)] focus:outline-none focus:ring-2 focus:ring-[var(--wc-blue)] disabled:opacity-50"
-              >
-                <option value="">
-                  {proceduresLoading ? "Loading procedures…" : "Select a procedure"}
-                </option>
-                {filteredProcedures.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.titleEn} {p.titleAr ? ` / ${p.titleAr}` : ""} — {p.specialty}
-                  </option>
-                ))}
-              </select>
-              <Button
-                variant="brand"
-                size="sm"
-                uppercase={false}
-                onClick={() => void resolveAssembly()}
-                disabled={!state.encounter || !state.selectedProcedureId || assemblyLoading}
-              >
-                {assemblyLoading ? "Resolving…" : "Load package"}
-              </Button>
-            </div>
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                value={state.procedureQuery}
-                onChange={(e) => setProcedureQuery(e.target.value)}
-                placeholder="Or search procedure / specialty / Arabic name"
-                startIcon={<Search className="w-4 h-4" />}
-                disabled={!state.encounter || assemblyLoading}
-                className="flex-1"
-              />
-            </div>
-            {state.selectedProcedureTitle && !state.assembly && (
-              <div className="text-sm text-[var(--wc-text-muted)]">
-                Selected: <span className="font-medium text-[var(--wc-text)]">{state.selectedProcedureTitle}</span>. Click <strong>Load package</strong> to assemble the consent form.
-              </div>
-            )}
-            {procedureSearchMessage && (
-              <div className="text-sm text-[var(--wc-text-muted)]">{procedureSearchMessage}</div>
-            )}
-          </div>
-          <label className="flex items-center gap-2 text-sm text-[var(--wc-text)] cursor-pointer">
-            <Checkbox
-              checked={state.reviewMode}
-              onChange={(e) => setReviewMode(e.target.checked)}
+      <div>
+        <WorkspaceSectionLabel>{lang === "ar" ? "إعداد الموافقة" : "Consent setup"}</WorkspaceSectionLabel>
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(0,1fr)_340px]">
+          <div className="space-y-6">
+            <ProcedureSelectionPanel
+              encounter={state.encounter}
+              selectedProcedureId={state.selectedProcedureId}
+              selectedProcedureTitle={state.selectedProcedureTitle}
+              selectedProcedure={state.selectedProcedure}
+              procedureQuery={state.procedureQuery}
+              procedures={filteredProcedures}
+              proceduresLoading={proceduresLoading}
+              procedureSearchMessage={procedureSearchMessage}
+              reviewMode={state.reviewMode}
+              assemblyLoading={assemblyLoading}
+              assemblyLoaded={Boolean(state.assembly)}
+              assemblyError={assemblyError}
+              onProcedureQueryChange={setProcedureQuery}
+              onSelectProcedure={selectProcedure}
+              onResolveAssembly={() => void resolveAssembly()}
+              onReviewModeChange={setReviewMode}
             />
-            Internal review mode — show draft illustrations
-            <span className="text-xs text-[var(--wc-text-muted)]">(physician/clinical reviewer only)</span>
-          </label>
-          {assemblyError && <div className="text-sm text-[var(--wc-danger)]">{assemblyError}</div>}
-          {!state.assembly && !assemblyLoading && !assemblyError && (
-            <div className="text-sm text-[var(--wc-text-muted)]">
-              Select an encounter, then choose a procedure and click Load package to assemble the consent form.
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            <DoctorCompletionPanel
+              mapping={state.fieldMappingReadiness}
+              values={state.doctorCompletionValues}
+              physicianSignatureDataUrl={state.physicianSignatureDataUrl}
+              onValueChange={setDoctorCompletionValue}
+              onPhysicianSignatureChange={setPhysicianSignatureDataUrl}
+              disabled={sendLoading}
+            />
+            <ReadinessChecklist readiness={readiness} />
+          </div>
 
-      <CanvaWorkspacePage
-        patient={state.patient}
-        encounter={state.encounter}
-        assembly={state.assembly}
-        readiness={readiness}
-        state={state}
-        timeline={state.timeline}
-        sendLoading={sendLoading}
-        onSend={handleSend}
-        onApproveDraft={handleApprove}
-        onMarkPreviewReviewed={() => setPreviewReviewed(true)}
-      />
+          <ApprovedPdfViewer
+            assembly={state.assembly}
+            loading={assemblyLoading}
+            reviewed={state.previewReviewed}
+                        draftPdfUrl={draftPdfUrl}
+            draftPdfLoading={draftPdfLoading}
+            draftPdfError={draftPdfError}
+            onOpenPreview={() => setPreviewOpen(true)}
+            onMarkReviewed={() => setPreviewReviewed(true)}
+          />
+
+          <div className="space-y-6">
+            <ComplianceReadinessPanel assembly={state.assembly} readiness={readiness} reviewMode={state.reviewMode} />
+            <SendToPatientPanel
+              mobile={state.recipientMobile}
+              email={state.recipientEmail}
+              allowlisted={state.sendEligibility?.allowlisted}
+              pilotEnabled={state.sendEligibility?.pilotEnabled}
+              reason={state.sendEligibility?.reason}
+              previewReviewed={state.previewReviewed}
+              draftApproved={state.draftApproved}
+              sendDisabled={!readiness.sendReady || sendLoading || !hasApprovedPdfSource}
+              sendReason={sendReason}
+              sendLoading={sendLoading}
+              signingResult={state.signingResult}
+              onMobileChange={setRecipientMobile}
+              onEmailChange={setRecipientEmail}
+              onApproveDraft={handleApprove}
+              onSend={handleSend}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <WorkspaceSectionLabel>{lang === "ar" ? "التدقيق والأدلة" : "Audit & evidence"}</WorkspaceSectionLabel>
+        <AuditEvidenceTimeline timeline={state.timeline} signingResult={state.signingResult} />
+      </div>
 
       {state.dryRunSuccess && (
         <Card className="border-emerald-200 bg-emerald-50">
@@ -223,10 +316,19 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
         allowlisted={state.sendEligibility?.allowlisted}
         pilotEnabled={state.sendEligibility?.pilotEnabled}
         eligibilityReason={state.sendEligibility?.reason}
-        allowRealSend={readiness.sendReady}
+        allowRealSend={readiness.sendReady && hasApprovedPdfSource}
         onConfirm={handleConfirmSend}
         onDryRun={handleDryRunSend}
         onCancel={() => setSendModalOpen(false)}
+      />
+
+      <ConsentPreviewModal
+        open={previewOpen}
+        assembly={state.assembly}
+        reviewMode={state.reviewMode}
+        reviewed={state.previewReviewed}
+        onMarkReviewed={() => setPreviewReviewed(true)}
+        onClose={() => setPreviewOpen(false)}
       />
     </div>
   );
@@ -257,20 +359,17 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
   };
 
   return (
-    <CanvaWorkspaceShell
-      activePage={activePage}
-      onPageChange={setActivePage}
-      physician={physician}
-      topBar={
-        <CanvaTopBar
+    <div className="flex min-h-screen w-full bg-slate-50" dir={lang === "ar" ? "rtl" : "ltr"}>
+      <EnterpriseSidebar activePage={activePage} onPageChange={setActivePage} physician={physician} />
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <PhysicianWorkspaceHeader
           patient={state.patient}
           encounter={state.encounter}
           selectedProcedureTitle={state.selectedProcedureTitle}
           assembly={state.assembly}
         />
-      }
-    >
-      {renderPage()}
-    </CanvaWorkspaceShell>
+        <main className="flex-1 px-5 py-6 lg:px-8">{renderPage()}</main>
+      </div>
+    </div>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import { Phone, Mail, AlertTriangle, ShieldCheck } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, Input, Stack } from "@/components/design-system";
+import { Phone, Mail, AlertTriangle, ShieldCheck, BadgeCheck, Send, Smartphone } from "lucide-react";
+import { Input } from "@/components/design-system";
+import { WorkspaceBadge, WorkspaceCard, WorkspaceCardHeader } from "./WorkspaceAtoms";
 
 interface SendRecipientCardProps {
   mobile: string;
@@ -39,68 +40,89 @@ export function SendRecipientCard({
   const showAllowlistWarning = hasContact && allowlisted === false;
 
   return (
-    <Card className="overflow-hidden" id="section-recipient">
-      <CardHeader className="workspace-card-header">
-        <Stack direction="row" align="center" gap={2}>
-          <Phone className="w-5 h-5 text-[var(--wc-blue)]" />
-          <CardTitle className="workspace-section-title">Send Recipient</CardTitle>
-        </Stack>
-      </CardHeader>
-      <CardContent className="p-5 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-[var(--wc-text)]">Mobile number</label>
-            <Input
-              type="tel"
-              value={mobile}
-              onChange={(e) => onMobileChange(e.target.value)}
-              placeholder="05xxxxxxxx or +9665xxxxxxxx"
-              startIcon={<Phone className="w-4 h-4" />}
-              disabled={disabled}
-            />
-            {normalized && (
-              <p className="text-[10px] text-[var(--wc-text-muted)]">Normalized: {normalized}</p>
-            )}
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-[var(--wc-text)]">Email</label>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => onEmailChange(e.target.value)}
-              placeholder="patient@example.com"
-              startIcon={<Mail className="w-4 h-4" />}
-              disabled={disabled}
-            />
+    <WorkspaceCard id="section-recipient">
+      <WorkspaceCardHeader
+        icon={<Send className="size-5" />}
+        title="Send recipient"
+        description="Confirm where the consent package will be delivered."
+      />
+      <div className="space-y-3 px-5 py-5">
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <div className="flex items-center gap-3">
+            <span className="flex size-9 items-center justify-center rounded-lg bg-white text-blue-700 ring-1 ring-slate-200">
+              <Smartphone className="size-4" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Mobile number</p>
+              <Input
+                type="tel"
+                value={mobile}
+                onChange={(e) => onMobileChange(e.target.value)}
+                placeholder="05xxxxxxxx or +9665xxxxxxxx"
+                startIcon={<Phone className="w-4 h-4" />}
+                disabled={disabled}
+              />
+              {normalized ? <p className="mt-1 text-[10px] text-slate-500">Normalized: {normalized}</p> : null}
+            </div>
+            <div className="ml-auto">
+              {allowlisted ? (
+                <WorkspaceBadge tone="green">
+                  <BadgeCheck className="size-3" /> Verified
+                </WorkspaceBadge>
+              ) : (
+                <WorkspaceBadge tone="gold">Pending</WorkspaceBadge>
+              )}
+            </div>
           </div>
         </div>
 
-        {!hasContact && (
-          <div className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 p-3 rounded-lg">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <div className="flex items-center gap-3">
+            <span className="flex size-9 items-center justify-center rounded-lg bg-white text-blue-700 ring-1 ring-slate-200">
+              <Mail className="size-4" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Email address</p>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => onEmailChange(e.target.value)}
+                placeholder="patient@example.com"
+                disabled={disabled}
+              />
+            </div>
+            <div className="ml-auto">
+              {email.trim() ? <WorkspaceBadge tone="green">Available</WorkspaceBadge> : <WorkspaceBadge tone="slate">Optional</WorkspaceBadge>}
+            </div>
+          </div>
+        </div>
+
+        {!hasContact ? (
+          <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>Enter a mobile number or email to enable sending.</span>
           </div>
-        )}
+        ) : null}
 
-        {hasContact && allowlisted === true && (
-          <div className="flex items-start gap-2 text-sm text-emerald-700 bg-emerald-50 p-3 rounded-lg">
-            <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>
-              Pilot recipient verified. {reason}
+        {hasContact && allowlisted === true ? (
+          <div className="flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-3 text-xs text-blue-700 ring-1 ring-inset ring-blue-100">
+            <ShieldCheck className="size-4 shrink-0" />
+            <span className="text-slate-700">
+              Pilot recipient verification complete. {reason || "Identity hash sealed and logged to the audit trail."}
             </span>
           </div>
-        )}
+        ) : null}
 
-        {showAllowlistWarning && (
-          <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 p-3 rounded-lg">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+        {showAllowlistWarning ? (
+          <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
               This contact is not on the IMC pilot allowlist. Real send is blocked. {reason}
-              {!pilotEnabled && " Pilot sending is not enabled for this tenant."}
+              {!pilotEnabled ? " Pilot sending is not enabled for this tenant." : ""}
             </span>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        ) : null}
+      </div>
+    </WorkspaceCard>
   );
 }

@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import chromium from "@sparticuz/chromium";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import puppeteer from "puppeteer";
 import type { Browser, LaunchOptions } from "puppeteer";
 import QRCode from "qrcode";
@@ -532,47 +532,84 @@ async function launchBrowser(): Promise<Browser> {
 }
 
 async function getFinalConsentPdfDocumentOrThrow(args: { documentId: string; tenantId: string }) {
-  const document = await prisma().consentDocument.findFirst({
-    where: { id: args.documentId, tenantId: args.tenantId },
-    include: {
-      tenant: { select: { name: true } },
-      template: {
-        select: {
-          titleAr: true,
-          titleEn: true,
-          consentType: true,
-          specialty: true,
-          requiresGuardian: true,
-          requiresInterpreter: true,
-        },
+  const include = Prisma.validator<Prisma.ConsentDocumentInclude>()({
+    tenant: { select: { name: true } },
+    template: {
+      select: {
+        titleAr: true,
+        titleEn: true,
+        consentType: true,
+        specialty: true,
+        requiresGuardian: true,
+        requiresInterpreter: true,
       },
-      templateVersion: {
-        select: {
-          id: true,
-          versionLabel: true,
-          approvedAt: true,
-        },
-      },
-      case: { select: { caseNumber: true } },
-      emrMappings: {
-        orderBy: { updatedAt: "desc" },
-        take: 1,
-        select: {
-          physicianIdentifier: true,
-          encounterIdentifier: true,
-          diagnosisCode: true,
-          procedureCode: true,
-          metadata: true,
-        },
-      },
-      signatures: { orderBy: [{ signedAt: "asc" }, { createdAt: "asc" }] },
-      sections: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
-      documentRisks: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
-      auditEvents: { orderBy: { createdAt: "asc" } },
-      timelineEvents: { orderBy: { createdAt: "asc" } },
-      evidencePackages: { orderBy: { generatedAt: "desc" } },
     },
+    templateVersion: {
+      select: {
+        id: true,
+        versionLabel: true,
+        approvedAt: true,
+      },
+    },
+    case: { select: { caseNumber: true } },
+    emrMappings: {
+      orderBy: { updatedAt: "desc" },
+      take: 1,
+      select: {
+        physicianIdentifier: true,
+        encounterIdentifier: true,
+        diagnosisCode: true,
+        procedureCode: true,
+        metadata: true,
+      },
+    },
+    signatures: { orderBy: [{ signedAt: "asc" }, { createdAt: "asc" }] },
+    sections: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
+    documentRisks: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
+    auditEvents: { orderBy: { createdAt: "asc" } },
+    timelineEvents: { orderBy: { createdAt: "asc" } },
+    evidencePackages: { orderBy: { generatedAt: "desc" } },
   });
+
+  type FinalConsentPdfDocument = Prisma.ConsentDocumentGetPayload<{
+    include: typeof include;
+  }>;
+
+  let document: FinalConsentPdfDocument | null;
+  try {
+    document = await prisma().consentDocument.findFirst({
+      where: { id: args.documentId, tenantId: args.tenantId },
+      include,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes("consent_emr_mappings") && !message.includes("consent_document_risks")) {
+      throw error;
+    }
+
+    const fallback = await prisma().consentDocument.findFirst({
+      where: { id: args.documentId, tenantId: args.tenantId },
+      include: {
+        tenant: include.tenant,
+        template: include.template,
+        templateVersion: include.templateVersion,
+        case: include.case,
+        signatures: include.signatures,
+        sections: include.sections,
+        auditEvents: include.auditEvents,
+        timelineEvents: include.timelineEvents,
+        evidencePackages: include.evidencePackages,
+      },
+    });
+
+    document = fallback
+      ? {
+          ...fallback,
+          emrMappings: [],
+          documentRisks: [],
+        }
+      : fallback;
+  }
 
   if (!document) {
     throw new ApiError(404, "Consent document not found");
@@ -648,6 +685,13 @@ export async function buildFinalConsentPdfPayload(args: {
   });
 
   const metadata = asRecord(document.metadata);
+  const approvedConsentSourceAvailable = firstBoolean(metadata, [["approvedConsentSourceAvailable"]]);
+  if (approvedConsentSourceAvailable === false && document.sections.length === 0) {
+    throw new ApiError(
+      409,
+      "No approved consent form is linked to this procedure. Please link an approved consent form before sending.",
+    );
+  }
   const executionContext = asRecord(metadata.executionContext);
   const wordingSnapshot = asRecord(metadata.finalizedWordingSnapshot);
   const fixedClauses = asRecord(wordingSnapshot.fixedClauses);
@@ -664,6 +708,10 @@ export async function buildFinalConsentPdfPayload(args: {
   const anesthesiaMetadata = asRecord(metadata.anesthesia);
   const disclosuresMetadata = asRecord(metadata.disclosures);
   const facilityName = normalizeText(document.tenant?.name || "International Medical Center");
+  const approvedConsentTitleEn = firstString(
+    metadata,
+    [["approvedConsentFormTitleEn"], ["clinicalConsentFormTitleEn"]],
+  ) || document.template.titleEn;
 
   void executionContext;
   void args.requestOrigin;
@@ -1162,7 +1210,7 @@ export async function buildFinalConsentPdfPayload(args: {
     },
     consent: {
       consentType: document.template.consentType,
-      templateTitle: document.template.titleEn,
+      templateTitle: approvedConsentTitleEn,
       diagnosis: document.diagnosis || NOT_PROVIDED.en,
       medicalCondition: sectionMedicalCondition.contentEn || document.admissionDetails,
     },
@@ -1270,12 +1318,10 @@ function renderRowValueHtml(row: FinalConsentPdfRow, locale: "ar" | "en", payloa
 }
 
 
-function readLocalPdfFontBase64(relativePathFromRepoRoot: string): string {
+function readLocalPdfFontBase64(relativeNodeModulesPath: string): string {
   const candidates = [
-    path.join(process.cwd(), relativePathFromRepoRoot),
-    path.join(process.cwd(), "..", relativePathFromRepoRoot),
-    path.join(process.cwd(), "..", "..", relativePathFromRepoRoot),
-    path.join(process.cwd(), "..", "..", "..", relativePathFromRepoRoot),
+    path.join(/* turbopackIgnore: true */ process.cwd(), "node_modules", relativeNodeModulesPath),
+    path.join(/* turbopackIgnore: true */ process.cwd(), "..", "..", "node_modules", relativeNodeModulesPath),
   ];
 
   for (const candidate of candidates) {
@@ -1289,19 +1335,19 @@ function readLocalPdfFontBase64(relativePathFromRepoRoot: string): string {
 
 function buildInlinePdfFontFaceCss(): string {
   const sansArabic400 = readLocalPdfFontBase64(
-    "node_modules/@fontsource/noto-sans-arabic/files/noto-sans-arabic-arabic-400-normal.woff2",
+    path.join("@fontsource", "ibm-plex-sans-arabic", "files", "ibm-plex-sans-arabic-arabic-400-normal.woff2"),
   );
 
   const sansArabic700 = readLocalPdfFontBase64(
-    "node_modules/@fontsource/noto-sans-arabic/files/noto-sans-arabic-arabic-700-normal.woff2",
+    path.join("@fontsource", "ibm-plex-sans-arabic", "files", "ibm-plex-sans-arabic-arabic-700-normal.woff2"),
   );
 
   const naskhArabic400 = readLocalPdfFontBase64(
-    "node_modules/@fontsource/noto-naskh-arabic/files/noto-naskh-arabic-arabic-400-normal.woff2",
+    path.join("@fontsource", "tajawal", "files", "tajawal-arabic-400-normal.woff2"),
   );
 
   const naskhArabic700 = readLocalPdfFontBase64(
-    "node_modules/@fontsource/noto-naskh-arabic/files/noto-naskh-arabic-arabic-700-normal.woff2",
+    path.join("@fontsource", "tajawal", "files", "tajawal-arabic-700-normal.woff2"),
   );
 
   const faces: string[] = [];

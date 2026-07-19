@@ -5,6 +5,7 @@ import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
 import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { getPrisma } from "@/lib/server/prisma";
+import { ensureNotificationDeliveryAttemptSchema } from "@/services/sms/smsAuditService";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { logRuntimeEvent, sanitizeLogDetails } from "@/lib/server/runtime-observability";
 import {
@@ -568,6 +569,7 @@ async function recordSecureLinkOtpDelivery(args: {
   result: SecureLinkOtpDeliveryResult;
   otpHash: string;
 }): Promise<void> {
+  await ensureNotificationDeliveryAttemptSchema();
   await prisma().notificationDeliveryAttempt.create({
     data: {
       tenantId: args.tenantId,

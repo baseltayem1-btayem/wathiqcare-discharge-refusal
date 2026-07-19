@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, CheckCircle, FileText, Hash, Shield, XCircle } from "lucide-react";
+import { Check, CheckCircle, ExternalLink, FileText, Hash, Shield, ShieldCheck, XCircle } from "lucide-react";
 import { Alert, Card, cls, type Lang } from "../shared";
 import { pickLocalized, type FullDocument } from "./types";
 
@@ -29,80 +29,100 @@ export function UnderstandingAcknowledgementStep({
 
   const legalText = pickLocalized(lang, doc.legalTextAr, doc.legalTextEn);
   const pdplText = pickLocalized(lang, doc.pdplTextAr, doc.pdplTextEn);
-  const sections = doc.sections || [];
+  const approvedPdfUrl = doc.approvedPdfUrl?.trim() || "";
+  const approvedContentAvailable = Boolean(doc.approvedContentAvailable);
+  const approvedReady = approvedContentAvailable && Boolean(approvedPdfUrl);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <div
         className={cls(
-          "flex flex-col gap-1",
+          "flex flex-col gap-2",
           isAr ? "items-end text-right" : "items-start text-left",
         )}
       >
-        <h1 className="text-lg font-bold text-foreground">
-          {isAr ? "مراجعة شروط الموافقة" : "Review Consent Terms"}
+        <h1 className="text-2xl font-bold text-[#102c56]">
+          {isAr ? "مراجعة الموافقة المعتمدة" : "Review approved consent"}
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm leading-7 text-slate-600">
           {isAr
-            ? "اقرأ محتوى الموافقة بالكامل قبل الموافقة أو الرفض."
-            : "Read the full consent content before accepting or refusing."}
+            ? "راجع نموذج الموافقة الطبي المعتمد نفسه قبل اتخاذ قرار القبول أو الرفض."
+            : "Review the approved medical consent itself before making an accept or refuse decision."}
         </p>
       </div>
 
-      <Card className="p-4 flex flex-col gap-3">
+      <Card className="rounded-[24px] border border-[#dbe7f4] p-4 shadow-[0_18px_36px_rgba(12,39,74,0.08)] flex flex-col gap-4">
         <div
           className={cls(
-            "flex items-center gap-2",
+            "flex items-start justify-between gap-3",
             isAr ? "flex-row-reverse" : "flex-row",
           )}
         >
-          <FileText size={16} className="text-primary" />
-          <h2 className="text-sm font-semibold text-foreground">
-            {procedureTitle}
-          </h2>
+          <div className={cls("flex items-center gap-3", isAr ? "flex-row-reverse" : "flex-row")}>
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#edf4fd] text-[#1f5fae]">
+              <FileText size={18} />
+            </div>
+            <div className={isAr ? "text-right" : "text-left"}>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#4f78a6]">
+                {isAr ? "النموذج المعتمد" : "Approved document"}
+              </p>
+              <h2 className="mt-1 text-base font-semibold text-[#12345f]">{procedureTitle}</h2>
+            </div>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+            <ShieldCheck size={13} />
+            {isAr ? "معتمد" : "Approved"}
+          </div>
         </div>
-        <div className="h-px bg-border" />
-        <div className="bg-muted/40 rounded p-3 max-h-72 overflow-y-auto space-y-3">
-          {sections.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {isAr ? "لا يوجد محتوى." : "No content."}
-            </p>
+
+        <div className="rounded-[22px] border border-[#dbe7f4] bg-[linear-gradient(180deg,#f8fbff_0%,#eef5fd_100%)] p-3">
+          <div className={cls("mb-3 flex items-center justify-between gap-3", isAr ? "flex-row-reverse" : "flex-row")}>
+            <div className={cls("flex items-center gap-2 text-[#325a89]", isAr ? "flex-row-reverse" : "flex-row")}>
+              <FileText size={14} />
+              <span className="text-xs font-semibold">{isAr ? "عرض نسخة المريض المعتمدة" : "Viewing approved patient copy"}</span>
+            </div>
+            {approvedReady ? (
+              <a
+                href={approvedPdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={cls("inline-flex items-center gap-1 text-xs font-semibold text-[#1f5fae] underline underline-offset-2", isAr ? "flex-row-reverse" : "flex-row")}
+              >
+                {isAr ? "فتح في نافذة جديدة" : "Open in new tab"}
+                <ExternalLink size={12} />
+              </a>
+            ) : null}
+          </div>
+
+          {approvedReady ? (
+            <div className="space-y-3">
+              <div className="overflow-hidden rounded-[18px] border border-[#d4e1f0] bg-white shadow-[0_14px_30px_rgba(12,39,74,0.06)]">
+                <iframe
+                  title={isAr ? "الموافقة المعتمدة" : "Approved consent PDF"}
+                  src={approvedPdfUrl}
+                  className="h-[620px] w-full"
+                />
+              </div>
+            </div>
           ) : (
-            sections.map((s) => {
-              const title = pickLocalized(lang, s.titleAr, s.titleEn);
-              const body = pickLocalized(lang, s.contentAr, s.contentEn);
-              return (
-                <div key={s.id}>
-                  {title ? (
-                    <p
-                      className={cls(
-                        "text-sm font-semibold text-foreground",
-                        isAr ? "text-right" : "text-left",
-                      )}
-                    >
-                      {title}
-                    </p>
-                  ) : null}
-                  {body ? (
-                    <p
-                      className={cls(
-                        "text-sm text-foreground/80 leading-relaxed whitespace-pre-line",
-                        isAr ? "text-right" : "text-left",
-                      )}
-                    >
-                      {body}
-                    </p>
-                  ) : null}
-                </div>
-              );
-            })
+            <div className={cls("rounded-[18px] border border-red-200 bg-red-50 p-4", isAr ? "text-right" : "text-left")}>
+              <p className="text-sm font-semibold text-red-700">
+                {isAr ? "لا يمكن المتابعة لأن نموذج الموافقة المعتمد غير متاح." : "You cannot continue because the approved consent form is unavailable."}
+              </p>
+              <p className="mt-2 text-sm leading-7 text-red-700/80">
+                {isAr
+                  ? "يرجى التواصل مع المنشأة الطبية لإعادة إصدار الرابط بعد التأكد من توفر النسخة المعتمدة." 
+                  : "Please contact the medical facility to reissue the link after the approved version becomes available."}
+              </p>
+            </div>
           )}
         </div>
+
         {legalText ? <Alert type="info" lang={lang}>{legalText}</Alert> : null}
       </Card>
 
       {pdplText ? (
-        <Card className="p-3">
+        <Card className="rounded-[22px] border border-[#dbe7f4] p-3 shadow-[0_12px_28px_rgba(12,39,74,0.05)]">
           <div
             className={cls(
               "flex items-center gap-2 mb-1",
@@ -126,7 +146,7 @@ export function UnderstandingAcknowledgementStep({
       ) : null}
 
       {consentRef ? (
-        <Card className="p-3 flex flex-col gap-1">
+        <Card className="rounded-[22px] border border-[#dbe7f4] p-3 flex flex-col gap-1 shadow-[0_12px_28px_rgba(12,39,74,0.05)]">
           <div
             className={cls(
               "flex items-center gap-2",
@@ -147,24 +167,25 @@ export function UnderstandingAcknowledgementStep({
       <button
         type="button"
         onClick={() => setAcked((v) => !v)}
+        disabled={!approvedReady}
         className={cls(
-          "flex items-start gap-3 p-3 rounded-lg border transition-colors",
+          "flex items-start gap-3 rounded-[20px] border p-4 transition-colors disabled:cursor-not-allowed disabled:opacity-60",
           isAr ? "flex-row-reverse text-right" : "flex-row text-left",
-          acked ? "border-primary bg-primary/5" : "border-border bg-card",
+          acked ? "border-[#1f5fae] bg-[#f1f7fe]" : "border-[#dbe7f4] bg-white",
         )}
       >
         <div
           className={cls(
             "w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors",
-            acked ? "bg-primary border-primary" : "border-border bg-white",
+            acked ? "border-[#1f5fae] bg-[#1f5fae]" : "border-border bg-white",
           )}
         >
           {acked ? <Check size={12} className="text-white" /> : null}
         </div>
         <span className="text-sm text-foreground leading-relaxed">
           {isAr
-            ? "أؤكد أنني قرأت وفهمت محتوى هذه الوثيقة."
-            : "I confirm that I have read and understood the content of this document."}
+            ? "أؤكد أنني قرأت وفهمت نموذج الموافقة المعتمد المعروض أعلاه."
+            : "I confirm that I have read and understood the approved consent form shown above."}
         </span>
       </button>
 
@@ -174,9 +195,9 @@ export function UnderstandingAcknowledgementStep({
         <button
           type="button"
           onClick={onAccept}
-          disabled={!acked || submitting}
+          disabled={!acked || submitting || !approvedReady}
           className={cls(
-            "w-full rounded-xl border-2 p-4 flex flex-col items-center gap-1 transition-colors active:scale-[0.99] disabled:opacity-60",
+            "w-full rounded-[22px] border-2 p-4 flex flex-col items-center gap-1 transition-colors active:scale-[0.99] disabled:opacity-60",
             "border-emerald-200 bg-emerald-50 hover:border-emerald-400 hover:bg-emerald-100",
           )}
         >
@@ -191,9 +212,9 @@ export function UnderstandingAcknowledgementStep({
         <button
           type="button"
           onClick={onRefuse}
-          disabled={!acked || submitting}
+          disabled={!acked || submitting || !approvedReady}
           className={cls(
-            "w-full rounded-xl border-2 p-4 flex flex-col items-center gap-1 transition-colors active:scale-[0.99] disabled:opacity-60",
+            "w-full rounded-[22px] border-2 p-4 flex flex-col items-center gap-1 transition-colors active:scale-[0.99] disabled:opacity-60",
             "border-red-200 bg-red-50 hover:border-red-400 hover:bg-red-100",
           )}
         >

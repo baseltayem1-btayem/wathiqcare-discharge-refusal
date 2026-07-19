@@ -6,9 +6,11 @@ import SignaturePad from "signature_pad";
 type TabletSignaturePadProps = {
   value: string;
   onChange: (value: string) => void;
+  label?: string;
+  ariaLabel?: string;
 };
 
-export default function TabletSignaturePad({ value, onChange }: TabletSignaturePadProps) {
+export default function TabletSignaturePad({ value, onChange, label, ariaLabel }: TabletSignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawingRef = useRef(false);
   const [hasInk, setHasInk] = useState(Boolean(value));
@@ -79,7 +81,7 @@ export default function TabletSignaturePad({ value, onChange }: TabletSignatureP
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-3">
       <div className="mb-2 flex items-center justify-between text-xs text-slate-600">
-        <span>Draw patient signature on tablet</span>
+        <span>{label ?? "Draw patient signature on tablet"}</span>
         <button type="button" onClick={clearPad} className="rounded border border-slate-200 px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50">
           Clear
         </button>
@@ -88,6 +90,8 @@ export default function TabletSignaturePad({ value, onChange }: TabletSignatureP
         ref={canvasRef}
         width={640}
         height={180}
+        aria-label={ariaLabel ?? label ?? "Patient signature pad"}
+        role="img"
         className="h-44 w-full rounded-lg border border-dashed border-slate-300 bg-white touch-none"
         onPointerDown={startDrawing}
         onPointerMove={draw}

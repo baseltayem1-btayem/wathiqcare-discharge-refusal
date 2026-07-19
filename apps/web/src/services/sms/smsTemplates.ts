@@ -24,7 +24,7 @@ export function buildSigningOtpSms(input: SigningOtpTemplateInput): string {
   }
 
   return [
-    `رمز التحقق لتوقيع وثائق وثيق كير هو: ${input.otpCode}.`,
+    `رمز التحقق لتوقيع وثائق واثق كير هو: ${input.otpCode}.`,
     `تنتهي صلاحية الرمز خلال ${input.expiresMinutes} دقيقة.`,
     `رابط التوقيع الآمن: ${input.linkUrl}`,
     "إذا لم تطلب هذا الرمز، يرجى تجاهل الرسالة.",
@@ -44,7 +44,7 @@ export function buildSecureSigningLinkSms(input: SecureSigningLinkTemplateInput)
   }
 
   return [
-    "رابط التوقيع الآمن من وثيق كير:",
+    "رابط التوقيع الآمن من واثق كير:",
     input.signingUrl,
     `تنتهي صلاحية الرابط خلال ${input.expiresMinutes} دقيقة.`,
     "إذا لم تطلب هذا الرابط، يرجى تجاهل الرسالة.",

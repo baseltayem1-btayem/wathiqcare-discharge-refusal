@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { recordPublicDecisionEvent } from "@/lib/server/public-signing-service";
+import { recordPublicDecisionEvent } from "@/lib/server/public-signing-decision-service";
 import { ApiError } from "@/lib/server/http";
 
 export async function POST(

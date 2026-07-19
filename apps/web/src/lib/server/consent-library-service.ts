@@ -24,6 +24,8 @@ import { hasInformedConsentPermission } from "@/lib/modules/informed-consents-rb
 import { computeFinalConsentPdfByteHash } from "@/lib/server/informed-consents-final-pdf-payload";
 import { logRuntimeIncident } from "@/lib/server/runtime-observability";
 
+import { logRuntimeIncident } from "@/lib/server/runtime-observability";
+
 const prisma = () => getPrisma();
 
 export const CONSENT_TYPE_OPTIONS = [
@@ -279,7 +281,7 @@ function hasHallucinationSignal(value: string | null | undefined): boolean {
   return /\b(as an ai|language model|cannot provide|i (?:cannot|can'?t) verify|placeholder)\b/.test(normalized);
 }
 
-function computeFixedClauseChecksum(input: Record<string, unknown>): string {
+export function computeFixedClauseChecksum(input: Record<string, unknown>): string {
   const payload: Record<string, string> = {};
   for (const field of FIXED_CLAUSE_FIELDS) {
     payload[field] = normalizeText(input[field] as string | null | undefined);
@@ -2155,32 +2157,182 @@ export async function finalizeConsentDocument(
     }))
     .digest("hex");
 
-  let pdfByteHashResult: { hash: string; engine: string } | null = null;
+  const finalizationMetadata =
+    asRecord(
+      doc.metadata,
+    )
+    || {};
+
+  const finalizationImcTemplate =
+    asRecord(
+      finalizationMetadata
+        .imcApprovedTemplate,
+    )
+    || {};
+
+  const approvedConsentFormId =
+    typeof finalizationMetadata
+      .approvedConsentFormId === "string"
+      ? normalizeText(
+          finalizationMetadata
+            .approvedConsentFormId,
+        )
+      : typeof finalizationImcTemplate
+          .id === "string"
+        ? normalizeText(
+            finalizationImcTemplate.id,
+          )
+        : "";
+
+  const usesApprovedImcOverlay =
+    approvedConsentFormId ===
+    "imc-approved-adenotonsillectomy";
+
+  let pdfByteHashResult: {
+    hash: string;
+    engine: string;
+  } | null = null;
+
+  if (
+    usesApprovedImcOverlay
+    && !request
+  ) {
+    throw new ApiError(
+      409,
+      "Approved IMC consent finalization requires a request origin to generate and hash the canonical PDF bytes.",
+    );
+  }
+
   if (request) {
     try {
-      const requestOrigin = request.nextUrl?.origin || new URL(request.url).origin;
-      pdfByteHashResult = await computeFinalConsentPdfByteHash({
-        documentId: id,
-        tenantId,
-        requestOrigin,
-        copyType: "LEGAL_ARCHIVE_COPY",
-      });
-    } catch (byteHashError) {
+      const requestOrigin =
+        request.nextUrl?.origin
+        || new URL(
+          request.url,
+        ).origin;
+
+      if (usesApprovedImcOverlay) {
+        const {
+          renderImcApprovedConsentPdf,
+        } = await import(
+          "@/lib/server/imc-approved-pdf-template-engine"
+        );
+
+        const rendered =
+          await renderImcApprovedConsentPdf({
+            documentId:
+              id,
+
+            tenantId,
+
+            origin:
+              requestOrigin,
+          });
+
+        pdfByteHashResult = {
+          hash:
+            crypto
+              .createHash(
+                "sha256",
+              )
+              .update(
+                rendered.bytes,
+              )
+              .digest(
+                "hex",
+              ),
+
+          engine:
+            "approved-imc-overlay",
+        };
+      }
+      else {
+        const { computeFinalConsentPdfByteHash } = await import(
+          "@/lib/server/informed-consents-final-pdf-payload"
+        );
+        pdfByteHashResult =
+          await computeFinalConsentPdfByteHash({
+            documentId:
+              id,
+
+            tenantId,
+
+            requestOrigin,
+
+            copyType:
+              "LEGAL_ARCHIVE_COPY",
+          });
+      }
+    }
+    catch (byteHashError) {
       logRuntimeIncident({
         request,
-        module: "consent_library",
-        type: "PDF_FAILURE",
-        operation: "finalizeConsentDocument",
+        module:
+          "consent_library",
+
+        type:
+          "PDF_FAILURE",
+
+        operation:
+          "finalizeConsentDocument",
+
         tenantId,
-        error: byteHashError,
-        details: { reason: "pdf_byte_hash_generation_failed", fallback: "metadata_hash" },
+        error:
+          byteHashError,
+
+        details: {
+          reason:
+            "pdf_byte_hash_generation_failed",
+
+          engine:
+            usesApprovedImcOverlay
+              ? "approved-imc-overlay"
+              : "generic-html-pdf",
+
+          fallback:
+            usesApprovedImcOverlay
+              ? "blocked"
+              : "metadata_hash",
+        },
       });
+
+      if (usesApprovedImcOverlay) {
+        if (
+          byteHashError
+          instanceof ApiError
+        ) {
+          throw byteHashError;
+        }
+
+        throw new ApiError(
+          500,
+          "Approved IMC PDF generation failed during immutable byte hashing.",
+        );
+      }
     }
   }
 
-  const immutablePdfHash = payload.immutablePdfHash?.trim()
-    || pdfByteHashResult?.hash
-    || fallbackMetadataHash;
+  if (
+    usesApprovedImcOverlay
+    && !pdfByteHashResult
+  ) {
+    throw new ApiError(
+      409,
+      "Approved IMC PDF byte hash was not generated.",
+    );
+  }
+
+  const immutablePdfHash =
+    usesApprovedImcOverlay
+      ? pdfByteHashResult
+          ?.hash
+        || ""
+      : payload
+          .immutablePdfHash
+          ?.trim()
+        || pdfByteHashResult
+          ?.hash
+        || fallbackMetadataHash;
 
   const clinicalKnowledgeAssembly = asRecord(asRecord(doc.metadata)?.clinicalKnowledgeAssembly);
   const signedVersionLinkage = {

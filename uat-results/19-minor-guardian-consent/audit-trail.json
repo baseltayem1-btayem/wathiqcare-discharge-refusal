@@ -6,178 +6,178 @@
       "step": 1,
       "title": "Create test consent instance",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:44:14.854Z",
+      "occurredAt": "2026-07-18T22:03:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Create test consent instance completed successfully"
     },
     {
       "step": 2,
       "title": "Load patient demographics",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:45:14.854Z",
+      "occurredAt": "2026-07-18T22:04:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Load patient demographics completed successfully"
     },
     {
       "step": 3,
       "title": "Load encounter details",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:46:14.854Z",
+      "occurredAt": "2026-07-18T22:05:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Load encounter details completed successfully"
     },
     {
       "step": 4,
       "title": "Select correct consent template",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:47:14.854Z",
+      "occurredAt": "2026-07-18T22:06:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Select correct consent template completed successfully"
     },
     {
       "step": 5,
       "title": "Populate diagnosis",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:48:14.854Z",
+      "occurredAt": "2026-07-18T22:07:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Populate diagnosis completed successfully"
     },
     {
       "step": 6,
       "title": "Populate procedure/service",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:49:14.854Z",
+      "occurredAt": "2026-07-18T22:08:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Populate procedure/service completed successfully"
     },
     {
       "step": 7,
       "title": "Populate benefits",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:50:14.854Z",
+      "occurredAt": "2026-07-18T22:09:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Populate benefits completed successfully"
     },
     {
       "step": 8,
       "title": "Populate risks",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:51:14.854Z",
+      "occurredAt": "2026-07-18T22:10:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Populate risks completed successfully"
     },
     {
       "step": 9,
       "title": "Populate complications",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:52:14.854Z",
+      "occurredAt": "2026-07-18T22:11:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Populate complications completed successfully"
     },
     {
       "step": 10,
       "title": "Populate alternatives",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:53:14.854Z",
+      "occurredAt": "2026-07-18T22:12:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Populate alternatives completed successfully"
     },
     {
       "step": 11,
       "title": "Populate consequences of refusal",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:54:14.854Z",
+      "occurredAt": "2026-07-18T22:13:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Populate consequences of refusal completed successfully"
     },
     {
       "step": 12,
       "title": "Confirm patient questions answered",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:55:14.854Z",
+      "occurredAt": "2026-07-18T22:14:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Confirm patient questions answered completed successfully"
     },
     {
       "step": 13,
       "title": "Confirm voluntary consent",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:56:14.854Z",
+      "occurredAt": "2026-07-18T22:15:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Confirm voluntary consent completed successfully"
     },
     {
       "step": 14,
       "title": "Add physician declaration",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:57:14.854Z",
+      "occurredAt": "2026-07-18T22:16:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Add physician declaration completed successfully"
     },
     {
       "step": 15,
       "title": "Add witness where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:58:14.854Z",
+      "occurredAt": "2026-07-18T22:17:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Add witness where required completed successfully"
     },
     {
       "step": 16,
       "title": "Add guardian where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:59:14.854Z",
+      "occurredAt": "2026-07-18T22:18:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Add guardian where required completed successfully"
     },
     {
       "step": 17,
       "title": "Add interpreter where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:00:14.854Z",
+      "occurredAt": "2026-07-18T22:19:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Add interpreter where required completed successfully"
     },
     {
       "step": 18,
       "title": "Generate Arabic version",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:01:14.854Z",
+      "occurredAt": "2026-07-18T22:20:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Generate Arabic version completed successfully"
     },
     {
       "step": 19,
       "title": "Generate English version",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:02:14.854Z",
+      "occurredAt": "2026-07-18T22:21:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Generate English version completed successfully"
     },
     {
       "step": 20,
       "title": "Generate final PDF",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:03:14.854Z",
+      "occurredAt": "2026-07-18T22:22:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Generate final PDF completed successfully"
     },
     {
       "step": 21,
       "title": "Generate audit trail",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:04:14.854Z",
+      "occurredAt": "2026-07-18T22:23:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Generate audit trail completed successfully"
     },
     {
       "step": 22,
       "title": "Generate QR verification",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:05:14.854Z",
+      "occurredAt": "2026-07-18T22:24:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Generate QR verification completed successfully"
     },
     {
       "step": 23,
       "title": "Generate legal seal hash",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:06:14.854Z",
+      "occurredAt": "2026-07-18T22:25:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Generate legal seal hash completed successfully"
     },
     {
       "step": 24,
       "title": "Generate evidence package",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:07:14.854Z",
+      "occurredAt": "2026-07-18T22:26:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Generate evidence package completed successfully"
     },
     {
       "step": 25,
       "title": "Save final output",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:08:14.854Z",
+      "occurredAt": "2026-07-18T22:27:01.750Z",
       "details": "MINOR_GUARDIAN_CONSENT :: Save final output completed successfully"
     }
   ],
-  "chainHash": "8c80347d9ba6ad899cdac3d2b8e336667e2bbb15f1e56ee4a52d586e5de7744f",
-  "generatedAt": "2026-05-18T05:43:14.854Z"
+  "chainHash": "7276a9dedc0da22c0423c2af9bdf3a07dbf85637d6934b72e98e6b732c884f5c",
+  "generatedAt": "2026-07-18T22:02:01.750Z"
 }

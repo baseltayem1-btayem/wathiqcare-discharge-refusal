@@ -11,10 +11,10 @@ test("module path resolver supports mounted module subroutes", () => {
     assert.equal(resolveModuleKeyFromPath("/modules/informed-consents/templates"), "informed-consents");
     assert.equal(resolveModuleKeyFromPath("/modules/wathiqnote"), "wathiqnote");
     assert.equal(resolveModuleKeyFromPath("/modules/wathiqnote/note-builder"), "wathiqnote");
-    assert.equal(resolveModuleKeyFromPath("/modules/promissory-notes/list"), "promissory-notes");
-    assert.equal(resolveModuleKeyFromPath("/modules/promissory-notes/create"), "promissory-notes");
-    assert.equal(resolveModuleKeyFromPath("/modules/promissory-notes/archive"), "promissory-notes");
-    assert.equal(resolveModuleKeyFromPath("/modules/promissory-notes/enterprise"), "promissory-notes");
+    assert.equal(resolveModuleKeyFromPath("/modules/promissory-notes/list"), "wathiqnote");
+    assert.equal(resolveModuleKeyFromPath("/modules/promissory-notes/create"), "wathiqnote");
+    assert.equal(resolveModuleKeyFromPath("/modules/promissory-notes/archive"), "wathiqnote");
+    assert.equal(resolveModuleKeyFromPath("/modules/promissory-notes/enterprise"), "wathiqnote");
     assert.equal(resolveModuleKeyFromPath("/modules/discharge-refusal/dashboard"), "discharge-refusal");
     assert.equal(resolveModuleKeyFromPath("/modules/discharge-refusal/cases"), "discharge-refusal");
 });

@@ -7,6 +7,7 @@
  */
 
 import crypto from "node:crypto";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { getPrisma } from "@/lib/server/prisma";
 import {
   type SigningSessionInput,
@@ -26,6 +27,151 @@ import { SIGNATURE_CONFIG } from "@/lib/config/platform-config";
 import { ApiError } from "@/lib/server/http";
 
 const prisma = () => getPrisma();
+
+const SIGNING_SCHEMA_STATEMENTS = [
+  `
+    CREATE TABLE IF NOT EXISTS signing_sessions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      tenant_id UUID NOT NULL,
+      document_id UUID NOT NULL,
+      module_type TEXT NOT NULL
+        CHECK (module_type IN ('informed_consent','discharge_refusal','promissory_note')),
+      provider_key TEXT NOT NULL,
+      provider_session_id TEXT,
+      status TEXT NOT NULL DEFAULT 'PENDING'
+        CHECK (status IN ('PENDING','SENT','PARTIALLY_SIGNED','COMPLETED','EXPIRED','REVOKED')),
+      required_signers JSONB NOT NULL DEFAULT '[]',
+      completed_signers JSONB NOT NULL DEFAULT '[]',
+      signer_links JSONB NOT NULL DEFAULT '{}',
+      expires_at TIMESTAMPTZ,
+      completed_at TIMESTAMPTZ,
+      revoked_at TIMESTAMPTZ,
+      revoked_reason TEXT,
+      signed_pdf_key TEXT,
+      initiated_by_id UUID NOT NULL,
+      resend_count INT NOT NULL DEFAULT 0,
+      last_resent_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `,
+  `
+    CREATE TABLE IF NOT EXISTS signing_events (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      session_id UUID NOT NULL REFERENCES signing_sessions(id) ON DELETE CASCADE,
+      tenant_id UUID NOT NULL,
+      event_type TEXT NOT NULL,
+      signer_role TEXT,
+      provider_key TEXT NOT NULL,
+      provider_event_id TEXT,
+      payload JSONB NOT NULL DEFAULT '{}',
+      ip_address TEXT,
+      timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `,
+  `
+    CREATE TABLE IF NOT EXISTS signing_secure_tokens (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      session_id UUID NOT NULL REFERENCES signing_sessions(id) ON DELETE CASCADE,
+      tenant_id UUID NOT NULL,
+      signer_role TEXT NOT NULL,
+      token TEXT UNIQUE,
+      token_hash TEXT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      used_at TIMESTAMPTZ,
+      revoked_at TIMESTAMPTZ,
+      ip_on_use TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `,
+  `
+    ALTER TABLE signing_secure_tokens
+      ADD COLUMN IF NOT EXISTS token_hash TEXT NULL
+  `,
+  `
+    ALTER TABLE signing_secure_tokens
+      ALTER COLUMN token DROP NOT NULL
+  `,
+  `
+    CREATE TABLE IF NOT EXISTS webhook_events (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      tenant_id UUID,
+      provider_key TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      raw_payload JSONB NOT NULL,
+      hmac_verified BOOLEAN NOT NULL DEFAULT FALSE,
+      processed BOOLEAN NOT NULL DEFAULT FALSE,
+      processed_at TIMESTAMPTZ,
+      processing_error TEXT,
+      received_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_ss_tenant_document
+      ON signing_sessions (tenant_id, document_id)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_ss_provider_session
+      ON signing_sessions (provider_session_id)
+      WHERE provider_session_id IS NOT NULL
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_ss_status
+      ON signing_sessions (status)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_se_session
+      ON signing_events (session_id)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_se_tenant_event
+      ON signing_events (tenant_id, event_type)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_sst_token
+      ON signing_secure_tokens (token)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_sst_session
+      ON signing_secure_tokens (session_id)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_sst_expires
+      ON signing_secure_tokens (expires_at)
+      WHERE used_at IS NULL AND revoked_at IS NULL
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_sst_token_hash
+      ON signing_secure_tokens (token_hash)
+      WHERE revoked_at IS NULL AND used_at IS NULL
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_we_provider_event
+      ON webhook_events (provider_key, event_type)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_we_unprocessed
+      ON webhook_events (processed, received_at)
+      WHERE processed = FALSE
+  `,
+];
+
+let signingSchemaBootstrapPromise: Promise<void> | null = null;
+
+async function ensureSigningSchema() {
+  if (!signingSchemaBootstrapPromise) {
+    signingSchemaBootstrapPromise = (async () => {
+      for (const statement of SIGNING_SCHEMA_STATEMENTS) {
+        await prisma().$executeRawUnsafe(statement);
+      }
+    })().catch((error) => {
+      signingSchemaBootstrapPromise = null;
+      throw error;
+    });
+  }
+
+  return signingSchemaBootstrapPromise;
+}
 
 function computeSigningTokenHash(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
@@ -67,6 +213,7 @@ export async function createSigningSession(
   input: SigningSessionInput
 ): Promise<SigningSession> {
   assertSignaturesEnabled();
+  await ensureSigningSchema();
 
   const providerKey = defaultProviderKey();
   const expiresAt = computeSigningExpiry(input.expiryHours);
@@ -203,21 +350,44 @@ export async function validateSigningToken(
   );
 
   const row = rows[0];
-  if (!row || !row.session_id || !row.document_id || !row.module_type || !row.tenant_id || !row.signer_role) {
-    throw new ApiError(404, "Invalid or expired signing token");
+  if (row && row.session_id && row.document_id && row.module_type && row.tenant_id && row.signer_role) {
+    if (row.used_at) throw new ApiError(404, "Invalid or expired signing token");
+    if (row.revoked_at) throw new ApiError(404, "Invalid or expired signing token");
+    if (new Date(row.expires_at) < new Date()) {
+      throw new ApiError(404, "Invalid or expired signing token");
+    }
+    return {
+      sessionId: row.session_id,
+      documentId: row.document_id,
+      moduleType: row.module_type,
+      signerRole: row.signer_role,
+      tenantId: row.tenant_id,
+    };
   }
-  if (row.used_at) throw new ApiError(404, "Invalid or expired signing token");
-  if (row.revoked_at) throw new ApiError(404, "Invalid or expired signing token");
-  if (new Date(row.expires_at) < new Date()) {
+
+  // Fallback to Prisma-managed signing secure tokens (Package 1 outbox model).
+  const prismaToken = await prisma().signingSecureToken.findFirst({
+    where: { tokenHash },
+    include: { session: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (
+    !prismaToken
+    || !prismaToken.session
+    || prismaToken.usedAt
+    || prismaToken.revokedAt
+    || new Date(prismaToken.expiresAt) < new Date()
+  ) {
     throw new ApiError(404, "Invalid or expired signing token");
   }
 
   return {
-    sessionId: row.session_id,
-    documentId: row.document_id,
-    moduleType: row.module_type,
-    signerRole: row.signer_role,
-    tenantId: row.tenant_id,
+    sessionId: prismaToken.session.id,
+    documentId: prismaToken.session.documentId,
+    moduleType: prismaToken.session.moduleType,
+    signerRole: prismaToken.signerRole,
+    tenantId: prismaToken.session.tenantId,
   };
 }
 
@@ -225,13 +395,28 @@ export async function validateSigningToken(
 // Mark Token Used
 // ---------------------------------------------------------------------------
 
-export async function markTokenUsed(token: string, ipAddress?: string): Promise<void> {
+export async function markTokenUsed(
+  token: string,
+  ipAddress?: string,
+  client?: PrismaClient | Prisma.TransactionClient,
+): Promise<void> {
+  const db = client ?? prisma();
   const tokenHash = computeSigningTokenHash(token.trim());
-  await prisma().$executeRawUnsafe(
-    `UPDATE signing_secure_tokens SET used_at = NOW(), ip_on_use = $1 WHERE token_hash = $2`,
-    ipAddress ?? null,
-    tokenHash
-  );
+  const now = new Date();
+
+  const result = await db.signingSecureToken.updateMany({
+    where: {
+      tokenHash,
+      usedAt: null,
+      revokedAt: null,
+      expiresAt: { gt: now },
+    },
+    data: { usedAt: now, ipOnUse: ipAddress ?? null },
+  });
+
+  if (result.count !== 1) {
+    throw new ApiError(409, "Token already used, revoked, or expired");
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -243,6 +428,7 @@ export async function processSigningWebhook(
   receivedHmac: string,
   providerKey: string
 ): Promise<void> {
+  await ensureSigningSchema();
   // Verify HMAC
   const valid = verifyWebhookSignature(rawBody, receivedHmac);
   if (!valid) {
@@ -318,6 +504,7 @@ export async function resendSigningLink(
   tenantId: string
 ): Promise<void> {
   assertSignaturesEnabled();
+  await ensureSigningSchema();
 
   const sessions = await prisma().$queryRawUnsafe<
     Array<{ provider_session_id: string; provider_key: string; resend_count: number }>
@@ -354,6 +541,7 @@ export async function revokeSigningSession(
   reason: string
 ): Promise<void> {
   assertSignaturesEnabled();
+  await ensureSigningSchema();
 
   const sessions = await prisma().$queryRawUnsafe<
     Array<{ provider_session_id: string; provider_key: string }>
@@ -395,6 +583,7 @@ export async function retrieveSignedPdf(
   tenantId: string
 ): Promise<Buffer> {
   assertSignaturesEnabled();
+  await ensureSigningSchema();
 
   const sessions = await prisma().$queryRawUnsafe<
     Array<{ provider_session_id: string; provider_key: string; status: string }>
@@ -428,6 +617,7 @@ async function logSigningEvent(
   signerRole?: string,
   metadata?: Record<string, unknown>
 ): Promise<void> {
+  await ensureSigningSchema();
   await prisma().$executeRawUnsafe(
     `INSERT INTO signing_events (session_id, tenant_id, event_type, signer_role, provider_key, payload)
      VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6::jsonb)`,

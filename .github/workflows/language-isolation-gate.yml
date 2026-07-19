@@ -1,4 +1,4 @@
-name: language-isolation-gate
+﻿name: language-isolation-gate
 
 on:
   push:
@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -22,8 +24,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run language scanners
+      - name: Run full language scanners on main
+        if: github.event_name == 'push'
         run: npm run audit:language
 
-      - name: Enforce zero-violation gate
+      - name: Enforce full zero-violation gate on main
+        if: github.event_name == 'push'
         run: npm run audit:language:gate
+
+      - name: Run changed-files language gate on pull requests
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/language-audit/prChangedGate.mjs

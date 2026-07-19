@@ -8,6 +8,7 @@ import {
   type EmailDiagnostics,
 } from "@/lib/server/email-provider";
 import { getPrisma } from "@/lib/server/prisma";
+import { ensureNotificationDeliveryAttemptSchema } from "@/services/sms/smsAuditService";
 
 const prisma = () => getPrisma();
 
@@ -92,6 +93,7 @@ async function recordEmailAuditAttempt(args: {
   diagnostics?: EmailDiagnostics | null;
   metadata?: Record<string, unknown>;
 }): Promise<string | null> {
+  await ensureNotificationDeliveryAttemptSchema();
   const created = await prisma().notificationDeliveryAttempt.create({
     data: {
       tenantId: args.tenantId,
@@ -203,7 +205,7 @@ function buildEnterpriseSecureSigningEmailTemplate(args: {
                     <p style="margin:0;font-size:14px;line-height:22px;color:#2F2F2F;">✓ Electronic Audit Trail Enabled</p>
                     <hr style="border:none;border-top:1px solid #dbe7f4;margin:12px 0;" />
                     <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">✓ تم التحقق من الطلب من المركز الطبي الدولي</p>
-                    <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">✓ مدعوم من وثيق كير</p>
+                    <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">✓ مدعوم من واثق كير</p>
                     <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">✓ وصول آمن ومشفر</p>
                     <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">✓ يتطلب التحقق عبر رمز OTP</p>
                     <p style="margin:0;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">✓ سجل تدقيق إلكتروني مفعل</p>
@@ -316,7 +318,7 @@ function buildEnterpriseSecureSigningEmailTemplate(args: {
     "",
     "مؤشرات الثقة:",
     "- تم التحقق من الطلب من المركز الطبي الدولي",
-    "- مدعوم من وثيق كير",
+    "- مدعوم من واثق كير",
     "- وصول آمن ومشفر",
     "- يتطلب التحقق عبر رمز OTP",
     "- سجل تدقيق إلكتروني مفعل",
@@ -680,6 +682,56 @@ export async function sendPilotPatientCopyEmail(args: {
   });
 }
 
+function buildBilingualOtpEmailTemplate(args: {
+  otpCode: string;
+  linkUrl: string;
+  expiresMinutes: number;
+  documentId: string;
+  sessionId: string;
+  mobileNumber: string;
+}): { html: string; text: string; subject: string } {
+  const titleEn = "Secure Signing OTP";
+  const titleAr = "رمز التحقق الآمن للتوقيع";
+  const subject = `${titleEn} | ${titleAr}`;
+  const expiresNote = `This OTP expires in ${args.expiresMinutes} minutes. | ينتهي رمز التحقق هذا خلال ${args.expiresMinutes} دقيقة.`;
+  const securityNote =
+    "Do not share this OTP with anyone. If you did not request this OTP, contact support immediately. | " +
+    "لا تشارك رمز التحقق مع أي شخص. إذا لم تطلب هذا الرمز، يرجى التواصل مع الدعم فورًا.";
+
+  const html = buildWathiqCareEmailHtml({
+    title: titleEn,
+    preheader: "Your secure signing OTP is ready. | رمز التحقق الآمن للتوقيع جاهز.",
+    bodyHtml: `
+      <p><strong>${titleEn}</strong> / <strong dir="rtl">${titleAr}</strong></p>
+      <p>Your secure signing one-time password (OTP) is:<br/><strong style="font-size:20px;letter-spacing:0.18em;">${args.otpCode}</strong></p>
+      <p dir="rtl">رمز التحقق لمرة واحدة (OTP) الخاص بالتوقيع الآمن هو:<br/><strong style="font-size:20px;letter-spacing:0.18em;" dir="rtl">${args.otpCode}</strong></p>
+      <p>Document ID / معرّف الوثيقة: <strong>${args.documentId}</strong></p>
+      <p>Signing Session ID / معرّف جلسة التوقيع: <strong>${args.sessionId}</strong></p>
+      <p>Mobile target / رقم الجوال المستهدف: <strong>${args.mobileNumber}</strong></p>
+    `,
+    ctaUrl: args.linkUrl,
+    ctaText: "Open Secure Signing / فتح التوقيع الآمن",
+    expiresNote,
+    securityNote,
+  });
+
+  const text = buildWathiqCareEmailText({
+    title: `${titleEn} / ${titleAr}`,
+    bodyLines: [
+      `OTP Code / رمز التحقق: ${args.otpCode}`,
+      `Document ID / معرّف الوثيقة: ${args.documentId}`,
+      `Signing Session ID / معرّف جلسة التوقيع: ${args.sessionId}`,
+      `Mobile target / رقم الجوال المستهدف: ${args.mobileNumber}`,
+    ],
+    ctaUrl: args.linkUrl,
+    ctaLabel: "Open Secure Signing / فتح التوقيع الآمن",
+    expiresNote,
+    securityNote,
+  });
+
+  return { html, text, subject };
+}
+
 export async function sendSigningOtpEmail(args: {
   tenantId: string;
   caseId?: string | null;
@@ -701,37 +753,21 @@ export async function sendSigningOtpEmail(args: {
 
   const sendEmail = dependencies?.sendEmail ?? sendEmailWithDiagnostics;
   const recordAuditAttempt = dependencies?.recordAuditAttempt ?? recordEmailAuditAttempt;
-  const title = "Secure Signing OTP";
-  const expiresNote = `This OTP expires in ${args.expiresMinutes} minutes.`;
-  const html = buildWathiqCareEmailHtml({
-    title,
-    preheader: "Your secure signing OTP is ready.",
-    bodyHtml: `<p>Your secure signing one-time password (OTP) is:</p><p><strong style=\"font-size:20px;letter-spacing:0.18em;\">${args.otpCode}</strong></p><p>Document ID: <strong>${args.documentId}</strong></p><p>Signing Session ID: <strong>${args.sessionId}</strong></p><p>Mobile target: <strong>${args.mobileNumber}</strong></p>`,
-    ctaUrl: args.linkUrl,
-    ctaText: "Open Secure Signing",
-    expiresNote,
-    securityNote: "Do not share this OTP with anyone. If you did not request this OTP, contact support immediately.",
-  });
-  const text = buildWathiqCareEmailText({
-    title,
-    bodyLines: [
-      `OTP Code: ${args.otpCode}`,
-      `Document ID: ${args.documentId}`,
-      `Signing Session ID: ${args.sessionId}`,
-      `Mobile target: ${args.mobileNumber}`,
-    ],
-    ctaUrl: args.linkUrl,
-    ctaLabel: "Open Secure Signing",
-    expiresNote,
-    securityNote: "Do not share this OTP with anyone.",
+  const template = buildBilingualOtpEmailTemplate({
+    otpCode: args.otpCode,
+    linkUrl: args.linkUrl,
+    expiresMinutes: args.expiresMinutes,
+    documentId: args.documentId,
+    sessionId: args.sessionId,
+    mobileNumber: args.mobileNumber,
   });
 
   try {
     const diagnostics = await sendEmail({
       to: recipientEmail,
-      subject: `${title} | ${args.documentId}`,
-      html,
-      text,
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
     });
 
     if (!wasRecipientAcceptedByProvider(diagnostics, recipientEmail)) {

@@ -15,6 +15,8 @@ export type Bootstrap = {
   facilityName?: string | null;
   templateTitleAr?: string | null;
   templateTitleEn?: string | null;
+  approvedPdfUrl?: string | null;
+  approvedContentAvailable?: boolean;
   locale?: "ar" | "en" | "bilingual" | string | null;
   educationRequired?: boolean;
   maskedMobile?: string | null;
@@ -86,6 +88,8 @@ export type FullDocument = {
   plannedProcedure?: string | null;
   templateTitleAr?: string | null;
   templateTitleEn?: string | null;
+  approvedPdfUrl?: string | null;
+  approvedContentAvailable?: boolean;
   versionLabel?: string | null;
   facilityName?: string | null;
   sections?: Section[];
@@ -121,13 +125,48 @@ export type SignatureResult = {
 export type PatientScreen =
   | "review"
   | "otp"
+  | "language"
   | "education"
+  | "disclosures"
   | "acknowledgement"
   | "signature"
   | "confirmation"
   | "refusal-ack"
   | "refusal-signature"
   | "refusal-confirmed";
+
+function containsArabicGlyphs(value: string): boolean {
+  return /[\u0600-\u06FF]/.test(value);
+}
+
+export function looksCorruptedArabic(value?: string | null): boolean {
+  if (!value) return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  if (containsArabicGlyphs(trimmed)) return false;
+  return /^[?\s\-_/\\().,:;!%0-9A-Za-z]+$/.test(trimmed) && trimmed.includes("?");
+}
+
+export function resolveProcedureTitles(args: {
+  titleAr?: string | null;
+  titleEn?: string | null;
+  plannedProcedure?: string | null;
+}): { ar: string; en: string } {
+  const english = args.titleEn?.trim() || args.plannedProcedure?.trim() || "";
+  const rawArabic = args.titleAr?.trim() || "";
+  const normalizedEnglish = english.toLowerCase();
+
+  let resolvedArabic = !looksCorruptedArabic(rawArabic) ? rawArabic : "";
+
+  if (!resolvedArabic && normalizedEnglish.includes("icu and critical care consent")) {
+    resolvedArabic = "موافقة العناية المركزة والعلاج الحرج";
+  }
+
+  return {
+    ar: resolvedArabic || english,
+    en: english || resolvedArabic,
+  };
+}
 
 export function pickLocalized(
   lang: Lang,

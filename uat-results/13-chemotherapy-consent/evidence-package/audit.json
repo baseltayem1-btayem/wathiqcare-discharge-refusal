@@ -6,178 +6,178 @@
       "step": 1,
       "title": "Create test consent instance",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:44:00.626Z",
+      "occurredAt": "2026-07-18T22:02:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Create test consent instance completed successfully"
     },
     {
       "step": 2,
       "title": "Load patient demographics",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:45:00.626Z",
+      "occurredAt": "2026-07-18T22:03:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Load patient demographics completed successfully"
     },
     {
       "step": 3,
       "title": "Load encounter details",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:46:00.626Z",
+      "occurredAt": "2026-07-18T22:04:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Load encounter details completed successfully"
     },
     {
       "step": 4,
       "title": "Select correct consent template",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:47:00.626Z",
+      "occurredAt": "2026-07-18T22:05:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Select correct consent template completed successfully"
     },
     {
       "step": 5,
       "title": "Populate diagnosis",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:48:00.626Z",
+      "occurredAt": "2026-07-18T22:06:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Populate diagnosis completed successfully"
     },
     {
       "step": 6,
       "title": "Populate procedure/service",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:49:00.626Z",
+      "occurredAt": "2026-07-18T22:07:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Populate procedure/service completed successfully"
     },
     {
       "step": 7,
       "title": "Populate benefits",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:50:00.626Z",
+      "occurredAt": "2026-07-18T22:08:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Populate benefits completed successfully"
     },
     {
       "step": 8,
       "title": "Populate risks",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:51:00.626Z",
+      "occurredAt": "2026-07-18T22:09:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Populate risks completed successfully"
     },
     {
       "step": 9,
       "title": "Populate complications",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:52:00.626Z",
+      "occurredAt": "2026-07-18T22:10:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Populate complications completed successfully"
     },
     {
       "step": 10,
       "title": "Populate alternatives",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:53:00.626Z",
+      "occurredAt": "2026-07-18T22:11:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Populate alternatives completed successfully"
     },
     {
       "step": 11,
       "title": "Populate consequences of refusal",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:54:00.626Z",
+      "occurredAt": "2026-07-18T22:12:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Populate consequences of refusal completed successfully"
     },
     {
       "step": 12,
       "title": "Confirm patient questions answered",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:55:00.626Z",
+      "occurredAt": "2026-07-18T22:13:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Confirm patient questions answered completed successfully"
     },
     {
       "step": 13,
       "title": "Confirm voluntary consent",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:56:00.626Z",
+      "occurredAt": "2026-07-18T22:14:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Confirm voluntary consent completed successfully"
     },
     {
       "step": 14,
       "title": "Add physician declaration",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:57:00.626Z",
+      "occurredAt": "2026-07-18T22:15:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Add physician declaration completed successfully"
     },
     {
       "step": 15,
       "title": "Add witness where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:58:00.626Z",
+      "occurredAt": "2026-07-18T22:16:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Add witness where required completed successfully"
     },
     {
       "step": 16,
       "title": "Add guardian where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:59:00.626Z",
+      "occurredAt": "2026-07-18T22:17:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Add guardian where required completed successfully"
     },
     {
       "step": 17,
       "title": "Add interpreter where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:00:00.626Z",
+      "occurredAt": "2026-07-18T22:18:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Add interpreter where required completed successfully"
     },
     {
       "step": 18,
       "title": "Generate Arabic version",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:01:00.626Z",
+      "occurredAt": "2026-07-18T22:19:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Generate Arabic version completed successfully"
     },
     {
       "step": 19,
       "title": "Generate English version",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:02:00.626Z",
+      "occurredAt": "2026-07-18T22:20:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Generate English version completed successfully"
     },
     {
       "step": 20,
       "title": "Generate final PDF",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:03:00.626Z",
+      "occurredAt": "2026-07-18T22:21:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Generate final PDF completed successfully"
     },
     {
       "step": 21,
       "title": "Generate audit trail",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:04:00.626Z",
+      "occurredAt": "2026-07-18T22:22:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Generate audit trail completed successfully"
     },
     {
       "step": 22,
       "title": "Generate QR verification",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:05:00.626Z",
+      "occurredAt": "2026-07-18T22:23:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Generate QR verification completed successfully"
     },
     {
       "step": 23,
       "title": "Generate legal seal hash",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:06:00.626Z",
+      "occurredAt": "2026-07-18T22:24:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Generate legal seal hash completed successfully"
     },
     {
       "step": 24,
       "title": "Generate evidence package",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:07:00.626Z",
+      "occurredAt": "2026-07-18T22:25:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Generate evidence package completed successfully"
     },
     {
       "step": 25,
       "title": "Save final output",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:08:00.626Z",
+      "occurredAt": "2026-07-18T22:26:41.463Z",
       "details": "CHEMOTHERAPY_CONSENT :: Save final output completed successfully"
     }
   ],
-  "chainHash": "babd697461d20165834479d2b764a40ed8bb7649c32df6b5a7ce99012993833e",
-  "generatedAt": "2026-05-18T05:43:00.626Z"
+  "chainHash": "b82902efa728c966c7d392ace1cc74b86384657093ef9809d96c3ec7694fd4c4",
+  "generatedAt": "2026-07-18T22:01:41.463Z"
 }

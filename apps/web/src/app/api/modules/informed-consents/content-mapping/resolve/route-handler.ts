@@ -16,6 +16,7 @@ import type {
   ClinicalKnowledgeEducationMaterial,
   ClinicalKnowledgeIllustration,
 } from "@/lib/clinical-knowledge/types";
+import { resolveApprovedConsentSource } from "@/lib/server/approved-consent-source";
 
 export type ContentMappingResolveDependencies = {
   requireModuleOperationalAccess: (request: NextRequest, moduleKey: string) => Promise<AuthContext>;
@@ -36,6 +37,9 @@ export type ContentMappingResolveDependencies = {
   resolveContentMapping: (input: {
     procedure: string;
     tenantId: string;
+    procedureId?: string;
+    procedureCode?: string;
+    categoryCode?: string;
     preferredLanguage?: "en" | "ar" | "bilingual";
   }) => Promise<ContentMappingResult>;
   buildImcConsentPackage: (result: ContentMappingFound) => ImcConsentPackage;
@@ -58,6 +62,9 @@ export type ContentMappingResolveDependencies = {
   ) => Promise<ClinicalKnowledgeIllustration[]>;
 };
 
+const NO_APPROVED_CONSENT_MESSAGE =
+  "No approved consent form is linked to this procedure. Please link an approved consent form before sending.";
+
 function getTenantId(auth: { tenant_id?: string | null }, queryTenantId: string | null): string | null {
   if (queryTenantId) return queryTenantId;
   return auth.tenant_id ?? null;
@@ -68,6 +75,7 @@ function mapStaticConsentForm(
   form: MappedConsentForm,
 ): ClinicalKnowledgeConsentForm {
   const now = new Date().toISOString();
+  const sourceInfo = resolveApprovedConsentSource(form.publicPath);
   return {
     id: form.templateId,
     tenantId,
@@ -77,10 +85,17 @@ function mapStaticConsentForm(
     formType: form.templateCode as ClinicalKnowledgeConsentForm["formType"],
     riskLevel: "STANDARD",
     status: "PUBLISHED",
-    version: "v1.0",
-    effectiveDate: now,
+    version: form.version || "v1.0",
+    effectiveDate: form.effectiveDate || now,
     expiryDate: null,
-    governanceSnapshot: null,
+    governanceSnapshot: {
+      approvalStatus: form.approvalStatus,
+      sourcePath: form.sourcePath,
+      checksum: form.checksum,
+      effectiveDate: form.effectiveDate,
+      sourceAvailable: sourceInfo.available,
+      sourceKind: sourceInfo.sourceKind,
+    },
     pdfTemplateUrl: form.publicPath,
     requiresWitness: false,
     requiresInterpreter: false,
@@ -88,7 +103,19 @@ function mapStaticConsentForm(
     publishedByUserId: null,
     createdAt: now,
     updatedAt: now,
-    sections: [],
+    sections: (form.sections || []).map((section) => ({
+      id: section.id,
+      tenantId,
+      formId: form.templateId,
+      type: section.sectionKind,
+      orderIndex: section.sortOrder,
+      titleEn: section.titleEn,
+      titleAr: section.titleAr,
+      contentEn: section.contentEn,
+      contentAr: section.contentAr,
+      isRequired: section.isRequired,
+      isEditableByPhysician: section.isEditableByPhysician,
+    })),
   };
 }
 
@@ -164,6 +191,9 @@ export async function handleContentMappingResolve(
   const { searchParams } = new URL(request.url);
 
   const procedure = (searchParams.get("procedure") || "").trim();
+  const procedureId = (searchParams.get("procedureId") || "").trim() || undefined;
+  const procedureCode = (searchParams.get("procedureCode") || "").trim() || undefined;
+  const categoryCode = (searchParams.get("categoryCode") || "").trim() || undefined;
   const tenantId = getTenantId(auth, searchParams.get("tenantId"));
   const preferredLanguage = (searchParams.get("language") || "bilingual") as
     | "en"
@@ -212,6 +242,9 @@ export async function handleContentMappingResolve(
     source: "content-mapping-service",
     metadata: {
       procedure,
+      procedureId,
+      procedureCode,
+      categoryCode,
       tenantId,
       preferredLanguage,
       useCke,
@@ -254,6 +287,19 @@ export async function handleContentMappingResolve(
       }
 
       if (ckeResult.found) {
+        const consentForm = ckeResult.clinicalKnowledgeAssembly.consentForm;
+        if (consentForm) {
+          const sourceInfo = resolveApprovedConsentSource(consentForm.pdfTemplateUrl);
+          ckeResult.clinicalKnowledgeAssembly.consentForm = {
+            ...consentForm,
+            governanceSnapshot: {
+              ...(consentForm.governanceSnapshot || {}),
+              sourceAvailable: sourceInfo.available,
+              sourceKind: sourceInfo.sourceKind,
+            },
+          };
+        }
+
         return NextResponse.json({
           ok: true,
           found: true,
@@ -286,6 +332,9 @@ export async function handleContentMappingResolve(
   const result = await deps.resolveContentMapping({
     procedure,
     tenantId,
+    procedureId,
+    procedureCode,
+    categoryCode,
     preferredLanguage,
   });
 
@@ -310,6 +359,7 @@ export async function handleContentMappingResolve(
       ckeEnabled: false,
       procedureName: result.procedureName,
       availableProcedures: result.availableProcedures,
+      error: NO_APPROVED_CONSENT_MESSAGE,
     });
   }
 

@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   ProductionPatient,
   ProductionEncounter,
   ProductionAssembly,
@@ -25,9 +25,77 @@ export async function getPatientEncounters(mrn: string): Promise<ProductionEncou
   return Array.isArray(payload) ? payload : [];
 }
 
+export type ConsentFieldMappingReadiness = {
+  ok?: boolean;
+  source?: string;
+  formId: string;
+  slug?: string;
+  hasMapping: boolean;
+  verificationStatus: string;
+  sendBlocked: boolean;
+  blockers: string[];
+  requiredDoctorFields: Array<{
+    key: string;
+    labelEn: string;
+    section?: string;
+    type: string;
+  }>;
+  requiredAnesthesiaFields: Array<{
+    key: string;
+    labelEn: string;
+    section?: string;
+    type: string;
+    requiredWhen?: string;
+  }>;
+  requiredPatientFields: Array<{
+    key: string;
+    labelEn: string;
+    type: string;
+  }>;
+};
+
+export async function fetchConsentFieldMappingReadiness(formId: string): Promise<ConsentFieldMappingReadiness> {
+  const response = await fetch(
+    `/api/modules/informed-consents/forms/${encodeURIComponent(formId)}/field-mapping`,
+    {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    },
+  );
+
+  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+
+  if (!response.ok || payload.ok === false) {
+    throw new Error(String(payload.error || "Failed to load consent field mapping readiness."));
+  }
+
+  return {
+    ok: Boolean(payload.ok ?? true),
+    source: payload.source ? String(payload.source) : undefined,
+    formId: String(payload.formId || formId),
+    slug: payload.slug ? String(payload.slug) : undefined,
+    hasMapping: Boolean(payload.hasMapping),
+    verificationStatus: String(payload.verificationStatus || "MISSING"),
+    sendBlocked: Boolean(payload.sendBlocked),
+    blockers: Array.isArray(payload.blockers) ? payload.blockers.map(String) : [],
+    requiredDoctorFields: Array.isArray(payload.requiredDoctorFields)
+      ? payload.requiredDoctorFields as ConsentFieldMappingReadiness["requiredDoctorFields"]
+      : [],
+    requiredAnesthesiaFields: Array.isArray(payload.requiredAnesthesiaFields)
+      ? payload.requiredAnesthesiaFields as ConsentFieldMappingReadiness["requiredAnesthesiaFields"]
+      : [],
+    requiredPatientFields: Array.isArray(payload.requiredPatientFields)
+      ? payload.requiredPatientFields as ConsentFieldMappingReadiness["requiredPatientFields"]
+      : [],
+  };
+}
+
 export async function resolveContentMapping(args: {
   procedure: string;
   tenantId: string;
+  procedureId?: string;
+  procedureCode?: string;
+  categoryCode?: string;
   reviewMode?: boolean;
   patientContext?: {
     capacityStatus?: string;
@@ -54,6 +122,9 @@ export async function resolveContentMapping(args: {
   params.set("tenantId", args.tenantId);
   params.set("useCke", "true");
   params.set("language", args.patientContext?.languagePreference || "bilingual");
+  if (args.procedureId) params.set("procedureId", args.procedureId);
+  if (args.procedureCode) params.set("procedureCode", args.procedureCode);
+  if (args.categoryCode) params.set("categoryCode", args.categoryCode);
   if (args.reviewMode) {
     params.set("reviewMode", "true");
   }
@@ -65,18 +136,102 @@ export async function resolveContentMapping(args: {
     return { ok: false, found: false, error: String(payload.error || "Content mapping request failed.") };
   }
 
-  if (!payload.found) {
-    return { ok: true, found: false, error: String(payload.error || "No content mapping found for this procedure.") };
+  if (payload.clinicalKnowledgeAssembly) {
+    return {
+      ok: true,
+      found: true,
+      ckeEnabled: Boolean(payload.ckeEnabled ?? true),
+      clinicalKnowledgeAssembly: payload.clinicalKnowledgeAssembly as ProductionAssembly,
+    };
   }
 
-  return {
-    ok: true,
-    found: true,
-    ckeEnabled: Boolean(payload.ckeEnabled),
-    clinicalKnowledgeAssembly: payload.clinicalKnowledgeAssembly as ProductionAssembly | undefined,
-  };
-}
+  const mapping = (payload.mapping || payload.package || {}) as Record<string, unknown>;
+  const packageRecord = (payload.package || {}) as Record<string, unknown>;
+  const consentTemplate = (packageRecord.consentTemplate || mapping || {}) as Record<string, unknown>;
 
+  const resolvedProcedureId = String(
+    mapping.procedureId ||
+      mapping.templateId ||
+      mapping.id ||
+      args.procedureId ||
+      args.procedureCode ||
+      args.procedure ||
+      "procedure"
+  );
+
+  const resolvedProcedureCode = String(
+    mapping.procedureCode ||
+      mapping.templateCode ||
+      mapping.templateId ||
+      args.procedureCode ||
+      resolvedProcedureId
+  );
+
+  const procedureNameEn = String(
+    mapping.procedure ||
+      mapping.procedureNameEn ||
+      mapping.titleEn ||
+      args.procedure ||
+      "Clinical Procedure"
+  );
+
+  const procedureNameAr = String(mapping.procedureNameAr || mapping.titleAr || "");
+
+  const approvedPdfUrl = String(
+    consentTemplate.pdfUrl ||
+      consentTemplate.pdfTemplateUrl ||
+      consentTemplate.sourcePdfUrl ||
+      consentTemplate.approvedPdfUrl ||
+      mapping.pdfUrl ||
+      mapping.pdfTemplateUrl ||
+      mapping.sourcePdfUrl ||
+      mapping.approvedPdfUrl ||
+      ""
+  );
+
+  if (payload.ok === true && (payload.mapping || payload.package || payload.source === "forms_fallback_mapping")) {
+    const assembly = {
+      assemblyId: String(payload.assemblyId || `assembly-${resolvedProcedureId}`),
+      packageId: String(packageRecord.packageId || `package-${resolvedProcedureId}`),
+      procedureId: resolvedProcedureId,
+      procedureCode: resolvedProcedureCode,
+      procedureNameEn,
+      procedureNameAr,
+      status: "ready",
+      consentForm: {
+        id: String(consentTemplate.id || mapping.templateId || resolvedProcedureId),
+        code: String(consentTemplate.code || mapping.templateCode || resolvedProcedureCode),
+        titleEn: String(consentTemplate.titleEn || mapping.titleEn || procedureNameEn),
+        titleAr: String(consentTemplate.titleAr || mapping.titleAr || procedureNameAr),
+        formType: String(consentTemplate.formType || mapping.category || mapping.consentType || args.categoryCode || "procedure"),
+        riskLevel: String(consentTemplate.riskLevel || mapping.riskLevel || "medium"),
+        version: String(consentTemplate.version || mapping.version || "1.0"),
+        pdfTemplateUrl: approvedPdfUrl,
+        pdfUrl: approvedPdfUrl,
+        sourcePdfUrl: approvedPdfUrl,
+        approvedPdfUrl: approvedPdfUrl,
+        sourceAvailable: Boolean(approvedPdfUrl),
+        requiresWitness: Boolean(consentTemplate.requiresWitness || false),
+        requiresInterpreter: Boolean(consentTemplate.requiresInterpreter || false),
+      },
+      educationMaterials: [],
+      riskDisclosures: [],
+      illustrations: [],
+      suggestions: [],
+      blockers: [],
+      requiredParticipants: [],
+    } as ProductionAssembly;
+
+    return {
+      ok: true,
+      found: true,
+      ckeEnabled: true,
+      clinicalKnowledgeAssembly: assembly,
+    };
+  }
+
+  return { ok: true, found: false, error: String(payload.error || "No content mapping found for this procedure.") };
+}
 export async function sendSecureSigningLink(args: {
   tenantId: string;
   documentId: string;
@@ -152,6 +307,7 @@ export async function fetchTimeline(args: {
 export async function createConsentDocument(args: {
   caseId: string;
   templateId?: string;
+  approvedConsentFormId?: string;
   language?: "ar" | "en" | "bilingual";
   physicianName?: string;
   physicianSpecialty?: string;
@@ -176,6 +332,71 @@ export async function createConsentDocument(args: {
     status: String(doc.status),
     patientName: doc.patientName ? String(doc.patientName) : null,
     mrn: doc.mrn ? String(doc.mrn) : null,
+  };
+}
+
+export async function capturePhysicianSignatureForDocument(args: {
+  documentId: string;
+  signatureDataUrl: string;
+}): Promise<{
+  ok: true;
+  alreadyCaptured: boolean;
+  signatureId: string;
+  status: string;
+}> {
+  const response = await fetch(
+    `/api/modules/informed-consents/documents/${encodeURIComponent(args.documentId)}/physician-signature`,
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+
+      body: JSON.stringify({
+        signatureDataUrl:
+          args.signatureDataUrl,
+      }),
+    },
+  );
+
+  const payload =
+    (await response
+      .json()
+      .catch(() => ({}))) as Record<string, unknown>;
+
+  if (
+    !response.ok
+    || payload.ok !== true
+  ) {
+    throw new Error(
+      String(
+        payload.error
+        || "Failed to capture the treating physician signature.",
+      ),
+    );
+  }
+
+  return {
+    ok: true,
+
+    alreadyCaptured:
+      Boolean(
+        payload.alreadyCaptured,
+      ),
+
+    signatureId:
+      String(
+        payload.signatureId
+        || "",
+      ),
+
+    status:
+      String(
+        payload.status
+        || "",
+      ),
   };
 }
 
@@ -223,10 +444,88 @@ export async function checkSendEligibility(args: {
 export async function fetchProcedures(tenantId: string): Promise<
   ProductionProcedure[]
 > {
-  const response = await fetch(`/api/modules/clinical-content/procedures?tenantId=${encodeURIComponent(tenantId)}`);
+  const params = new URLSearchParams();
+  if (tenantId) params.set("tenantId", tenantId);
+
+  const response = await fetch(`/api/modules/informed-consents/imc-library?${params.toString()}`, {
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+  });
+
   const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
-  if (!response.ok || !payload.ok) {
+
+  if (!response.ok || payload.ok === false) {
     throw new Error(String(payload.error || "Failed to load procedures."));
   }
-  return Array.isArray(payload.procedures) ? (payload.procedures as ProductionProcedure[]) : [];
+
+  const sourceItems =
+    Array.isArray(payload.procedures)
+      ? payload.procedures
+      : Array.isArray(payload.items)
+        ? payload.items
+        : Array.isArray(payload.templates)
+          ? payload.templates
+          : [];
+
+  return sourceItems.map((item) => {
+    const record = item as Record<string, unknown>;
+
+    const id = String(record.id || record.templateId || record.templateCode || record.procedureCode || "");
+    const procedure = String(record.procedure || record.procedureName || record.titleEn || "Clinical Procedure");
+    const titleEn = String(record.titleEn || procedure);
+    const titleAr = String(record.titleAr || "");
+    const category = String(record.category || record.categoryCode || record.consentType || record.templateType || "procedure");
+    const specialty = String(record.specialty || record.department || "");
+
+    return {
+      id,
+      titleEn: procedure || titleEn,
+      titleAr,
+      procedureCode: String(record.procedureCode || id),
+      categoryCode: category,
+      consentType: category,
+      templateType: category,
+      specialty,
+      department: String(record.department || specialty),
+      riskLevel: String(record.riskLevel || "medium"),
+      source: String(record.source || "imc_library"),
+    } as ProductionProcedure;
+  }).filter((procedure) => Boolean(procedure.id));
+}
+
+
+
+
+export async function createDoctorCompletedDraftPdfPreview(
+  args: {
+    formId: string;
+    approvedPdfUrl: string;
+    doctorCompletionValues: Record<string, string>;
+    physicianSignatureDataUrl: string;
+  },
+  signal?: AbortSignal,
+): Promise<string> {
+  const response = await fetch(
+    "/api/modules/informed-consents/forms/" + encodeURIComponent(args.formId) + "/draft-pdf",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/pdf" },
+      cache: "no-store",
+      signal,
+      body: JSON.stringify({
+        approvedPdfUrl: args.approvedPdfUrl,
+        doctorCompletionValues: args.doctorCompletionValues,
+        physicianSignatureDataUrl:
+          args.physicianSignatureDataUrl,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    throw new Error(String(payload.error || "Failed to generate doctor-completed draft PDF."));
+  }
+
+  const blob = await response.blob();
+  return URL.createObjectURL(blob);
 }

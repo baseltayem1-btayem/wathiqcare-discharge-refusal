@@ -30,18 +30,20 @@ export function cls(
 /* ─── Bilingual labels (NO mock identity strings) ───────────────────────── */
 export const T = {
   ar: {
-    platformName: "وثيق كير",
+    platformName: "واثق كير",
     patientTitle: "بوابة المريض",
     physicianTitle: "محطة الطبيب",
     legalTitle: "لوحة الامتثال القانوني",
     language: "EN",
     secureNotice: "اتصال آمن ومشفر",
     journeySteps: [
-      "مراجعة الطلب",
+      "الرابط الآمن",
       "التحقق",
-      "التثقيف",
-      "الإقرار",
+      "اللغة",
+      "شرح الإجراء",
+      "مراجعة الموافقة",
       "التوقيع",
+      "تم",
     ],
     // Patient flow
     welcome: "مرحبًا بك",
@@ -111,11 +113,13 @@ export const T = {
     language: "AR",
     secureNotice: "Encrypted secure connection",
     journeySteps: [
-      "Review Request",
-      "Verify",
-      "Education",
-      "Acknowledge",
-      "Sign",
+      "Secure Link",
+      "Verification",
+      "Language",
+      "Procedure",
+      "Review",
+      "eSign",
+      "Done",
     ],
     welcome: "Welcome",
     landingSubtitle: "Verified medical consent platform",

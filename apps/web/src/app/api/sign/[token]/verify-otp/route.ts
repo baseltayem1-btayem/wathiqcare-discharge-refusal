@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySigningOtp } from "@/lib/server/public-signing-service";
+import { verifySigningOtp } from "@/lib/server/public-signing-otp-service";
 import { getPublicSigningSessionCookieName } from "@/lib/server/public-signing-session";
 import { ApiError } from "@/lib/server/http";
 

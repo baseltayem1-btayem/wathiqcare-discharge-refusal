@@ -40,32 +40,36 @@ export async function getApprovedIllustrationsForProcedureByNames(
   names: string[],
   asOf: Date = new Date(),
 ): Promise<ClinicalKnowledgeIllustration[]> {
-  const prisma = getPrisma();
   const normalizedNames = names.map((n) => n.trim()).filter(Boolean);
   if (normalizedNames.length === 0) return [];
 
-  const rows = await prisma.clinicalKnowledgeIllustration.findMany({
-    where: {
-      tenantId,
-      imageReviewStatus: "approved",
-      patientFacing: true,
-      AND: [
-        {
-          effectiveDate: { lte: asOf },
-          OR: [{ expiryDate: null }, { expiryDate: { gte: asOf } }],
-        },
-        {
-          OR: [
-            { procedureNameEn: { in: normalizedNames, mode: "insensitive" } },
-            { procedureNameAr: { in: normalizedNames, mode: "insensitive" } },
-            { synonyms: { hasSome: normalizedNames } },
-          ],
-        },
-      ],
-    },
-    orderBy: { updatedAt: "desc" },
-  });
-  return rows.map(mapIllustration);
+  try {
+    const prisma = getPrisma();
+    const rows = await prisma.clinicalKnowledgeIllustration.findMany({
+      where: {
+        tenantId,
+        imageReviewStatus: "approved",
+        patientFacing: true,
+        AND: [
+          {
+            effectiveDate: { lte: asOf },
+            OR: [{ expiryDate: null }, { expiryDate: { gte: asOf } }],
+          },
+          {
+            OR: [
+              { procedureNameEn: { in: normalizedNames, mode: "insensitive" } },
+              { procedureNameAr: { in: normalizedNames, mode: "insensitive" } },
+              { synonyms: { hasSome: normalizedNames } },
+            ],
+          },
+        ],
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+    return rows.map(mapIllustration);
+  } catch {
+    return [];
+  }
 }
 
 export async function getIllustrationsByProcedureId(
@@ -109,22 +113,26 @@ export async function getInternalReviewIllustrationsForProcedureByNames(
   tenantId: string,
   names: string[],
 ): Promise<ClinicalKnowledgeIllustration[]> {
-  const prisma = getPrisma();
   const normalizedNames = names.map((n) => n.trim()).filter(Boolean);
   if (normalizedNames.length === 0) return [];
 
-  const rows = await prisma.clinicalKnowledgeIllustration.findMany({
-    where: {
-      tenantId,
-      OR: [
-        { procedureNameEn: { in: normalizedNames, mode: "insensitive" } },
-        { procedureNameAr: { in: normalizedNames, mode: "insensitive" } },
-        { synonyms: { hasSome: normalizedNames } },
-      ],
-    },
-    orderBy: { updatedAt: "desc" },
-  });
-  return rows.map(mapIllustration);
+  try {
+    const prisma = getPrisma();
+    const rows = await prisma.clinicalKnowledgeIllustration.findMany({
+      where: {
+        tenantId,
+        OR: [
+          { procedureNameEn: { in: normalizedNames, mode: "insensitive" } },
+          { procedureNameAr: { in: normalizedNames, mode: "insensitive" } },
+          { synonyms: { hasSome: normalizedNames } },
+        ],
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+    return rows.map(mapIllustration);
+  } catch {
+    return [];
+  }
 }
 
 export async function getApprovedIllustrationsForDocument(
@@ -132,32 +140,38 @@ export async function getApprovedIllustrationsForDocument(
   plannedProcedure: string | null | undefined,
   asOf: Date = new Date(),
 ): Promise<ClinicalKnowledgeIllustration[]> {
-  const prisma = getPrisma();
   const normalized = (plannedProcedure || "").trim();
   if (!normalized) return [];
+  const prisma = getPrisma();
 
-  // Try to resolve a ClinicalProcedure by code or name (EN/AR). If found,
-  // return approved illustrations linked to that procedure. This keeps the
-  // lookup deterministic without requiring a foreign key on ConsentDocument.
-  const procedures = await prisma.clinicalProcedure.findMany({
-    where: {
-      tenantId,
-      OR: [
-        { code: { equals: normalized, mode: "insensitive" } },
-        { nameEn: { equals: normalized, mode: "insensitive" } },
-        { nameAr: { equals: normalized, mode: "insensitive" } },
-        { shortNameEn: { equals: normalized, mode: "insensitive" } },
-        { shortNameAr: { equals: normalized, mode: "insensitive" } },
-      ],
-    },
-    take: 1,
-    select: { id: true },
-  });
+  try {
+    // Try to resolve a ClinicalProcedure by code or name (EN/AR). If found,
+    // return approved illustrations linked to that procedure. This keeps the
+    // lookup deterministic without requiring a foreign key on ConsentDocument.
+    const procedures = await prisma.clinicalProcedure.findMany({
+      where: {
+        tenantId,
+        OR: [
+          { code: { equals: normalized, mode: "insensitive" } },
+          { nameEn: { equals: normalized, mode: "insensitive" } },
+          { nameAr: { equals: normalized, mode: "insensitive" } },
+          { shortNameEn: { equals: normalized, mode: "insensitive" } },
+          { shortNameAr: { equals: normalized, mode: "insensitive" } },
+        ],
+      },
+      take: 1,
+      select: { id: true },
+    });
 
-  const procedureId = procedures[0]?.id;
-  if (!procedureId) return [];
+    const procedureId = procedures[0]?.id;
+    if (!procedureId) return [];
 
-  return getApprovedIllustrationsForProcedure(tenantId, procedureId, asOf);
+    return getApprovedIllustrationsForProcedure(tenantId, procedureId, asOf);
+  } catch {
+    // Clinical knowledge tables are optional for preview UAT. Patient signing
+    // should continue without illustrations when that dataset is unavailable.
+    return [];
+  }
 }
 
 function mapIllustration(

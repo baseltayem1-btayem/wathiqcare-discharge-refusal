@@ -1,46 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
-import { sendModuleSecureSigningLink } from "@/lib/server/module-secure-signing-service";
+import {
+  sendModuleSecureSigningLink,
+  deriveSendRootOperationKey,
+  resolveTrustedPdfHash,
+} from "@/lib/server/module-secure-signing-service";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeConsentAudit } from "@/lib/server/consent-library-service";
 import { ApiError } from "@/lib/server/http";
+import { isAllowlistedRecipient } from "@/lib/server/workspace-consent-helpers";
+import { hashRecipient } from "@/lib/server/idempotency-core";
+import { resolveCanonicalCaseContact } from "@/lib/server/recipient-resolution-service";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-function envBool(key: string): boolean {
-  const raw = process.env[key]?.trim().toLowerCase();
-  return raw === "true" || raw === "1" || raw === "yes";
+function maskMobile(value: string): string {
+  return value.replace(/\d(?=\d{4})/g, "*");
 }
 
-function envList(key: string): string[] {
-  const raw = process.env[key]?.trim();
-  if (!raw) return [];
-  return raw.split(",").map((item) => item.trim()).filter(Boolean);
-}
-
-function normalizePhoneNumber(value: string): string {
-  const compact = value.replace(/[\s\-()]/g, "");
-  if (!compact) return "";
-  if (compact.startsWith("+")) return compact;
-  if (compact.startsWith("00")) return `+${compact.slice(2)}`;
-  if (compact.startsWith("966")) return `+${compact}`;
-  if (compact.startsWith("05") && compact.length === 10) return `+966${compact.slice(1)}`;
-  return `+${compact}`;
-}
-
-function normalizeRecipientEmail(value: string): string {
-  return value.trim().toLowerCase();
-}
-
-function isAllowlistedRecipient(mobileNumber: string, recipientEmail: string): boolean {
-  if (!envBool("FF_PATIENT_FACING_PILOT_SEND")) return false;
-  const allowedMobiles = envList("PILOT_PATIENT_SEND_ALLOWLIST_MOBILE").map(normalizePhoneNumber);
-  const allowedEmails = envList("PILOT_PATIENT_SEND_ALLOWLIST_EMAIL").map(normalizeRecipientEmail);
-  return Boolean(
-    (mobileNumber && allowedMobiles.includes(normalizePhoneNumber(mobileNumber))) ||
-    (recipientEmail && allowedEmails.includes(normalizeRecipientEmail(recipientEmail))),
-  );
+function maskEmail(value: string): string {
+  return value.replace(/(.{2}).*?(@.*)/, "$1***$2");
 }
 
 export async function POST(
@@ -57,8 +37,6 @@ export async function POST(
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const caseId = String(body.caseId || "").trim();
   const patientName = String(body.patientName || "").trim();
-  const mobileNumber = String(body.mobileNumber || "").trim();
-  const recipientEmail = String(body.recipientEmail || "").trim().toLowerCase();
   const physicianName = String((body.physicianName as string) || auth.email || "").trim();
   const locale = body.locale === "en" ? "en" : "ar";
 
@@ -66,9 +44,42 @@ export async function POST(
     return NextResponse.json({ ok: false, error: "caseId and patientName are required" }, { status: 400 });
   }
 
-  if (!mobileNumber && !recipientEmail) {
-    return NextResponse.json({ ok: false, error: "Patient mobile number or email is required" }, { status: 400 });
+  const prisma = getPrisma();
+  const document = await prisma.consentDocument.findFirst({
+    where: { id: documentId, tenantId, caseId },
+    select: {
+      id: true,
+      patientName: true,
+      status: true,
+      templateVersionId: true,
+      immutablePdfHash: true,
+      metadata: true,
+    },
+  });
+  if (!document) {
+    return NextResponse.json({ ok: false, error: "Consent document not found" }, { status: 404 });
   }
+
+  const approvedPdfHash = resolveTrustedPdfHash(document);
+  if (!approvedPdfHash) {
+    return NextResponse.json(
+      { ok: false, error: "Approved PDF hash is missing or untrusted for secure signing" },
+      { status: 422 },
+    );
+  }
+
+  const canonicalContacts = await resolveCanonicalCaseContact({
+    tenantId,
+    caseId,
+  });
+  if (!canonicalContacts?.mobile && !canonicalContacts?.email) {
+    return NextResponse.json(
+      { ok: false, error: "Patient contact details missing" },
+      { status: 422 },
+    );
+  }
+  const mobileNumber = canonicalContacts.mobile ?? "";
+  const recipientEmail = canonicalContacts.email ?? "";
 
   if (!isAllowlistedRecipient(mobileNumber, recipientEmail)) {
     return NextResponse.json(
@@ -77,14 +88,23 @@ export async function POST(
     );
   }
 
-  const prisma = getPrisma();
-  const document = await prisma.consentDocument.findFirst({
-    where: { id: documentId, tenantId, caseId },
-    select: { id: true, patientName: true, status: true },
+  const docMetadata = (document.metadata || {}) as Record<string, unknown>;
+  const approvedConsentFormKey =
+    typeof docMetadata.approvedConsentFormCode === "string"
+      ? docMetadata.approvedConsentFormCode
+      : undefined;
+
+  const serverKey = deriveSendRootOperationKey({
+    tenantId,
+    caseId,
+    documentId,
+    approvedConsentFormKey,
+    approvedTemplateVersionId: document.templateVersionId || undefined,
+    immutablePdfHash: approvedPdfHash,
+    mobileNumber,
+    recipientEmail,
+    locale: locale as "ar" | "en",
   });
-  if (!document) {
-    return NextResponse.json({ ok: false, error: "Consent document not found" }, { status: 404 });
-  }
 
   try {
     const workflow = await sendModuleSecureSigningLink({
@@ -98,9 +118,14 @@ export async function POST(
       mobileNumber,
       recipientEmail,
       locale: locale as "ar" | "en",
+      baseUrl: request.nextUrl.origin,
+      approvedConsentFormKey,
+      approvedTemplateVersionId: document.templateVersionId || undefined,
+      immutablePdfHash: approvedPdfHash,
+      idempotencyKey: serverKey,
     });
 
-    // Persist recipient contact details on the document for downstream use.
+    // Persist only non-sensitive workflow identifiers on the document.
     const existingDoc = await prisma.consentDocument.findFirst({
       where: { id: documentId, tenantId },
       select: { metadata: true },
@@ -113,9 +138,9 @@ export async function POST(
           ...existingMetadata,
           secureSigningWorkflow: {
             ...(existingMetadata.secureSigningWorkflow as Record<string, unknown> ?? {}),
-            recipientEmail: workflow.recipientEmail,
-            mobileNumber: workflow.recipientMobile,
-            sentAt: new Date().toISOString(),
+            sessionId: workflow.sessionId,
+            dispatchStatuses: workflow.dispatchStatuses,
+            queuedAt: new Date().toISOString(),
           },
         },
       },
@@ -125,18 +150,15 @@ export async function POST(
       tenantId,
       auth,
       action: "signing_link_created",
-      summary: `Secure signing link created for document ${documentId} (session ${workflow.sessionId})`,
+      summary: `Secure signing session created for document ${documentId} (session ${workflow.sessionId})`,
       source: "informed-consents-documents-secure-signing",
       caseId,
       consentDocumentId: documentId,
       metadata: {
         sessionId: workflow.sessionId,
-        tokenHash: workflow.tokenHash,
-        signingUrl: workflow.signingUrl,
-        mobileNumber: workflow.recipientMobile,
-        recipientEmail: workflow.recipientEmail,
-        smsDeliveryStatus: workflow.smsDeliveryStatus,
-        emailDeliveryStatus: workflow.emailDeliveryStatus,
+        mobileHash: mobileNumber ? hashRecipient(mobileNumber, { tenantId }) : null,
+        emailHash: recipientEmail ? hashRecipient(recipientEmail, { tenantId }) : null,
+        dispatchStatuses: workflow.dispatchStatuses,
         locale,
       },
       request,

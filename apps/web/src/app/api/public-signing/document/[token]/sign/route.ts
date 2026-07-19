@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { submitPublicSigningSignature } from "@/lib/server/public-signing-service";
+import { submitPublicSigningSignature } from "@/lib/server/public-signing-signature-service";
 import { ApiError } from "@/lib/server/http";
 
 export async function POST(

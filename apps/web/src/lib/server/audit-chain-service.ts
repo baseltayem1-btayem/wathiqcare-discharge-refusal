@@ -7,6 +7,53 @@ import { toIsoString } from "@/lib/server/compliance-utils";
 
 const prisma = () => getPrisma();
 
+const AUDIT_CHAIN_SCHEMA_STATEMENTS = [
+  `
+    CREATE TABLE IF NOT EXISTS audit_chain_events (
+      id VARCHAR PRIMARY KEY,
+      tenant_id VARCHAR NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      case_id VARCHAR REFERENCES cases(id) ON DELETE SET NULL,
+      event_type VARCHAR NOT NULL,
+      actor_id VARCHAR,
+      actor_role VARCHAR,
+      source_ip VARCHAR,
+      device_info VARCHAR,
+      session_info VARCHAR,
+      previous_hash VARCHAR,
+      current_hash VARCHAR NOT NULL UNIQUE,
+      payload_summary VARCHAR NOT NULL,
+      document_version VARCHAR,
+      metadata_json JSONB,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_audit_chain_events_case
+      ON audit_chain_events(tenant_id, case_id, created_at ASC)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_audit_chain_events_event_type
+      ON audit_chain_events(tenant_id, event_type, created_at ASC)
+  `,
+];
+
+let auditChainSchemaBootstrapPromise: Promise<void> | null = null;
+
+async function ensureAuditChainSchema() {
+  if (!auditChainSchemaBootstrapPromise) {
+    auditChainSchemaBootstrapPromise = (async () => {
+      for (const statement of AUDIT_CHAIN_SCHEMA_STATEMENTS) {
+        await prisma().$executeRawUnsafe(statement);
+      }
+    })().catch((error) => {
+      auditChainSchemaBootstrapPromise = null;
+      throw error;
+    });
+  }
+
+  return auditChainSchemaBootstrapPromise;
+}
+
 type AuditChainEventDelegate = {
   findFirst: (args: unknown) => Promise<{ currentHash?: string | null } | null>;
   create: (args: unknown) => Promise<unknown>;
@@ -188,6 +235,7 @@ export async function appendAuditChainEventInTransaction(
   tx: PrismaClient | Prisma.TransactionClient,
 ) {
   validateAppendAuditChainEventArgs(args);
+  await ensureAuditChainSchema();
 
   const previous = await tx.auditChainEvent.findFirst({
     where: {
@@ -213,6 +261,7 @@ export async function appendAuditChainEvent(
   }
 
   validateAppendAuditChainEventArgs(args);
+  await ensureAuditChainSchema();
 
   const auditChainEvent = getAuditChainEventDelegate();
 
@@ -232,6 +281,7 @@ export async function appendAuditChainEvent(
 }
 
 export async function getCaseAuditChain(tenantId: string, caseId: string) {
+  await ensureAuditChainSchema();
   const auditChainEvent = getAuditChainEventDelegate();
 
   const events = await auditChainEvent.findMany({

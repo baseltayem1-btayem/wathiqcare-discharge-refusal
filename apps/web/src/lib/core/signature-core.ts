@@ -13,7 +13,12 @@
 
 import crypto from "crypto";
 import { SIGNATURE_CONFIG } from "@/lib/config/platform-config";
-import { ENABLE_EXTERNAL_SIGNATURES, ENABLE_SECURE_SIGNING_LINKS } from "@/lib/config/feature-flags";
+import { resolveTrustedSigningBaseUrl } from "@/lib/server/signing-url-config";
+import {
+  ENABLE_EXTERNAL_SIGNATURES,
+  ENABLE_IMC_PILOT_PATIENTS,
+  ENABLE_SECURE_SIGNING_LINKS,
+} from "@/lib/config/feature-flags";
 
 // ---------------------------------------------------------------------------
 // Signer Types
@@ -54,6 +59,8 @@ export interface SigningSessionInput {
   expiryHours?: number;
   /** Actor who initiated */
   initiatedBy: string;
+  /** Preferred locale for signer communications */
+  locale?: "ar" | "en";
 }
 
 export interface SigningSession {
@@ -95,7 +102,7 @@ export function generateSecureSigningToken(): string {
  * Route must be registered in the Next.js app under /sign/[token].
  */
 export function buildSigningUrl(token: string, baseUrl?: string): string {
-  const base = baseUrl ?? process.env.NEXTAUTH_URL ?? "https://wathiqcare.online";
+  const base = resolveTrustedSigningBaseUrl(baseUrl);
   return `${base}/sign/${encodeURIComponent(token)}`;
 }
 
@@ -167,7 +174,7 @@ export interface ISignatureProvider {
 // ---------------------------------------------------------------------------
 
 export function assertSignaturesEnabled(): void {
-  if (!ENABLE_EXTERNAL_SIGNATURES) {
+  if (!ENABLE_EXTERNAL_SIGNATURES && !(process.env.VERCEL_ENV === "preview" && ENABLE_IMC_PILOT_PATIENTS)) {
     throw new SignatureDisabledError(
       "External signatures are disabled by feature flag FF_ENABLE_EXTERNAL_SIGNATURES."
     );
@@ -175,7 +182,7 @@ export function assertSignaturesEnabled(): void {
 }
 
 export function assertSecureLinksEnabled(): void {
-  if (!ENABLE_SECURE_SIGNING_LINKS) {
+  if (!ENABLE_SECURE_SIGNING_LINKS && !(process.env.VERCEL_ENV === "preview" && ENABLE_IMC_PILOT_PATIENTS)) {
     throw new SignatureDisabledError(
       "Secure signing links are disabled by feature flag FF_ENABLE_SECURE_SIGNING_LINKS."
     );

@@ -10,38 +10,7 @@
  */
 
 import { SIGNATURE_CONFIG } from "@/lib/config/platform-config";
-import { logRuntimeEvent } from "@/lib/server/runtime-observability";
-
-function maskPhone(value: string): string {
-  const digits = value.replace(/\D/g, "");
-  if (digits.length <= 4) {
-    return "[REDACTED_PHONE]";
-  }
-  return `${digits.slice(0, 3)}****${digits.slice(-2)}`;
-}
-
-/**
- * Normalize a Saudi mobile number to the proxy/Taqnyat-successful format:
- * 9665XXXXXXXX without a leading '+'.
- */
-function normalizeSaudiMobileForSms(recipient: string): string {
-  let digits = recipient.replace(/\D/g, "");
-
-  if (digits.startsWith("+")) {
-    digits = digits.slice(1);
-  }
-  if (digits.startsWith("00")) {
-    digits = digits.slice(2);
-  }
-  if (digits.startsWith("0") && digits.length === 10) {
-    digits = `966${digits.slice(1)}`;
-  }
-  if (digits.startsWith("5") && digits.length === 9) {
-    digits = `966${digits}`;
-  }
-
-  return digits;
-}
+import { getEnvironmentConfig } from "@/lib/environment/environment";
 
 export interface SmsDeliveryResult {
   messageId?: string;
@@ -95,16 +64,17 @@ export class TaqniatSmsAdapter {
    */
   async send(message: SmsMessage): Promise<SmsDeliveryResult> {
     if (!this.isConfigured) {
-      logRuntimeEvent({
-        module: "sms_adapter",
-        event: "taqniat_stub_mode",
-        severity: "warn",
-        details: {
-          to: maskPhone(message.to),
-          bodyPreview: message.body.substring(0, 50),
-          reason: "no_provider_configured",
-        },
-      });
+      const isProduction = getEnvironmentConfig().isProduction;
+      if (isProduction) {
+        return {
+          status: "failed",
+          error: `Taqniat SMS is not configured in production. Set ${SIGNATURE_CONFIG.taqniatApiKeyEnv}.`,
+        };
+      }
+      console.warn(
+        `[TaqniatSmsAdapter] Not configured — stub mode. Set ${SIGNATURE_CONFIG.taqniatApiKeyEnv}.`,
+        { to: message.to, bodyPreview: message.body.substring(0, 50) }
+      );
       return { status: "stub" };
     }
 

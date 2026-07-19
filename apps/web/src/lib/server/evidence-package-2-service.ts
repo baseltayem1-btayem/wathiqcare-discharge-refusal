@@ -1,5 +1,3 @@
-import "server-only";
-
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { getPrisma } from "@/lib/server/prisma";
 import type { AuthContext } from "@/lib/server/auth";
@@ -126,6 +124,78 @@ function maxDate(values: Array<Date | null | undefined>): Date | null {
   return valid.sort((a, b) => b.getTime() - a.getTime())[0];
 }
 
+const EVIDENCE_SCHEMA_STATEMENTS = [
+  `
+    CREATE TABLE IF NOT EXISTS evidence_events (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      tenant_id UUID NOT NULL,
+      package_id UUID,
+      case_id UUID,
+      consent_document_id UUID,
+      event_type TEXT NOT NULL,
+      event_timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      sequence_no INT,
+      procedure_name TEXT,
+      education_version TEXT,
+      education_language TEXT,
+      assets_presented INT,
+      images_presented INT,
+      videos_presented INT,
+      pdfs_presented INT,
+      education_viewed BOOLEAN,
+      view_duration_seconds INT,
+      consent_template TEXT,
+      consent_version TEXT,
+      consent_language TEXT,
+      consent_timestamp TIMESTAMPTZ,
+      signer_identity TEXT,
+      signature_timestamp TIMESTAMPTZ,
+      browser TEXT,
+      device_type TEXT,
+      ip_address TEXT,
+      otp_sent_time TIMESTAMPTZ,
+      otp_verification_time TIMESTAMPTZ,
+      otp_verification_status TEXT,
+      masked_mobile_number TEXT,
+      metadata JSONB,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_evidence_events_tenant_type_time
+      ON evidence_events (tenant_id, event_type, event_timestamp)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_evidence_events_case_time
+      ON evidence_events (tenant_id, case_id, event_timestamp)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_evidence_events_consent_time
+      ON evidence_events (tenant_id, consent_document_id, event_timestamp)
+  `,
+];
+
+let ensureEvidenceSchemaPromise: Promise<void> | null = null;
+
+async function ensureEvidenceSchema(): Promise<void> {
+  if (!ensureEvidenceSchemaPromise) {
+    ensureEvidenceSchemaPromise = (async () => {
+      const prisma = getPrisma();
+      for (const statement of EVIDENCE_SCHEMA_STATEMENTS) {
+        await prisma.$executeRawUnsafe(statement);
+      }
+    })().finally(() => {
+      ensureEvidenceSchemaPromise = null;
+    });
+  }
+
+  await ensureEvidenceSchemaPromise;
+}
+
+export async function ensureEvidenceEventSchema(): Promise<void> {
+  await ensureEvidenceSchema();
+}
+
 export async function recordEvidenceEvent(
   input: {
     tenantId: string;
@@ -161,6 +231,7 @@ export async function recordEvidenceEvent(
   },
   tx?: PrismaClient | Prisma.TransactionClient,
 ) {
+  await ensureEvidenceSchema();
   const client = tx ?? getPrisma();
   try {
     return await client.evidenceEvent.create({
@@ -214,7 +285,183 @@ export async function recordEvidenceEvent(
   }
 }
 
-export async function buildEvidencePackageV2(auth: AuthContext, consentDocumentId: string) {
+export async function recordConsentTimelineEvent(
+  input: {
+    tenantId: string;
+    consentDocumentId: string;
+    signingSessionId?: string;
+    action: string;
+    actorUserId?: string | null;
+    actorRole?: string | null;
+    deviceInfo?: string | null;
+    ipAddress?: string | null;
+    userAgent?: string | null;
+    metadata?: JsonObject;
+  },
+  tx?: PrismaClient | Prisma.TransactionClient,
+) {
+  const client = tx ?? getPrisma();
+  return client.consentTimelineEvent.create({
+    data: {
+      tenantId: input.tenantId,
+      consentDocumentId: input.consentDocumentId,
+      action: input.action,
+      actorUserId: input.actorUserId ?? null,
+      actorRole: input.actorRole ?? null,
+      deviceInfo: input.deviceInfo ?? null,
+      ipAddress: input.ipAddress ?? null,
+      userAgent: input.userAgent ?? null,
+      metadata: input.metadata as Prisma.InputJsonValue,
+    },
+  });
+}
+
+export type EvidenceTimelineRecord = {
+  key: string;
+  label: string;
+  occurredAt: Date;
+  actorRole?: string | null;
+  metadata?: JsonObject;
+};
+
+export function buildEvidenceTimelineRecords(args: {
+  doc: {
+    id: string;
+    caseId: string | null;
+    createdAt: Date;
+    status: string;
+    outcome?: string | null;
+    finalPdfHash?: string | null;
+  };
+  signatures: Array<{
+    role: string;
+    signerName: string;
+    signedAt: Date;
+    outcome?: string | null;
+  }>;
+  signingSession?: {
+    id: string;
+    createdAt: Date;
+    status: string;
+    otpVerifiedAt?: Date | null;
+    linkOpenedAt?: Date | null;
+    dispatches?: Array<{
+      channel: string;
+      status: string;
+      sentAt?: Date | null;
+      deliveredAt?: Date | null;
+      lastErrorCode?: string | null;
+    }>;
+  } | null;
+  educationEvents: Array<{ createdAt: Date; action: string; metadata?: JsonObject }>;
+  otpRows: Array<{ event_type: string; created_at: Date | string; raw_payload?: unknown }>;
+  finalPdfHash?: string | null;
+}): EvidenceTimelineRecord[] {
+  const records: EvidenceTimelineRecord[] = [];
+
+  records.push({
+    key: "SESSION_CREATED",
+    label: "Secure signing session created",
+    occurredAt: args.signingSession?.createdAt ?? args.doc.createdAt,
+    actorRole: "system",
+    metadata: args.signingSession
+      ? { sessionId: args.signingSession.id, status: args.signingSession.status }
+      : undefined,
+  });
+
+  const dispatches = args.signingSession?.dispatches ?? [];
+  for (const dispatch of dispatches) {
+    const occurredAt = dispatch.deliveredAt ?? dispatch.sentAt ?? args.signingSession?.createdAt ?? args.doc.createdAt;
+    records.push({
+      key: "DISPATCHED",
+      label: `${dispatch.channel} dispatch: ${dispatch.status}`,
+      occurredAt,
+      actorRole: "system",
+      metadata: {
+        channel: dispatch.channel,
+        status: dispatch.status,
+        lastErrorCode: dispatch.lastErrorCode,
+      },
+    });
+  }
+
+  if (args.signingSession?.linkOpenedAt) {
+    records.push({
+      key: "LINK_OPENED",
+      label: "Patient opened signing link",
+      occurredAt: args.signingSession.linkOpenedAt,
+      actorRole: "patient",
+    });
+  }
+
+  const otpVerified = args.otpRows.find((row) => row.event_type === "OTP_VERIFIED");
+  if (otpVerified) {
+    records.push({
+      key: "OTP_VERIFIED",
+      label: "OTP verified",
+      occurredAt: toDate(otpVerified.created_at) ?? args.doc.createdAt,
+      actorRole: "patient",
+    });
+  }
+
+  const educationPresented = args.educationEvents.find((event) =>
+    event.action.startsWith("EDUCATION_PRESENTED"),
+  );
+  if (educationPresented) {
+    records.push({
+      key: "EDUCATION_VIEWED",
+      label: "Education material viewed",
+      occurredAt: educationPresented.createdAt,
+      actorRole: "patient",
+    });
+  }
+
+  for (const signature of args.signatures) {
+    const outcome = signature.outcome ?? args.doc.outcome;
+    const key = outcome === "REFUSED" ? "DECISION_REFUSED" : "SIGNATURE_CAPTURED";
+    const label = outcome === "REFUSED"
+      ? `Refusal signature captured (${signature.role})`
+      : `Signature captured (${signature.role})`;
+    records.push({
+      key,
+      label,
+      occurredAt: signature.signedAt,
+      actorRole: signature.role.toLowerCase(),
+      metadata: {
+        signerName: signature.signerName,
+        signerRole: signature.role,
+        outcome,
+      },
+    });
+  }
+
+  if (args.doc.outcome === "REFUSED" || args.doc.outcome === "CONSENTED" || args.doc.outcome === "GUARDIAN_SIGNED") {
+    records.push({
+      key: "PDF_FINALIZED",
+      label: "Final PDF generated and evidence package finalized",
+      occurredAt: new Date(),
+      actorRole: "system",
+      metadata: {
+        outcome: args.doc.outcome,
+        finalPdfHash: args.finalPdfHash ?? args.doc.finalPdfHash,
+      },
+    });
+  }
+
+  return records
+    .filter((record) => record.occurredAt && !Number.isNaN(record.occurredAt.getTime()))
+    .sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
+}
+
+export async function buildEvidencePackageV2(
+  auth: AuthContext,
+  consentDocumentId: string,
+  options?: {
+    signingSessionId?: string;
+    finalPdfHash?: string;
+    patientCopyDeliveryStatus?: string;
+  },
+) {
   const tenantId = (auth.tenant_id || "").trim();
   if (!tenantId) {
     throw new ApiError(400, "Missing tenant context");
@@ -229,6 +476,11 @@ export async function buildEvidencePackageV2(auth: AuthContext, consentDocumentI
       signatures: { orderBy: { signedAt: "asc" } },
       auditEvents: { orderBy: { createdAt: "asc" } },
       timelineEvents: { orderBy: { createdAt: "asc" } },
+      signingSessions: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        include: { dispatches: true },
+      },
     },
   });
 
@@ -310,38 +562,57 @@ export async function buildEvidencePackageV2(auth: AuthContext, consentDocumentI
     consentTimestamp,
   });
 
-  const timelineRecords = [
-    {
-      key: "MRN_SELECTED",
-      label: "MRN Selected",
-      occurredAt: doc.case?.createdAt ?? doc.createdAt,
+  const signingSession =
+    doc.signingSessions?.find((session) =>
+      options?.signingSessionId ? session.id === options.signingSessionId : true,
+    ) ?? null;
+
+  const outcome =
+    doc.outcome && doc.outcome !== "PENDING"
+      ? doc.outcome
+      : latestSignature?.outcome ?? "PENDING";
+
+  const finalPdfHash = options?.finalPdfHash ?? doc.finalPdfHash ?? latestSignature?.signatureHash ?? null;
+
+  const timelineRecords = buildEvidenceTimelineRecords({
+    doc: {
+      id: doc.id,
+      caseId: doc.caseId,
+      createdAt: doc.createdAt,
+      status: doc.status,
+      outcome,
+      finalPdfHash,
     },
-    {
-      key: "EDUCATION_VIEWED",
-      label: "Education Viewed",
-      occurredAt: educationViewedAt,
-    },
-    {
-      key: "CONSENT_OPENED",
-      label: "Consent Opened",
-      occurredAt: doc.createdAt,
-    },
-    {
-      key: "SIGNATURE_APPLIED",
-      label: "Signature Applied",
-      occurredAt: firstSignature?.signedAt ?? null,
-    },
-    {
-      key: "OTP_VERIFIED",
-      label: "OTP Verified",
-      occurredAt: otpVerificationTime,
-    },
-    {
-      key: "EVIDENCE_GENERATED",
-      label: "Evidence Generated",
-      occurredAt: new Date(),
-    },
-  ].filter((entry) => entry.occurredAt !== null) as Array<{ key: string; label: string; occurredAt: Date }>;
+    signatures: doc.signatures.map((signature) => ({
+      role: signature.role,
+      signerName: signature.signerName,
+      signedAt: signature.signedAt,
+      outcome: signature.outcome,
+    })),
+    signingSession: signingSession
+      ? {
+          id: signingSession.id,
+          createdAt: signingSession.createdAt,
+          status: signingSession.status,
+          otpVerifiedAt: signingSession.otpVerifiedAt,
+          linkOpenedAt: signingSession.linkOpenedAt,
+          dispatches: signingSession.dispatches.map((dispatch) => ({
+            channel: dispatch.channel,
+            status: dispatch.status,
+            sentAt: dispatch.sentAt,
+            deliveredAt: dispatch.deliveredAt,
+            lastErrorCode: dispatch.lastErrorCode,
+          })),
+        }
+      : null,
+    educationEvents: educationEvents.map((event) => ({
+      createdAt: event.createdAt,
+      action: event.action,
+      metadata: asRecord(event.metadata),
+    })),
+    otpRows,
+    finalPdfHash,
+  });
 
   const timelineSummary = timelineRecords
     .map((entry) => `${entry.label}: ${entry.occurredAt.toISOString()}`)
@@ -352,6 +623,7 @@ export async function buildEvidencePackageV2(auth: AuthContext, consentDocumentI
       tenantId,
       caseId: doc.caseId,
       consentDocumentId: doc.id,
+      signingSessionId: signingSession?.id ?? options?.signingSessionId ?? null,
       mrn: doc.mrn || doc.case?.medicalRecordNo || null,
       procedureName,
       educationVersion,
@@ -374,6 +646,9 @@ export async function buildEvidencePackageV2(auth: AuthContext, consentDocumentI
       educationSummary,
       consentSummary,
       timelineSummary,
+      outcome,
+      finalPdfHash,
+      patientCopyDeliveryStatus: options?.patientCopyDeliveryStatus ?? doc.patientCopyDeliveryStatus ?? null,
       metadata: {
         source: "phase24-evidence-package-2",
         educationEventCount: educationEvents.length,
@@ -423,6 +698,18 @@ export async function buildEvidencePackageV2(auth: AuthContext, consentDocumentI
         otpRequestEventId,
         otpVerifyEventId,
         signatureHash: latestSignatureHash,
+      },
+    });
+    await recordConsentTimelineEvent({
+      tenantId,
+      consentDocumentId: doc.id,
+      signingSessionId: signingSession?.id ?? options?.signingSessionId ?? undefined,
+      action: item.key,
+      actorRole: item.actorRole ?? "system",
+      metadata: {
+        ...item.metadata,
+        label: item.label,
+        packageId: pkg.id,
       },
     });
     sequenceNo += 10;

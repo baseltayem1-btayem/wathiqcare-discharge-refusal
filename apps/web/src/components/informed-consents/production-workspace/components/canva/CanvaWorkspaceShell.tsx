@@ -9,11 +9,11 @@ import type { PhysicianContext } from "../../types";
 
 function PilotBadge() {
   return (
-    <div className="mx-2 mb-2 px-2 py-1 rounded-md bg-amber-50 border border-amber-200">
-      <p className="text-[9px] font-semibold text-amber-700 uppercase tracking-wide">
+    <div className="mx-2 mb-4 rounded-2xl border border-[#e7d6a3] bg-[linear-gradient(135deg,#fff9eb_0%,#fff3cf_100%)] px-3 py-3 shadow-[0_10px_24px_rgba(200,162,74,0.16)]">
+      <p className="text-[10px] font-semibold text-[#8f6d1b] uppercase tracking-[0.2em]">
         IMC Physician Pilot
       </p>
-      <p className="text-[8px] text-amber-600">Internal Use Only</p>
+      <p className="mt-1 text-[11px] leading-5 text-[#9a7b2f]">Internal clinical workspace for approved consent operations.</p>
     </div>
   );
 }
@@ -38,39 +38,37 @@ export function CanvaWorkspaceShell({
   return (
     <div
       className={cn(
-        "canva-workspace-root flex w-full h-screen overflow-hidden bg-[#f8fafc]",
+        "canva-workspace-root flex min-h-screen w-full bg-slate-50",
         isRtl && "canva-workspace-rtl"
       )}
       dir={isRtl ? "rtl" : "ltr"}
     >
       {/* Sidebar */}
-      <aside className="w-[200px] bg-white border-r border-slate-200 flex flex-col shrink-0 h-full">
-        <div className="p-3 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
-              <span className="text-white font-bold text-xs">W</span>
-            </div>
-            <div>
-              <p className="font-semibold text-xs text-slate-800">WathiqCare</p>
-              <p className="text-[9px] text-slate-500">Informed Consent</p>
-            </div>
+      <aside className="hidden w-64 shrink-0 flex-col bg-[#10263f] text-slate-200 lg:flex">
+        <div className="flex items-center gap-2.5 px-5 py-5">
+          <span className="flex size-9 items-center justify-center rounded-xl bg-[#2463eb] text-white">
+            <span className="text-sm font-bold">W</span>
+          </span>
+          <div className="leading-tight">
+            <p className="text-sm font-semibold text-white">WathiqCare</p>
+            <p className="text-[11px] text-slate-300">Informed Consent</p>
           </div>
         </div>
 
-        <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 overflow-y-auto px-3 py-2">
           <PilotBadge />
           <CanvaWorkspaceNav activePage={activePage} onPageChange={onPageChange} pilotMode />
         </nav>
 
-        <div className="p-3 border-t border-slate-100">
+        <div className="border-t border-slate-700 p-3">
           <CanvaSidebarProfile physician={physician} />
         </div>
       </aside>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col overflow-hidden h-full">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {topBar}
-        <main className="flex-1 overflow-y-auto p-4 space-y-3">{children}</main>
+        <main className="flex-1 px-5 py-6 lg:px-8">{children}</main>
       </div>
     </div>
   );

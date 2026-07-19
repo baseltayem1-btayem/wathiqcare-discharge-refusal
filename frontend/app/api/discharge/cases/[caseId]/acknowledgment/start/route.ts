@@ -1,11 +1,9 @@
-import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
-import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { buildAcknowledgmentMethods } from "../method-availability";
 type RouteContext = { params: Promise<{ caseId: string }> };
@@ -38,19 +36,6 @@ function normalizeMethod(raw: string): string {
     const upper = raw.trim().toUpperCase();
     if (!SUPPORTED_METHODS.has(upper)) throw new ApiError(400, "طريقة الإقرار غير مدعومة");
     return upper;
-}
-
-function generateOtp(): string {
-    return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-function hashOtp(code: string): string {
-    return crypto.createHash("sha256").update(code).digest("hex");
-}
-
-function maskPhone(phone: string): string {
-    if (phone.length <= 4) return "****";
-    return phone.slice(0, -4).replace(/./g, "*") + phone.slice(-4);
 }
 
 function safe(v: unknown): string {
@@ -208,7 +193,6 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         const inputPayload = (body.payload ?? {}) as Record<string, unknown>;
 
         // Verify case ownership
-        const prisma = getPrisma();
         const caseRecord = await prisma.case.findUnique({ where: { id: caseId } });
         if (!caseRecord) throw new ApiError(404, "Case not found");
         if (caseRecord.tenantId !== auth.tenant_id) throw new ApiError(403, "Tenant access denied");
@@ -239,19 +223,6 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         if (method === "TABLET_SIGNATURE") {
             sessionState.verification_status = "awaiting_signature";
             sessionState.provider_result = { device_source: "TABLET" } as Record<string, unknown>;
-
-            // Optional mobile OTP linkage (kept for backward compatibility)
-            const phone = safe(inputPayload.phone_number);
-            if (phone) {
-                const otpCode = generateOtp();
-                const otpHash = hashOtp(otpCode);
-                sessionState.otp_code_hash = otpHash;
-                sessionState.phone_number_masked = maskPhone(phone);
-                sessionState.otp_sent_at = nowIso();
-                (sessionState.provider_result as Record<string, unknown>).otp_debug_code = otpCode;
-                (sessionState.provider_result as Record<string, unknown>).stub_mode = true;
-                (sessionState.provider_result as Record<string, unknown>).challenge_id = crypto.randomUUID();
-            }
         } else if (method === "EMAIL_NOTICE") {
             const email = safe(inputPayload.email ?? inputPayload.patient_email);
             if (!email) throw new ApiError(400, "email is required for EMAIL_NOTICE");

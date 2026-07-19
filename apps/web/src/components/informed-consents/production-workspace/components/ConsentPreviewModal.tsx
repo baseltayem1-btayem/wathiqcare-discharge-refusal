@@ -1,4 +1,5 @@
 "use client";
+import { isAssemblyApprovedPdfSourceVerified, resolveAssemblyApprovedPdfUrl } from "../utils/approvedPdfSource";
 
 import { useMemo } from "react";
 import { Eye, AlertTriangle, Check, X } from "lucide-react";
@@ -13,6 +14,7 @@ import {
 } from "@/components/design-system";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { ClinicalKnowledgeAssembly } from "../types";
+import { PdfObjectEmbedViewer } from "./PdfObjectEmbedViewer";
 
 interface ConsentPreviewModalProps {
   open: boolean;
@@ -47,7 +49,8 @@ export function ConsentPreviewModal({
   const sections = useMemo(() => {
     return (consentForm?.sections || []).slice().sort((a, b) => a.orderIndex - b.orderIndex);
   }, [consentForm]);
-
+  const approvedPdfUrl = resolveAssemblyApprovedPdfUrl(assembly);
+  const hasApprovedPdfSource = isAssemblyApprovedPdfSourceVerified(assembly);
   const approvedIllustrations = useMemo(
     () =>
       (assembly?.illustrations || []).filter(
@@ -95,24 +98,44 @@ export function ConsentPreviewModal({
             </p>
           </div>
 
-          {sections.length === 0 && (
+          {!hasApprovedPdfSource && (
             <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 text-red-700 text-xs">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>
                 {isAr
-                  ? "لا توجد أقسام نموذج موافقة متاحة. لا يمكن الإرسال بدون محتوى موافقة حقيقي."
-                  : "No consent form sections are available. Sending is blocked without real consent content."}
+                  ? "مصدر ملف الموافقة المعتمد غير متاح. لا يمكن مراجعة المعاينة أو الإرسال بدون النموذج المعتمد الفعلي."
+                  : "The approved consent PDF source is unavailable. Preview review and sending are blocked without the actual approved form."}
               </span>
             </div>
           )}
 
-          <div className="space-y-4">
-            {sections.map((section) => (
-              <Section key={section.id} title={isAr && section.titleAr ? section.titleAr : section.titleEn}>
-                {isAr && section.contentAr ? section.contentAr : section.contentEn}
-              </Section>
-            ))}
-          </div>
+          {hasApprovedPdfSource ? (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-slate-200 overflow-hidden bg-slate-50">
+                <PdfObjectEmbedViewer
+                  title={isAr ? "معاينة ملف الموافقة المعتمد" : "Approved consent PDF preview"}
+                  src={approvedPdfUrl}
+                  className="rounded-none border-0 shadow-none"
+                  viewerClassName="h-[60vh] min-h-[520px]"
+                />
+              </div>
+              <div className="text-[11px] text-slate-500">
+                <a href={approvedPdfUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline underline-offset-2">
+                  {isAr ? "فتح ملف الموافقة المعتمد في نافذة جديدة" : "Open the approved consent PDF in a new tab"}
+                </a>
+              </div>
+            </div>
+          ) : null}
+
+          {hasApprovedPdfSource && sections.length > 0 ? (
+            <div className="space-y-4">
+              {sections.map((section) => (
+                <Section key={section.id} title={isAr && section.titleAr ? section.titleAr : section.titleEn}>
+                  {isAr && section.contentAr ? section.contentAr : section.contentEn}
+                </Section>
+              ))}
+            </div>
+          ) : null}
 
           {assembly && assembly.riskDisclosures.length > 0 && (
             <div className="space-y-2">
@@ -219,7 +242,7 @@ export function ConsentPreviewModal({
               size="sm"
               uppercase={false}
               onClick={onMarkReviewed}
-              disabled={sections.length === 0 || reviewed}
+              disabled={!hasApprovedPdfSource || reviewed}
               className="w-full sm:w-auto"
             >
               {reviewed ? (

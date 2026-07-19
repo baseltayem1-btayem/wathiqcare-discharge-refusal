@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { recordPublicEducationEvent } from "@/lib/server/public-signing-service";
+import { recordPublicEducationEvent } from "@/lib/server/public-signing-education-service";
 import { ApiError } from "@/lib/server/http";
 
 export async function POST(

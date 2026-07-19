@@ -2,24 +2,80 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
-import { sendModuleSecureSigningLink } from "@/lib/server/module-secure-signing-service";
+import {
+  sendModuleSecureSigningLink,
+  deriveSendRootOperationKey,
+  resolveTrustedPdfHash,
+} from "@/lib/server/module-secure-signing-service";
 import { writeConsentAudit } from "@/lib/server/consent-library-service";
 import { isTaqnyatReady } from "@/services/sms/taqnyatClient";
 import { logRuntimeIncident } from "@/lib/server/runtime-observability";
+import { verifyPublicAssetSource } from "@/lib/server/clinical-knowledge/services/source-verification";
 import { getPrisma } from "@/lib/server/prisma";
 import {
   envBool,
-  extractContactDetails,
   findOrCreateConsentDocument,
   isAllowlistedRecipient,
-  normalizePhoneNumber,
-  normalizeRecipientEmail,
   resolveCaseFromEncounter,
   resolveTemplateFromProcedure,
 } from "@/lib/server/workspace-consent-helpers";
+import { hashRecipient } from "@/lib/server/idempotency-core";
+import { resolveCanonicalCaseContact } from "@/lib/server/recipient-resolution-service";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+
+function resolveApprovedPdfSourceUrl(value: unknown): string {
+  if (typeof value === "string") return value.trim();
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const directCandidates = [
+      record.url,
+      record.href,
+      record.pdfUrl,
+      record.pdfTemplateUrl,
+      record.approvedPdfUrl,
+      record.sourcePdfUrl,
+      record.immutablePdfUrl,
+    ];
+
+    for (const candidate of directCandidates) {
+      if (typeof candidate === "string" && candidate.trim()) {
+        return candidate.trim();
+      }
+    }
+  }
+
+  return "";
+}
+
+function resolveMetadataApprovedPdfSource(metadata: unknown, immutablePdfUrl?: string | null): string {
+  const direct = resolveApprovedPdfSourceUrl(immutablePdfUrl);
+  if (direct) return direct;
+
+  if (!metadata || typeof metadata !== "object") return "";
+
+  const record = metadata as Record<string, unknown>;
+  const candidates = [
+    record.approvedPdfUrl,
+    record.sourcePdfUrl,
+    record.pdfTemplateUrl,
+    record.immutablePdfUrl,
+    record.approvedLink,
+    record.approvedConsentSource,
+    record.consentForm,
+    record.package,
+  ];
+
+  for (const candidate of candidates) {
+    const resolved = resolveApprovedPdfSourceUrl(candidate);
+    if (resolved) return resolved;
+  }
+
+  return "";
+}
 
 function isDryRunEnabled(body: Record<string, unknown>): boolean {
   if (body.dryRun === true) return true;
@@ -28,19 +84,16 @@ function isDryRunEnabled(body: Record<string, unknown>): boolean {
 }
 
 function readinessGates(
-  caseRecord: { metadata?: unknown } | null,
+  contacts: { mobile?: string; email?: string },
   templateVersion: { id: string } | null,
   document: { id: string; status: string } | null,
 ): { ok: boolean; reason?: string } {
-  if (!caseRecord) return { ok: false, reason: "Patient case not found" };
+  if (!contacts.mobile || !contacts.email) {
+    return { ok: false, reason: "Patient contact details missing" };
+  }
   if (!templateVersion) return { ok: false, reason: "Procedure package not resolved" };
   if (!document) return { ok: false, reason: "Consent document not ready" };
   if (document.status === "VOID") return { ok: false, reason: "Consent document is void" };
-
-  const { mobileNumber, email } = extractContactDetails(caseRecord.metadata);
-  if (!mobileNumber || !email) {
-    return { ok: false, reason: "Patient contact details missing" };
-  }
 
   return { ok: true };
 }
@@ -76,19 +129,102 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "Procedure package not found" }, { status: 404 });
   }
 
-  const { template, version } = resolved;
+  const { template, version, approvedLink } = resolved;
 
-  const document = await findOrCreateConsentDocument(tenantId, auth, caseRecord.id, template, version);
-  const gate = readinessGates(caseRecord, version, document);
+  const approvedPdfSourceUrl = resolveApprovedPdfSourceUrl(approvedLink);
+  const approvedPdfVerification = verifyPublicAssetSource(approvedPdfSourceUrl);
+
+  if (!approvedPdfVerification.sourceVerified) {
+    const reason = "Approved consent PDF source is missing or inaccessible.";
+
+    await writeConsentAudit({
+      tenantId,
+      auth,
+      action: "send_blocked_missing_approved_pdf_source",
+      summary: reason,
+      source: "api-consents-send",
+      caseId: caseRecord.id,
+      templateId: template.id,
+      templateVersionId: version.id,
+      metadata: {
+        caseId: caseRecord.id,
+        encounterId,
+        procedureId,
+        approvedPdfSourceUrl,
+        sourceAvailable: approvedPdfVerification.sourceAvailable,
+        sourceVerified: approvedPdfVerification.sourceVerified,
+        sourceStatusCode: approvedPdfVerification.statusCode,
+        sourceVerificationReason: approvedPdfVerification.reason,
+      },
+      request,
+    });
+
+    logRuntimeIncident({
+      module: "api-consents-send",
+      type: "UNHANDLED_EXCEPTION",
+      operation: "send_blocked_missing_approved_pdf_source",
+      tenantId,
+      error: new Error(reason),
+      details: {
+        caseId: caseRecord.id,
+        encounterId,
+        procedureId,
+        approvedPdfSourceUrl,
+        sourceVerificationReason: approvedPdfVerification.reason,
+        sourceStatusCode: approvedPdfVerification.statusCode,
+      },
+    });
+
+    return NextResponse.json(
+      {
+        ok: false,
+        error: reason,
+        sourceVerification: approvedPdfVerification,
+      },
+      { status: 422 },
+    );
+  }
+
+  const document = await findOrCreateConsentDocument(tenantId, auth, caseRecord.id, template, version, approvedLink);
+  const prisma = getPrisma();
+  const documentWithHash = await prisma.consentDocument.findFirst({
+    where: { id: document.id, tenantId },
+    select: { id: true, immutablePdfHash: true, metadata: true },
+  });
+  const approvedPdfHash = resolveTrustedPdfHash(documentWithHash ?? document);
+  if (!approvedPdfHash) {
+    const reason = "Approved PDF hash is missing or untrusted for secure signing";
+    await writeConsentAudit({
+      tenantId,
+      auth,
+      action: "send_blocked_missing_approved_pdf_hash",
+      summary: reason,
+      source: "api-consents-send",
+      caseId: caseRecord.id,
+      consentDocumentId: document.id,
+      templateId: template.id,
+      templateVersionId: version.id,
+      metadata: { documentId: document.id, caseId: caseRecord.id },
+      request,
+    });
+    return NextResponse.json({ ok: false, error: reason }, { status: 422 });
+  }
+
+  const canonicalContacts = await resolveCanonicalCaseContact({
+    tenantId,
+    caseId: caseRecord.id,
+  });
+  const gate = readinessGates(canonicalContacts ?? {}, version, document);
 
   if (!gate.ok) {
     return NextResponse.json({ ok: false, error: gate.reason }, { status: 422 });
   }
 
-  const contacts = extractContactDetails(caseRecord.metadata);
   const patientName = caseRecord.patientName || "Patient";
-  const mobileNumber = normalizePhoneNumber(contacts.mobileNumber);
-  const recipientEmail = normalizeRecipientEmail(contacts.email);
+  const mobileNumber = canonicalContacts?.mobile ?? "";
+  const recipientEmail = canonicalContacts?.email ?? "";
+  const maskedMobile = mobileNumber.replace(/\d(?=\d{4})/g, "*");
+  const maskedEmail = recipientEmail.replace(/(.{2}).*?(@.*)/, "$1***$2");
 
   if (isDryRunEnabled(body)) {
     await writeConsentAudit({
@@ -105,8 +241,10 @@ export async function POST(request: NextRequest) {
         documentId: document.id,
         caseId: caseRecord.id,
         patientName,
-        mobileNumber,
-        recipientEmail,
+        mobileNumber: maskedMobile,
+        recipientEmail: maskedEmail,
+        mobileHash: hashRecipient(mobileNumber, { tenantId }),
+        emailHash: hashRecipient(recipientEmail, { tenantId }),
         locale,
         dryRun: true,
       },
@@ -137,8 +275,10 @@ export async function POST(request: NextRequest) {
       documentId: document.id,
       caseId: caseRecord.id,
       patientName,
-      mobileNumber,
-      recipientEmail,
+      mobileNumber: maskedMobile,
+      recipientEmail: maskedEmail,
+      mobileHash: hashRecipient(mobileNumber, { tenantId }),
+      emailHash: hashRecipient(recipientEmail, { tenantId }),
       locale,
     },
     request,
@@ -185,6 +325,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const idempotencyKey = deriveSendRootOperationKey({
+    tenantId,
+    caseId: caseRecord.id,
+    documentId: document.id,
+    approvedConsentFormKey: template.templateCode,
+    approvedTemplateVersionId: version.id,
+    immutablePdfHash: approvedPdfHash,
+    mobileNumber,
+    recipientEmail,
+    locale,
+  });
+
   try {
     const workflow = await sendModuleSecureSigningLink({
       tenantId,
@@ -197,9 +349,13 @@ export async function POST(request: NextRequest) {
       mobileNumber,
       recipientEmail,
       locale,
+      baseUrl: request.nextUrl.origin,
+      idempotencyKey: idempotencyKey,
+      approvedConsentFormKey: template.templateCode,
+      approvedTemplateVersionId: version.id,
+      immutablePdfHash: approvedPdfHash,
     });
 
-    const prisma = getPrisma();
     const existingDoc = await prisma.consentDocument.findFirst({
       where: { id: document.id, tenantId },
       select: { metadata: true },
@@ -213,9 +369,9 @@ export async function POST(request: NextRequest) {
           ...existingMetadata,
           secureSigningWorkflow: {
             ...(existingMetadata.secureSigningWorkflow as Record<string, unknown> ?? {}),
-            recipientEmail: workflow.recipientEmail,
-            mobileNumber: workflow.recipientMobile,
-            sentAt: new Date().toISOString(),
+            sessionId: workflow.sessionId,
+            dispatchStatuses: workflow.dispatchStatuses,
+            queuedAt: new Date().toISOString(),
           },
         } as unknown as import("@prisma/client").Prisma.InputJsonValue,
       },
@@ -225,7 +381,7 @@ export async function POST(request: NextRequest) {
       tenantId,
       auth,
       action: "signing_link_created",
-      summary: `Secure signing link created for document ${document.id} (session ${workflow.sessionId})`,
+      summary: `Secure signing session created for document ${document.id} (session ${workflow.sessionId})`,
       source: "api-consents-send",
       caseId: caseRecord.id,
       consentDocumentId: document.id,
@@ -235,71 +391,21 @@ export async function POST(request: NextRequest) {
         documentId: document.id,
         caseId: caseRecord.id,
         sessionId: workflow.sessionId,
-        tokenHash: workflow.tokenHash,
-        signingUrl: workflow.signingUrl,
-        mobileNumber: workflow.recipientMobile,
-        recipientEmail: workflow.recipientEmail,
-        smsDeliveryStatus: workflow.smsDeliveryStatus,
-        emailDeliveryStatus: workflow.emailDeliveryStatus,
+        mobileHash: hashRecipient(mobileNumber, { tenantId }),
+        emailHash: hashRecipient(recipientEmail, { tenantId }),
+        dispatchStatuses: workflow.dispatchStatuses,
         locale,
       },
       request,
     });
-
-    if (workflow.smsDeliveryStatus === "sent") {
-      await writeConsentAudit({
-        tenantId,
-        auth,
-        action: "patient_sms_sent",
-        summary: `Pilot SMS sent to patient for document ${document.id}`,
-        source: "api-consents-send",
-        caseId: caseRecord.id,
-        consentDocumentId: document.id,
-        templateId: template.id,
-        templateVersionId: version.id,
-        metadata: {
-          documentId: document.id,
-          caseId: caseRecord.id,
-          sessionId: workflow.sessionId,
-          mobileNumber: workflow.recipientMobile,
-          locale,
-        },
-        request,
-      });
-    }
-
-    if (workflow.emailDeliveryStatus === "sent") {
-      await writeConsentAudit({
-        tenantId,
-        auth,
-        action: "patient_email_sent",
-        summary: `Pilot email sent to patient for document ${document.id}`,
-        source: "api-consents-send",
-        caseId: caseRecord.id,
-        consentDocumentId: document.id,
-        templateId: template.id,
-        templateVersionId: version.id,
-        metadata: {
-          documentId: document.id,
-          caseId: caseRecord.id,
-          sessionId: workflow.sessionId,
-          recipientEmail: workflow.recipientEmail,
-          locale,
-        },
-        request,
-      });
-    }
 
     return NextResponse.json({
       ok: true,
       workflow: {
         sessionId: workflow.sessionId,
         documentId: workflow.documentId,
-        signingUrl: workflow.signingUrl,
-        recipientMobile: workflow.recipientMobile,
-        recipientEmail: workflow.recipientEmail,
-        smsDeliveryStatus: workflow.smsDeliveryStatus,
-        emailDeliveryStatus: workflow.emailDeliveryStatus,
+        expiresAt: workflow.expiresAt,
+        dispatchStatuses: workflow.dispatchStatuses,
       },
     });
   } catch (error) {

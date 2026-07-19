@@ -73,6 +73,8 @@ export interface MockConsentForm {
   formType: ConsentFormType;
   riskLevel: RiskLevel;
   version: string;
+  pdfTemplateUrl?: string;
+  sourceAvailable?: boolean;
   requiresWitness: boolean;
   requiresInterpreter: boolean;
 }

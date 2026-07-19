@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPublicSigningDocument } from "@/lib/server/public-signing-service";
+import { getPublicSigningDocument } from "@/lib/server/public-signing-document-service";
 import { ApiError } from "@/lib/server/http";
 
 export async function GET(

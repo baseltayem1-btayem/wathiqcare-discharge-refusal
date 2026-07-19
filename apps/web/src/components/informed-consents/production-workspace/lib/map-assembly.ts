@@ -1,4 +1,4 @@
-import type { ClinicalKnowledgeAssembly } from "@/lib/clinical-knowledge/types";
+﻿import type { ClinicalKnowledgeAssembly } from "@/lib/clinical-knowledge/types";
 import type {
   MockClinicalKnowledgeAssembly,
   MockConsentForm,
@@ -27,6 +27,19 @@ export function mapAssemblyToMock(
           formType: mapFormType(assembly.consentForm.formType),
           riskLevel: mapRiskLevel(assembly.consentForm.riskLevel),
           version: assembly.consentForm.version,
+          pdfTemplateUrl:
+            assembly.consentForm.pdfTemplateUrl ||
+            (assembly.consentForm as unknown as Record<string, unknown>).pdfUrl as string ||
+            (assembly.consentForm as unknown as Record<string, unknown>).approvedPdfUrl as string ||
+            (assembly.consentForm as unknown as Record<string, unknown>).sourcePdfUrl as string ||
+            undefined,
+          sourceAvailable: Boolean(
+            assembly.consentForm.pdfTemplateUrl ||
+              (assembly.consentForm as unknown as Record<string, unknown>).pdfUrl ||
+              (assembly.consentForm as unknown as Record<string, unknown>).approvedPdfUrl ||
+              (assembly.consentForm as unknown as Record<string, unknown>).sourcePdfUrl ||
+              (assembly.consentForm.governanceSnapshot as Record<string, unknown> | null | undefined)?.sourceAvailable,
+          ),
           requiresWitness: assembly.requiredParticipants.includes("witness"),
           requiresInterpreter: assembly.requiredParticipants.includes("interpreter"),
         }
@@ -150,3 +163,4 @@ export function mapAnesthesiaDecision(
 ): "NONE" | "LOCAL" | "SEDATION" | "REGIONAL" | "GENERAL" | undefined {
   return decision;
 }
+

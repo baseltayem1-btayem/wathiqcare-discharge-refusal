@@ -26,33 +26,31 @@ export function CanvaSidebarProfile({ physician }: CanvaSidebarProfileProps) {
   const role = physician.role || physician.platformRole || physician.specialty || (isRtl ? "طبيب" : "Physician");
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3 rounded-xl bg-white/10 px-3 py-3">
+      <div className="flex items-center gap-3">
         {imcPhysician ? (
           // eslint-disable-next-line @next/next/no-img-element -- sidebar avatar from external IMC source
           <img
             src={imcPhysician.photoUrl}
             alt={displayName}
-            className="w-8 h-8 rounded-full object-cover shrink-0"
+            className="size-8 shrink-0 rounded-lg object-cover"
             loading="lazy"
           />
         ) : (
-          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-semibold text-blue-700">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-blue-500/30 text-[10px] font-semibold text-white">
             {initials || "?"}
           </div>
         )}
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold truncate text-slate-800">
+          <p className="truncate text-xs font-medium text-white">
             {displayName}
           </p>
-          <p className="text-[9px] text-slate-500 truncate">{role}</p>
+          <p className="truncate text-[11px] text-slate-300">{role}</p>
         </div>
       </div>
-      <div className="text-[9px] text-slate-500 leading-tight">
-        <p className="truncate" title={physician.email}>{physician.email}</p>
-        <p>{physician.tenantId}</p>
-        <p>{isRtl ? "المركز الطبي الدولي" : "International Medical Center"}</p>
-        <p>{isRtl ? "جدة، المملكة العربية السعودية" : "Jeddah, Saudi Arabia"}</p>
+      <div className="hidden min-w-0 leading-tight sm:block">
+        <p className="truncate text-[11px] text-slate-300" title={physician.email}>{physician.email}</p>
+        <p className="truncate text-[11px] text-slate-400">{isRtl ? "المركز الطبي الدولي" : "International Medical Center"}</p>
       </div>
     </div>
   );

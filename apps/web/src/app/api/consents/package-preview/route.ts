@@ -42,9 +42,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "Procedure package not found" }, { status: 404 });
   }
 
-  const { template, version } = resolved;
+  const { template, version, approvedLink } = resolved;
 
-  const document = await findOrCreateConsentDocument(tenantId, auth, caseRecord.id, template, version);
+  const document = await findOrCreateConsentDocument(tenantId, auth, caseRecord.id, template, version, approvedLink);
 
   await writeConsentAudit({
     tenantId,

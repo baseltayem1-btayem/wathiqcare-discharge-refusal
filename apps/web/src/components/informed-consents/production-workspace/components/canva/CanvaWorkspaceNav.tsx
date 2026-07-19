@@ -64,14 +64,15 @@ export function CanvaWorkspaceNav({ activePage, onPageChange, pilotMode = true }
             type="button"
             onClick={() => onPageChange(item.id)}
             className={cn(
-              "canva-nav-item w-full flex items-center gap-2 px-3 py-[7px] rounded-[7px] text-xs font-medium transition-all text-left",
+              "canva-nav-item flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
               isActive
-                ? "bg-[#eff6ff] text-blue-600 font-semibold"
-                : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                ? "bg-white/10 text-white"
+                : "text-slate-300 hover:bg-white/8 hover:text-white"
             )}
           >
-            <Icon className="w-[14px] h-[14px] shrink-0" />
+            <Icon className="size-4.5 shrink-0" />
             <span className="truncate">{item.labelEn}</span>
+            {isActive ? <span className="ml-auto h-1.5 w-1.5 rounded-full bg-amber-300" aria-hidden /> : null}
           </button>
         );
       })}

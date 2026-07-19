@@ -205,7 +205,7 @@ async function findExistingAuditEventByIdempotencyKey(
 
 export async function appendAuditEventInTransaction(
   args: AuditArgs & { tx: PrismaClient | Prisma.TransactionClient },
-  options?: { idempotencyKey?: string },
+  options?: { idempotencyKey?: string; allowLookup?: boolean },
 ): Promise<{ auditLogId: string; auditChainEventId: string }> {
   const {
     tx,
@@ -226,9 +226,11 @@ export async function appendAuditEventInTransaction(
 
   const idempotencyKey = options?.idempotencyKey ?? deriveIdempotencyKey(args);
 
-  const existing = await findExistingAuditEventByIdempotencyKey(tx, idempotencyKey);
-  if (existing) {
-    return existing;
+  if (options?.allowLookup !== false) {
+    const existing = await findExistingAuditEventByIdempotencyKey(tx, idempotencyKey);
+    if (existing) {
+      return existing;
+    }
   }
 
   const ip = request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;

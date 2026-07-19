@@ -265,6 +265,29 @@ enum ConsentEvidenceCopyType {
   LEGAL_ARCHIVE_COPY
 }
 
+enum ConsentSigningOutcome {
+  PENDING
+  CONSENTED
+  REFUSED
+  GUARDIAN_SIGNED
+  WITHDRAWN
+}
+
+enum PatientMessageChannel {
+  SMS
+  EMAIL
+}
+
+enum PatientMessageStatus {
+  PENDING
+  CLAIMED
+  ACCEPTED
+  SENT
+  DELIVERED
+  FAILED
+  PERMANENT_FAILURE
+}
+
 enum ProcedureEducationStatus {
   DRAFT
   ACTIVE
@@ -792,9 +815,9 @@ model Case {
   createdAt       DateTime   @default(now()) @map("created_at")
   updatedAt       DateTime   @updatedAt @map("updated_at")
 
-  tenant                      Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  createdBy                   User?                       @relation("CaseCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  updatedBy                   User?                       @relation("CaseUpdater", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  tenant                      Tenant                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy                   User?                        @relation("CaseCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  updatedBy                   User?                        @relation("CaseUpdater", fields: [updatedByUserId], references: [id], onDelete: SetNull)
   documents                   Document[]
   auditLogs                   AuditLog[]
   dischargeRefusalCases       DischargeRefusalCase[]
@@ -1630,29 +1653,29 @@ model ConsentCategory {
 }
 
 model ConsentTemplate {
-  id                String                @id @default(uuid())
-  tenantId          String                @map("tenant_id")
-  categoryId        String?               @map("category_id")
-  templateCode      String                @map("template_code")
-  riskLevel         String                @default("MEDIUM") @map("risk_level")
-  requiresWitness   Boolean               @default(false) @map("requires_witness")
-  requiresGuardian  Boolean               @default(false) @map("requires_guardian")
-  requiresInterpreter Boolean             @default(false) @map("requires_interpreter")
-  requiresSeparateConsent Boolean         @default(false) @map("requires_separate_consent")
-  consentType       String                @map("consent_type")
-  specialty         String
-  department        String?
-  status            ConsentTemplateStatus @default(DRAFT)
-  currentVersionId  String?               @map("current_version_id")
-  titleAr           String                @map("title_ar")
-  titleEn           String                @map("title_en")
-  summaryAr         String?               @map("summary_ar")
-  summaryEn         String?               @map("summary_en")
-  isAiAssistEnabled Boolean               @default(true) @map("is_ai_assist_enabled")
-  isSystemTemplate  Boolean               @default(false) @map("is_system_template")
-  metadata          Json?
-  createdAt         DateTime              @default(now()) @map("created_at")
-  updatedAt         DateTime              @updatedAt @map("updated_at")
+  id                      String                @id @default(uuid())
+  tenantId                String                @map("tenant_id")
+  categoryId              String?               @map("category_id")
+  templateCode            String                @map("template_code")
+  riskLevel               String                @default("MEDIUM") @map("risk_level")
+  requiresWitness         Boolean               @default(false) @map("requires_witness")
+  requiresGuardian        Boolean               @default(false) @map("requires_guardian")
+  requiresInterpreter     Boolean               @default(false) @map("requires_interpreter")
+  requiresSeparateConsent Boolean               @default(false) @map("requires_separate_consent")
+  consentType             String                @map("consent_type")
+  specialty               String
+  department              String?
+  status                  ConsentTemplateStatus @default(DRAFT)
+  currentVersionId        String?               @map("current_version_id")
+  titleAr                 String                @map("title_ar")
+  titleEn                 String                @map("title_en")
+  summaryAr               String?               @map("summary_ar")
+  summaryEn               String?               @map("summary_en")
+  isAiAssistEnabled       Boolean               @default(true) @map("is_ai_assist_enabled")
+  isSystemTemplate        Boolean               @default(false) @map("is_system_template")
+  metadata                Json?
+  createdAt               DateTime              @default(now()) @map("created_at")
+  updatedAt               DateTime              @updatedAt @map("updated_at")
 
   tenant           Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category         ConsentCategory?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -1693,8 +1716,8 @@ model ConsentTemplateVersion {
   createdAt        DateTime              @default(now()) @map("created_at")
   updatedAt        DateTime              @updatedAt @map("updated_at")
 
-  tenant           Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  template         ConsentTemplate          @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  tenant           Tenant                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  template         ConsentTemplate               @relation(fields: [templateId], references: [id], onDelete: Cascade)
   sections         ConsentTemplateSection[]
   localizations    ConsentTemplateLocalization[]
   documents        ConsentDocument[]
@@ -1767,68 +1790,77 @@ model ConsentAIPrompt {
 }
 
 model ConsentDocument {
-  id                  String                @id @default(uuid())
-  tenantId            String                @map("tenant_id")
-  caseId              String                @map("case_id")
-  templateId          String                @map("template_id")
-  templateVersionId   String                @map("template_version_id")
-  consentReference    String                @map("consent_reference")
-  status              ConsentDocumentStatus @default(DRAFT)
-  language            String                @default("bilingual")
-  patientName         String                @map("patient_name")
-  mrn                 String?
-  dob                 String?
-  gender              String?
-  physicianName       String                @map("physician_name")
-  physicianLicense    String?               @map("physician_license")
-  physicianSpecialty  String                @map("physician_specialty")
-  department          String?
-  diagnosis           String?
-  plannedProcedure    String?               @map("planned_procedure")
-  admissionDetails    String?               @map("admission_details")
-  procedureDetails    String?               @map("procedure_details")
-  risksAr             String?               @map("risks_ar")
-  risksEn             String?               @map("risks_en")
-  sideEffectsAr       String?               @map("side_effects_ar")
-  sideEffectsEn       String?               @map("side_effects_en")
-  alternativesAr      String?               @map("alternatives_ar")
-  alternativesEn      String?               @map("alternatives_en")
-  refusalRisksAr      String?               @map("refusal_risks_ar")
-  refusalRisksEn      String?               @map("refusal_risks_en")
-  expectedOutcomesAr  String?               @map("expected_outcomes_ar")
-  expectedOutcomesEn  String?               @map("expected_outcomes_en")
-  physicianNotesAr    String?               @map("physician_notes_ar")
-  physicianNotesEn    String?               @map("physician_notes_en")
-  legalTextAr         String                @map("legal_text_ar")
-  legalTextEn         String                @map("legal_text_en")
-  pdplTextAr          String                @map("pdpl_text_ar")
-  pdplTextEn          String                @map("pdpl_text_en")
-  witnessDeclAr       String                @map("witness_decl_ar")
-  witnessDeclEn       String                @map("witness_decl_en")
-  physicianCertAr     String                @map("physician_cert_ar")
-  physicianCertEn     String                @map("physician_cert_en")
-  aiWarningAr         String                @map("ai_warning_ar")
-  aiWarningEn         String                @map("ai_warning_en")
-  aiGeneratedAt       DateTime?             @map("ai_generated_at")
-  aiGeneratedByUserId String?               @map("ai_generated_by_user_id")
-  aiValidatedAt       DateTime?             @map("ai_validated_at")
-  aiValidatedByUserId String?               @map("ai_validated_by_user_id")
-  approvedAt          DateTime?             @map("approved_at")
-  approvedByUserId    String?               @map("approved_by_user_id")
-  finalizedAt         DateTime?             @map("finalized_at")
-  finalizedByUserId   String?               @map("finalized_by_user_id")
-  immutablePdfUrl     String?               @map("immutable_pdf_url")
-  immutablePdfHash    String?               @map("immutable_pdf_hash")
-  qrPayload           String?               @map("qr_payload")
-  documentVersion     String?               @map("document_version")
-  auditChecksum       String?               @map("audit_checksum")
-  generatedByModel    String?               @map("generated_by_model")
-  legalHold           Boolean               @default(false) @map("legal_hold")
-  legalHoldReason     String?               @map("legal_hold_reason")
-  retentionUntil      DateTime?             @map("retention_until")
-  metadata            Json?
-  createdAt           DateTime              @default(now()) @map("created_at")
-  updatedAt           DateTime              @updatedAt @map("updated_at")
+  id                     String                @id @default(uuid())
+  tenantId               String                @map("tenant_id")
+  caseId                 String                @map("case_id")
+  templateId             String                @map("template_id")
+  templateVersionId      String                @map("template_version_id")
+  consentReference       String                @map("consent_reference")
+  status                 ConsentDocumentStatus @default(DRAFT)
+  language               String                @default("bilingual")
+  patientName            String                @map("patient_name")
+  mrn                    String?
+  dob                    String?
+  gender                 String?
+  physicianName          String                @map("physician_name")
+  physicianLicense       String?               @map("physician_license")
+  physicianSpecialty     String                @map("physician_specialty")
+  department             String?
+  diagnosis              String?
+  plannedProcedure       String?               @map("planned_procedure")
+  admissionDetails       String?               @map("admission_details")
+  procedureDetails       String?               @map("procedure_details")
+  risksAr                String?               @map("risks_ar")
+  risksEn                String?               @map("risks_en")
+  sideEffectsAr          String?               @map("side_effects_ar")
+  sideEffectsEn          String?               @map("side_effects_en")
+  alternativesAr         String?               @map("alternatives_ar")
+  alternativesEn         String?               @map("alternatives_en")
+  refusalRisksAr         String?               @map("refusal_risks_ar")
+  refusalRisksEn         String?               @map("refusal_risks_en")
+  expectedOutcomesAr     String?               @map("expected_outcomes_ar")
+  expectedOutcomesEn     String?               @map("expected_outcomes_en")
+  physicianNotesAr       String?               @map("physician_notes_ar")
+  physicianNotesEn       String?               @map("physician_notes_en")
+  legalTextAr            String                @map("legal_text_ar")
+  legalTextEn            String                @map("legal_text_en")
+  pdplTextAr             String                @map("pdpl_text_ar")
+  pdplTextEn             String                @map("pdpl_text_en")
+  witnessDeclAr          String                @map("witness_decl_ar")
+  witnessDeclEn          String                @map("witness_decl_en")
+  physicianCertAr        String                @map("physician_cert_ar")
+  physicianCertEn        String                @map("physician_cert_en")
+  aiWarningAr            String                @map("ai_warning_ar")
+  aiWarningEn            String                @map("ai_warning_en")
+  aiGeneratedAt          DateTime?             @map("ai_generated_at")
+  aiGeneratedByUserId    String?               @map("ai_generated_by_user_id")
+  aiValidatedAt          DateTime?             @map("ai_validated_at")
+  aiValidatedByUserId    String?               @map("ai_validated_by_user_id")
+  approvedAt             DateTime?             @map("approved_at")
+  approvedByUserId       String?               @map("approved_by_user_id")
+  finalizedAt            DateTime?             @map("finalized_at")
+  finalizedByUserId      String?               @map("finalized_by_user_id")
+  immutablePdfUrl        String?               @map("immutable_pdf_url")
+  immutablePdfHash       String?               @map("immutable_pdf_hash")
+  qrPayload              String?               @map("qr_payload")
+  documentVersion        String?               @map("document_version")
+  auditChecksum          String?               @map("audit_checksum")
+  generatedByModel       String?               @map("generated_by_model")
+  legalHold              Boolean               @default(false) @map("legal_hold")
+  legalHoldReason        String?               @map("legal_hold_reason")
+  retentionUntil         DateTime?             @map("retention_until")
+  idempotencyKey         String?               @map("idempotency_key")
+  idempotencyFingerprint String?               @map("idempotency_fingerprint")
+  outcome                ConsentSigningOutcome? @default(PENDING) @map("outcome")
+  refusalReason          String?               @map("refusal_reason")
+  refusalRiskAcknowledged Boolean               @default(false) @map("refusal_risk_acknowledged")
+  finalPdfPath           String?               @map("final_pdf_path")
+  finalPdfHash           String?               @map("final_pdf_hash")
+  patientCopyDeliveredAt DateTime?             @map("patient_copy_delivered_at")
+  patientCopyDeliveryStatus String?            @map("patient_copy_delivery_status")
+  metadata               Json?
+  createdAt              DateTime              @default(now()) @map("created_at")
+  updatedAt              DateTime              @updatedAt @map("updated_at")
 
   tenant              Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   case                Case                        @relation(fields: [caseId], references: [id], onDelete: Cascade)
@@ -1847,8 +1879,10 @@ model ConsentDocument {
   evidenceV2Timelines EvidenceTimeline[]
   emrMappings         ConsentEmrMapping[]
   sourceSnapshots     ConsentSourceSnapshot[]
+  signingSessions     SigningSession[]
 
   @@unique([tenantId, consentReference], map: "uq_consent_documents_tenant_reference")
+  @@unique([tenantId, idempotencyKey], map: "uq_consent_documents_tenant_idempotency_key")
   @@index([tenantId, caseId, status, createdAt], map: "idx_consent_documents_tenant_case_status_created")
   @@index([tenantId, templateId, templateVersionId], map: "idx_consent_documents_tenant_template_version")
   @@map("consent_documents")
@@ -1878,20 +1912,23 @@ model ConsentDocumentSection {
 }
 
 model ConsentDocumentSignature {
-  id                String               @id @default(uuid())
-  tenantId          String               @map("tenant_id")
-  consentDocumentId String               @map("consent_document_id")
-  role              ConsentSignatureRole
-  signerName        String               @map("signer_name")
-  signerIdNumber    String?              @map("signer_id_number")
-  signerLicense     String?              @map("signer_license")
-  signatureMethod   ConsentMethod        @map("signature_method")
-  signedAt          DateTime             @default(now()) @map("signed_at")
-  ipAddress         String?              @map("ip_address")
-  userAgent         String?              @map("user_agent")
-  signatureHash     String?              @map("signature_hash")
-  metadata          Json?
-  createdAt         DateTime             @default(now()) @map("created_at")
+  id                    String               @id @default(uuid())
+  tenantId              String               @map("tenant_id")
+  consentDocumentId     String               @map("consent_document_id")
+  role                  ConsentSignatureRole
+  signerName            String               @map("signer_name")
+  signerIdNumber        String?              @map("signer_id_number")
+  signerLicense         String?              @map("signer_license")
+  signerRelationship    String?              @map("signer_relationship")
+  authorityDocumentUrl  String?              @map("authority_document_url")
+  signatureMethod       ConsentMethod        @map("signature_method")
+  signedAt              DateTime             @default(now()) @map("signed_at")
+  ipAddress             String?              @map("ip_address")
+  userAgent             String?              @map("user_agent")
+  signatureHash         String?              @map("signature_hash")
+  outcome               ConsentSigningOutcome? @default(PENDING) @map("outcome")
+  metadata              Json?
+  createdAt             DateTime             @default(now()) @map("created_at")
 
   tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   consentDocument ConsentDocument @relation(fields: [consentDocumentId], references: [id], onDelete: Cascade)
@@ -1923,6 +1960,102 @@ model ConsentAuditEvent {
   @@map("consent_audit_events")
 }
 
+model SigningSession {
+  id                     String    @id @default(uuid()) @db.Uuid
+  tenantId               String    @map("tenant_id")
+  documentId             String    @map("document_id")
+  moduleType             String    @map("module_type")
+  providerKey            String    @map("provider_key")
+  providerSessionId      String?   @map("provider_session_id")
+  status                 String    @default("PENDING")
+  requiredSigners        Json      @map("required_signers")
+  completedSigners       Json      @default("[]") @map("completed_signers")
+  signerLinks            Json      @default("{}") @map("signer_links")
+  expiresAt              DateTime? @map("expires_at")
+  completedAt            DateTime? @map("completed_at")
+  revokedAt              DateTime? @map("revoked_at")
+  revokedReason          String?               @map("revoked_reason")
+  signedPdfKey           String?               @map("signed_pdf_key")
+  initiatedById          String                @map("initiated_by_id") @db.Uuid
+  resendCount            Int                   @default(0) @map("resend_count")
+  lastResentAt           DateTime?             @map("last_resent_at")
+  idempotencyKey         String?               @map("idempotency_key")
+  idempotencyFingerprint String?               @map("idempotency_fingerprint")
+  otpVerifiedAt          DateTime?             @map("otp_verified_at")
+  otpChallengeId         String?               @map("otp_challenge_id")
+  linkOpenedAt           DateTime?             @map("link_opened_at")
+  finalPdfUrl            String?               @map("final_pdf_url")
+  finalPdfHash           String?               @map("final_pdf_hash")
+  outcome                ConsentSigningOutcome? @default(PENDING) @map("outcome")
+  metadata               Json?
+  createdAt              DateTime              @default(now()) @map("created_at")
+  updatedAt              DateTime              @updatedAt @map("updated_at")
+
+  document          ConsentDocument       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  tokens            SigningSecureToken[]
+  dispatches        PatientMessageDispatch[]
+  evidencePackages  ConsentEvidencePackage[]
+  evidenceV2Packages EvidencePackage[]
+
+  @@index([tenantId, documentId, status, createdAt], map: "idx_signing_sessions_tenant_doc_status_created")
+  @@index([tenantId, documentId, status], map: "idx_signing_sessions_tenant_doc_status")
+  @@index([tenantId, idempotencyKey], map: "idx_signing_sessions_tenant_idempotency_key_v1")
+  @@map("signing_sessions")
+}
+
+model SigningSecureToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  sessionId  String    @map("session_id") @db.Uuid
+  tenantId   String    @map("tenant_id")
+  signerRole String    @map("signer_role")
+  tokenHash  String?   @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  usedAt     DateTime? @map("used_at")
+  revokedAt  DateTime? @map("revoked_at")
+  ipOnUse    String?   @map("ip_on_use")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  session SigningSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, sessionId], map: "idx_signing_secure_tokens_tenant_session")
+  @@index([tokenHash], map: "idx_signing_secure_tokens_hash")
+  @@index([sessionId, revokedAt, usedAt], map: "idx_signing_secure_tokens_session_active")
+  @@map("signing_secure_tokens")
+}
+
+model PatientMessageDispatch {
+  id                     String                @id @default(uuid()) @db.Uuid
+  tenantId               String                @map("tenant_id")
+  signingSessionId       String                @map("signing_session_id") @db.Uuid
+  channel                PatientMessageChannel
+  idempotencyKey         String                @map("idempotency_key")
+  idempotencyFingerprint String                @map("idempotency_fingerprint")
+  recipientHash          String                @map("recipient_hash")
+  recipientReference     String                @map("recipient_reference")
+  status                 PatientMessageStatus  @default(PENDING)
+  attemptCount           Int                   @default(0) @map("attempt_count")
+  maxAttempts            Int                   @default(5) @map("max_attempts")
+  claimedAt              DateTime?             @map("claimed_at")
+  claimExpiresAt         DateTime?             @map("claim_expires_at")
+  lastAttemptAt          DateTime?             @map("last_attempt_at")
+  nextAttemptAt          DateTime              @default(now()) @map("next_attempt_at")
+  providerMessageId      String?               @map("provider_message_id")
+  lastErrorCode          String?               @map("last_error_code")
+  lastErrorMessage       String?               @map("last_error_message")
+  createdAt              DateTime              @default(now()) @map("created_at")
+  acceptedAt             DateTime?             @map("accepted_at")
+  sentAt                 DateTime?             @map("sent_at")
+  deliveredAt            DateTime?             @map("delivered_at")
+  metadata               Json?
+
+  session SigningSession @relation(fields: [signingSessionId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, signingSessionId, channel, idempotencyKey], map: "uq_patient_message_dispatch_tenant_session_channel_key")
+  @@index([tenantId, status, nextAttemptAt], map: "idx_patient_message_dispatches_tenant_status_next")
+  @@index([tenantId, signingSessionId, channel], map: "idx_patient_message_dispatches_tenant_session_channel")
+  @@map("patient_message_dispatches")
+}
+
 model ProcedureEducation {
   id               String                   @id @default(uuid())
   tenantId         String                   @map("tenant_id")
@@ -1940,13 +2073,13 @@ model ProcedureEducation {
   createdAt        DateTime                 @default(now()) @map("created_at")
   updatedAt        DateTime                 @updatedAt @map("updated_at")
 
-  tenant        Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  currentVersion ProcedureEducationVersion? @relation("ProcedureEducationCurrentVersion", fields: [currentVersionId], references: [id], onDelete: SetNull)
-  versions      ProcedureEducationVersion[] @relation("ProcedureEducationVersions")
-  sections      ProcedureEducationSection[]
-  assets        ProcedureEducationAsset[]
-  localizations ProcedureEducationLocalization[]
-  auditEvents   ProcedureEducationAuditEvent[]
+  tenant         Tenant                           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  currentVersion ProcedureEducationVersion?       @relation("ProcedureEducationCurrentVersion", fields: [currentVersionId], references: [id], onDelete: SetNull)
+  versions       ProcedureEducationVersion[]      @relation("ProcedureEducationVersions")
+  sections       ProcedureEducationSection[]
+  assets         ProcedureEducationAsset[]
+  localizations  ProcedureEducationLocalization[]
+  auditEvents    ProcedureEducationAuditEvent[]
 
   @@unique([tenantId, procedureCode], map: "uq_procedure_education_tenant_code")
   @@index([tenantId, status, updatedAt], map: "idx_procedure_education_tenant_status_updated")
@@ -1967,9 +2100,9 @@ model ProcedureEducationVersion {
   createdAt            DateTime                 @default(now()) @map("created_at")
   updatedAt            DateTime                 @updatedAt @map("updated_at")
 
-  tenant             Tenant                          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  procedureEducation ProcedureEducation              @relation("ProcedureEducationVersions", fields: [procedureEducationId], references: [id], onDelete: Cascade)
-  currentFor         ProcedureEducation[]            @relation("ProcedureEducationCurrentVersion")
+  tenant             Tenant                           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  procedureEducation ProcedureEducation               @relation("ProcedureEducationVersions", fields: [procedureEducationId], references: [id], onDelete: Cascade)
+  currentFor         ProcedureEducation[]             @relation("ProcedureEducationCurrentVersion")
   sections           ProcedureEducationSection[]
   assets             ProcedureEducationAsset[]
   localizations      ProcedureEducationLocalization[]
@@ -2023,9 +2156,9 @@ model ProcedureEducationAsset {
   createdAt            DateTime                    @default(now()) @map("created_at")
   updatedAt            DateTime                    @updatedAt @map("updated_at")
 
-  tenant             Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  procedureEducation ProcedureEducation        @relation(fields: [procedureEducationId], references: [id], onDelete: Cascade)
-  version            ProcedureEducationVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  tenant             Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  procedureEducation ProcedureEducation         @relation(fields: [procedureEducationId], references: [id], onDelete: Cascade)
+  version            ProcedureEducationVersion  @relation(fields: [versionId], references: [id], onDelete: Cascade)
   section            ProcedureEducationSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, procedureEducationId, sortOrder], map: "idx_procedure_education_assets_sort")
@@ -2070,8 +2203,8 @@ model ProcedureEducationAuditEvent {
   viewedAt             DateTime                      @default(now()) @map("viewed_at")
   createdAt            DateTime                      @default(now()) @map("created_at")
 
-  tenant             Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  procedureEducation ProcedureEducation        @relation(fields: [procedureEducationId], references: [id], onDelete: Cascade)
+  tenant             Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  procedureEducation ProcedureEducation         @relation(fields: [procedureEducationId], references: [id], onDelete: Cascade)
   version            ProcedureEducationVersion? @relation(fields: [versionId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, procedureEducationId, viewedAt], map: "idx_procedure_education_audit_viewed")
@@ -2323,56 +2456,68 @@ model ConsentEvidencePackage {
   id                String                  @id @default(uuid())
   tenantId          String                  @map("tenant_id")
   consentDocumentId String                  @map("consent_document_id")
+  signingSessionId  String?                 @map("signing_session_id") @db.Uuid
   copyType          ConsentEvidenceCopyType @map("copy_type")
   fileName          String                  @map("file_name")
   storagePath       String?                 @map("storage_path")
   checksumHash      String                  @map("checksum_hash")
   generatedBy       String?                 @map("generated_by")
   generatedAt       DateTime                @default(now()) @map("generated_at")
+  outcome           ConsentSigningOutcome?  @default(PENDING) @map("outcome")
+  deliveredAt       DateTime?               @map("delivered_at")
+  deliveryStatus    String?                 @map("delivery_status")
   metadata          Json?
 
   tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   consentDocument ConsentDocument @relation(fields: [consentDocumentId], references: [id], onDelete: Cascade)
+  signingSession  SigningSession? @relation(fields: [signingSessionId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, consentDocumentId, copyType], map: "idx_consent_evidence_packages_doc_type")
+  @@index([signingSessionId], map: "idx_consent_evidence_packages_signing_session")
   @@map("consent_evidence_packages")
 }
 
 model EvidencePackage {
-  id                    String   @id @default(uuid())
-  tenantId              String   @map("tenant_id")
-  caseId                String?  @map("case_id")
-  consentDocumentId     String?  @map("consent_document_id")
-  mrn                   String?
-  procedureName         String?  @map("procedure_name")
-  educationVersion      String?  @map("education_version")
-  educationLanguage     String?  @map("education_language")
-  educationViewed       Boolean  @default(false) @map("education_viewed")
-  viewDurationSeconds   Int?     @map("view_duration_seconds")
-  consentTemplate       String?  @map("consent_template")
-  consentVersion        String?  @map("consent_version")
-  consentLanguage       String?  @map("consent_language")
-  consentTimestamp      DateTime? @map("consent_timestamp")
-  signerIdentity        String?  @map("signer_identity")
-  signatureTimestamp    DateTime? @map("signature_timestamp")
-  browser               String?
-  deviceType            String?  @map("device_type")
-  ipAddress             String?  @map("ip_address")
-  otpSentTime           DateTime? @map("otp_sent_time")
-  otpVerificationTime   DateTime? @map("otp_verification_time")
-  otpVerificationStatus String?  @map("otp_verification_status")
-  maskedMobileNumber    String?  @map("masked_mobile_number")
-  educationSummary      String?  @map("education_summary")
-  consentSummary        String?  @map("consent_summary")
-  timelineSummary       String?  @map("timeline_summary")
-  generatedAt           DateTime @default(now()) @map("generated_at")
-  metadata              Json?
-  createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @updatedAt @map("updated_at")
+  id                       String                  @id @default(uuid())
+  tenantId                 String                  @map("tenant_id")
+  caseId                   String?                 @map("case_id")
+  consentDocumentId        String?                 @map("consent_document_id")
+  signingSessionId         String?                 @map("signing_session_id") @db.Uuid
+  mrn                      String?
+  procedureName            String?                 @map("procedure_name")
+  educationVersion         String?                 @map("education_version")
+  educationLanguage        String?                 @map("education_language")
+  educationViewed          Boolean                 @default(false) @map("education_viewed")
+  viewDurationSeconds      Int?                    @map("view_duration_seconds")
+  consentTemplate          String?                 @map("consent_template")
+  consentVersion           String?                 @map("consent_version")
+  consentLanguage          String?                 @map("consent_language")
+  consentTimestamp         DateTime?               @map("consent_timestamp")
+  signerIdentity           String?                 @map("signer_identity")
+  signatureTimestamp       DateTime?               @map("signature_timestamp")
+  browser                  String?
+  deviceType               String?                 @map("device_type")
+  ipAddress                String?                 @map("ip_address")
+  otpSentTime              DateTime?               @map("otp_sent_time")
+  otpVerificationTime      DateTime?               @map("otp_verification_time")
+  otpVerificationStatus    String?                 @map("otp_verification_status")
+  maskedMobileNumber       String?                 @map("masked_mobile_number")
+  educationSummary         String?                 @map("education_summary")
+  consentSummary           String?                 @map("consent_summary")
+  timelineSummary          String?                 @map("timeline_summary")
+  generatedAt              DateTime                @default(now()) @map("generated_at")
+  outcome                  ConsentSigningOutcome?  @default(PENDING) @map("outcome")
+  finalPdfHash             String?                 @map("final_pdf_hash")
+  patientCopyDeliveredAt   DateTime?               @map("patient_copy_delivered_at")
+  patientCopyDeliveryStatus String?                @map("patient_copy_delivery_status")
+  metadata                 Json?
+  createdAt                DateTime                @default(now()) @map("created_at")
+  updatedAt                DateTime                @updatedAt @map("updated_at")
 
-  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  case            Case?            @relation(fields: [caseId], references: [id], onDelete: SetNull)
-  consentDocument ConsentDocument? @relation(fields: [consentDocumentId], references: [id], onDelete: SetNull)
+  tenant          Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case            Case?                 @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  consentDocument ConsentDocument?      @relation(fields: [consentDocumentId], references: [id], onDelete: SetNull)
+  signingSession  SigningSession?       @relation(fields: [signingSessionId], references: [id], onDelete: SetNull)
   events          EvidenceEvent[]
   timeline        EvidenceTimeline?
   assetRecords    EvidenceAssetRecord[]
@@ -2380,6 +2525,7 @@ model EvidencePackage {
   @@index([tenantId, generatedAt], map: "idx_evidence_packages_tenant_generated")
   @@index([tenantId, mrn], map: "idx_evidence_packages_tenant_mrn")
   @@index([tenantId, consentTemplate], map: "idx_evidence_packages_tenant_template")
+  @@index([signingSessionId], map: "idx_evidence_packages_signing_session")
   @@map("evidence_packages")
 }
 
@@ -2417,10 +2563,10 @@ model EvidenceEvent {
   metadata              Json?
   createdAt             DateTime  @default(now()) @map("created_at")
 
-  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  package         EvidencePackage? @relation(fields: [packageId], references: [id], onDelete: SetNull)
-  case            Case?            @relation(fields: [caseId], references: [id], onDelete: SetNull)
-  consentDocument ConsentDocument? @relation(fields: [consentDocumentId], references: [id], onDelete: SetNull)
+  tenant          Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  package         EvidencePackage?      @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  case            Case?                 @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  consentDocument ConsentDocument?      @relation(fields: [consentDocumentId], references: [id], onDelete: SetNull)
   assetRecords    EvidenceAssetRecord[]
 
   @@index([tenantId, eventType, eventTimestamp], map: "idx_evidence_events_tenant_type_time")
@@ -2430,18 +2576,18 @@ model EvidenceEvent {
 }
 
 model EvidenceTimeline {
-  id                String    @id @default(uuid())
-  tenantId          String    @map("tenant_id")
-  packageId         String    @unique @map("package_id")
-  caseId            String?   @map("case_id")
-  consentDocumentId String?   @map("consent_document_id")
+  id                String   @id @default(uuid())
+  tenantId          String   @map("tenant_id")
+  packageId         String   @unique @map("package_id")
+  caseId            String?  @map("case_id")
+  consentDocumentId String?  @map("consent_document_id")
   mrn               String?
-  timelineJson      Json      @map("timeline_json")
-  summaryText       String?   @map("summary_text")
-  generatedAt       DateTime  @default(now()) @map("generated_at")
+  timelineJson      Json     @map("timeline_json")
+  summaryText       String?  @map("summary_text")
+  generatedAt       DateTime @default(now()) @map("generated_at")
   metadata          Json?
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   package         EvidencePackage  @relation(fields: [packageId], references: [id], onDelete: Cascade)
@@ -2534,22 +2680,22 @@ model TrakCareIntegrationLog {
 }
 
 model PatientExternalReference {
-  id                String   @id @default(uuid())
-  tenantId          String   @map("tenant_id")
-  caseId            String?  @map("case_id")
-  patientMrn        String   @map("patient_mrn")
-  externalSystem    String   @default("TRAKCARE") @map("external_system")
-  externalPatientId String   @map("external_patient_id")
-  nationalId        String?  @map("national_id")
-  iqamaNumber       String?  @map("iqama_number")
-  sourceTransactionId String? @map("source_transaction_id")
-  lastSyncedAt      DateTime @default(now()) @map("last_synced_at")
-  metadata          Json?
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id                  String   @id @default(uuid())
+  tenantId            String   @map("tenant_id")
+  caseId              String?  @map("case_id")
+  patientMrn          String   @map("patient_mrn")
+  externalSystem      String   @default("TRAKCARE") @map("external_system")
+  externalPatientId   String   @map("external_patient_id")
+  nationalId          String?  @map("national_id")
+  iqamaNumber         String?  @map("iqama_number")
+  sourceTransactionId String?  @map("source_transaction_id")
+  lastSyncedAt        DateTime @default(now()) @map("last_synced_at")
+  metadata            Json?
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
-  tenant     Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  case       Case?                       @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  tenant     Tenant                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case       Case?                        @relation(fields: [caseId], references: [id], onDelete: SetNull)
   encounters EncounterExternalReference[]
 
   @@unique([tenantId, externalSystem, externalPatientId], map: "uq_patient_external_refs_external")
@@ -2575,9 +2721,9 @@ model EncounterExternalReference {
   createdAt                  DateTime  @default(now()) @map("created_at")
   updatedAt                  DateTime  @updatedAt @map("updated_at")
 
-  tenant      Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  case        Case?                     @relation(fields: [caseId], references: [id], onDelete: SetNull)
-  patientRef  PatientExternalReference? @relation(fields: [patientExternalReferenceId], references: [id], onDelete: SetNull)
+  tenant     Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case       Case?                     @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  patientRef PatientExternalReference? @relation(fields: [patientExternalReferenceId], references: [id], onDelete: SetNull)
 
   @@unique([tenantId, externalSystem, externalEncounterId], map: "uq_encounter_external_refs_external")
   @@index([tenantId, encounterNumber], map: "idx_encounter_external_refs_tenant_number")
@@ -2707,7 +2853,7 @@ model ClinicalSpecialty {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  tenant     Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant     Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   procedures ClinicalProcedure[]
 
   @@unique([tenantId, code])
@@ -2716,21 +2862,21 @@ model ClinicalSpecialty {
 }
 
 model ClinicalProcedure {
-  id                     String  @id @default(uuid())
-  tenantId               String  @map("tenant_id")
+  id                     String   @id @default(uuid())
+  tenantId               String   @map("tenant_id")
   code                   String
-  nameEn                 String  @map("name_en")
-  nameAr                 String  @map("name_ar")
-  shortNameEn            String? @map("short_name_en")
-  shortNameAr            String? @map("short_name_ar")
-  specialtyId            String  @map("specialty_id")
-  departmentName         String  @map("department_name")
-  categoryCode           String  @map("category_code")
-  typicalDurationMinutes Int?    @map("typical_duration_minutes")
-  anesthesiaRequired     Boolean @default(false) @map("anesthesia_required")
+  nameEn                 String   @map("name_en")
+  nameAr                 String   @map("name_ar")
+  shortNameEn            String?  @map("short_name_en")
+  shortNameAr            String?  @map("short_name_ar")
+  specialtyId            String   @map("specialty_id")
+  departmentName         String   @map("department_name")
+  categoryCode           String   @map("category_code")
+  typicalDurationMinutes Int?     @map("typical_duration_minutes")
+  anesthesiaRequired     Boolean  @default(false) @map("anesthesia_required")
   keywords               String[] @default([])
-  externalMappings       Json?   @map("external_mappings")
-  status                 String  @default("draft")
+  externalMappings       Json?    @map("external_mappings")
+  status                 String   @default("draft")
   createdAt              DateTime @default(now()) @map("created_at")
   updatedAt              DateTime @updatedAt @map("updated_at")
 
@@ -2746,28 +2892,28 @@ model ClinicalProcedure {
 }
 
 model ClinicalKnowledgePackage {
-  id                         String                  @id @default(uuid())
-  tenantId                   String                  @map("tenant_id")
-  procedureId                String                  @map("procedure_id")
-  version                    String
-  versionMajor               Int                     @map("version_major")
-  versionMinor               Int                     @map("version_minor")
-  versionPatch               Int                     @map("version_patch")
-  effectiveDate              DateTime                @map("effective_date")
-  expiryDate                 DateTime?               @map("expiry_date")
-  status                     ClinicalKnowledgeStatus @default(DRAFT)
-  governanceSnapshot         Json?                   @map("governance_snapshot")
-  requiredParticipantsSnapshot Json?                 @map("required_participants_snapshot")
-  packageSnapshot            Json?                   @map("package_snapshot")
-  supersededByPackageId      String?                 @map("superseded_by_package_id")
-  createdByUserId            String                  @map("created_by_user_id")
-  publishedByUserId          String?                 @map("published_by_user_id")
-  createdAt                  DateTime                @default(now()) @map("created_at")
-  updatedAt                  DateTime                @updatedAt @map("updated_at")
+  id                           String                  @id @default(uuid())
+  tenantId                     String                  @map("tenant_id")
+  procedureId                  String                  @map("procedure_id")
+  version                      String
+  versionMajor                 Int                     @map("version_major")
+  versionMinor                 Int                     @map("version_minor")
+  versionPatch                 Int                     @map("version_patch")
+  effectiveDate                DateTime                @map("effective_date")
+  expiryDate                   DateTime?               @map("expiry_date")
+  status                       ClinicalKnowledgeStatus @default(DRAFT)
+  governanceSnapshot           Json?                   @map("governance_snapshot")
+  requiredParticipantsSnapshot Json?                   @map("required_participants_snapshot")
+  packageSnapshot              Json?                   @map("package_snapshot")
+  supersededByPackageId        String?                 @map("superseded_by_package_id")
+  createdByUserId              String                  @map("created_by_user_id")
+  publishedByUserId            String?                 @map("published_by_user_id")
+  createdAt                    DateTime                @default(now()) @map("created_at")
+  updatedAt                    DateTime                @updatedAt @map("updated_at")
 
-  tenant            Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  procedure         ClinicalProcedure          @relation(fields: [procedureId], references: [id], onDelete: Restrict)
-  items             PackageItem[]
+  tenant    Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  procedure ClinicalProcedure @relation(fields: [procedureId], references: [id], onDelete: Restrict)
+  items     PackageItem[]
 
   @@unique([tenantId, procedureId, version])
   @@index([tenantId, procedureId, status])
@@ -2776,14 +2922,14 @@ model ClinicalKnowledgePackage {
 }
 
 model PackageItem {
-  id               String                        @id @default(uuid())
-  tenantId         String                        @map("tenant_id")
-  packageId        String                        @map("package_id")
+  id               String                           @id @default(uuid())
+  tenantId         String                           @map("tenant_id")
+  packageId        String                           @map("package_id")
   itemType         ClinicalKnowledgePackageItemType @map("item_type")
-  itemId           String                        @map("item_id")
-  orderIndex       Int                           @map("order_index")
-  isRequired       Boolean                       @default(true) @map("is_required")
-  packageOverrides Json?                         @map("package_overrides")
+  itemId           String                           @map("item_id")
+  orderIndex       Int                              @map("order_index")
+  isRequired       Boolean                          @default(true) @map("is_required")
+  packageOverrides Json?                            @map("package_overrides")
 
   package ClinicalKnowledgePackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
 
@@ -2793,28 +2939,29 @@ model PackageItem {
 }
 
 model ConsentForm {
-  id                  String                        @id @default(uuid())
-  tenantId            String                        @map("tenant_id")
+  id                  String                           @id @default(uuid())
+  tenantId            String                           @map("tenant_id")
   code                String
-  titleEn             String                        @map("title_en")
-  titleAr             String                        @map("title_ar")
+  titleEn             String                           @map("title_en")
+  titleAr             String                           @map("title_ar")
   formType            ClinicalKnowledgeConsentFormType @map("form_type")
-  riskLevel           ClinicalKnowledgeRiskLevel    @default(STANDARD) @map("risk_level")
-  status              ClinicalKnowledgeStatus       @default(DRAFT)
+  riskLevel           ClinicalKnowledgeRiskLevel       @default(STANDARD) @map("risk_level")
+  status              ClinicalKnowledgeStatus          @default(DRAFT)
   version             String
-  effectiveDate       DateTime                      @map("effective_date")
-  expiryDate          DateTime?                     @map("expiry_date")
-  governanceSnapshot  Json?                         @map("governance_snapshot")
-  pdfTemplateUrl      String?                       @map("pdf_template_url")
-  requiresWitness     Boolean                       @default(false) @map("requires_witness")
-  requiresInterpreter Boolean                       @default(false) @map("requires_interpreter")
-  createdByUserId     String                        @map("created_by_user_id")
-  publishedByUserId   String?                       @map("published_by_user_id")
-  createdAt           DateTime                      @default(now()) @map("created_at")
-  updatedAt           DateTime                      @updatedAt @map("updated_at")
+  effectiveDate       DateTime                         @map("effective_date")
+  expiryDate          DateTime?                        @map("expiry_date")
+  governanceSnapshot  Json?                            @map("governance_snapshot")
+  pdfTemplateUrl      String?                          @map("pdf_template_url")
+  requiresWitness     Boolean                          @default(false) @map("requires_witness")
+  requiresInterpreter Boolean                          @default(false) @map("requires_interpreter")
+  createdByUserId     String                           @map("created_by_user_id")
+  publishedByUserId   String?                          @map("published_by_user_id")
+  createdAt           DateTime                         @default(now()) @map("created_at")
+  updatedAt           DateTime                         @updatedAt @map("updated_at")
 
-  tenant   Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  sections ConsentFormSection[]
+  tenant            Tenant                         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sections          ConsentFormSection[]
+  signatureMappings ConsentSignatureFieldMapping[]
 
   @@unique([tenantId, code, version])
   @@index([tenantId, status])
@@ -2823,43 +2970,83 @@ model ConsentForm {
 }
 
 model ConsentFormSection {
-  id                  String   @id @default(uuid())
-  tenantId            String   @map("tenant_id")
-  formId              String   @map("form_id")
-  type                String
-  orderIndex          Int      @map("order_index")
-  titleEn             String?  @map("title_en")
-  titleAr             String?  @map("title_ar")
-  contentEn           String?  @map("content_en") @db.Text
-  contentAr           String?  @map("content_ar") @db.Text
-  isRequired          Boolean  @default(true) @map("is_required")
+  id                    String  @id @default(uuid())
+  tenantId              String  @map("tenant_id")
+  formId                String  @map("form_id")
+  type                  String
+  orderIndex            Int     @map("order_index")
+  titleEn               String? @map("title_en")
+  titleAr               String? @map("title_ar")
+  contentEn             String? @map("content_en") @db.Text
+  contentAr             String? @map("content_ar") @db.Text
+  isRequired            Boolean @default(true) @map("is_required")
   isEditableByPhysician Boolean @default(false) @map("is_editable_by_physician")
 
-  tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   form   ConsentForm @relation(fields: [formId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, formId, orderIndex])
   @@map("clinical_consent_form_sections")
 }
 
+model ConsentSignatureFieldMapping {
+  id       String @id @default(uuid())
+  tenantId String @map("tenant_id")
+  formId   String @map("form_id")
+
+  fieldKey  String  @map("field_key")
+  fieldType String  @map("field_type")
+  role      String?
+  labelEn   String? @map("label_en")
+  labelAr   String? @map("label_ar")
+
+  pageNumber Int   @map("page_number")
+  x          Float
+  y          Float
+  width      Float
+  height     Float
+
+  coordinateMode String  @default("NORMALIZED") @map("coordinate_mode")
+  required       Boolean @default(true)
+  isActive       Boolean @default(true) @map("is_active")
+
+  appearance Json?
+  metadata   Json?
+
+  createdByUserId  String?   @map("created_by_user_id")
+  reviewedByUserId String?   @map("reviewed_by_user_id")
+  approvedByUserId String?   @map("approved_by_user_id")
+  approvedAt       DateTime? @map("approved_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  form ConsentForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, formId], map: "idx_signature_mapping_form")
+  @@index([tenantId, formId, fieldType], map: "idx_signature_mapping_type")
+  @@index([tenantId, formId, isActive], map: "idx_signature_mapping_active")
+  @@map("consent_signature_field_mappings")
+}
+
 model EducationMaterial {
-  id                String                        @id @default(uuid())
-  tenantId          String                        @map("tenant_id")
-  code              String
-  titleEn           String                        @map("title_en")
-  titleAr           String                        @map("title_ar")
-  assetType         ClinicalKnowledgeEducationAssetType @map("asset_type")
-  assetUrl          String                        @map("asset_url")
-  durationMinutes   Int?                          @map("duration_minutes")
-  status            ClinicalKnowledgeStatus       @default(DRAFT)
-  version           String
-  effectiveDate     DateTime                      @map("effective_date")
-  expiryDate        DateTime?                     @map("expiry_date")
-  governanceSnapshot Json?                        @map("governance_snapshot")
-  createdByUserId   String                        @map("created_by_user_id")
-  publishedByUserId String?                       @map("published_by_user_id")
-  createdAt         DateTime                      @default(now()) @map("created_at")
-  updatedAt         DateTime                      @updatedAt @map("updated_at")
+  id                 String                              @id @default(uuid())
+  tenantId           String                              @map("tenant_id")
+  code               String
+  titleEn            String                              @map("title_en")
+  titleAr            String                              @map("title_ar")
+  assetType          ClinicalKnowledgeEducationAssetType @map("asset_type")
+  assetUrl           String                              @map("asset_url")
+  durationMinutes    Int?                                @map("duration_minutes")
+  status             ClinicalKnowledgeStatus             @default(DRAFT)
+  version            String
+  effectiveDate      DateTime                            @map("effective_date")
+  expiryDate         DateTime?                           @map("expiry_date")
+  governanceSnapshot Json?                               @map("governance_snapshot")
+  createdByUserId    String                              @map("created_by_user_id")
+  publishedByUserId  String?                             @map("published_by_user_id")
+  createdAt          DateTime                            @default(now()) @map("created_at")
+  updatedAt          DateTime                            @updatedAt @map("updated_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -2869,25 +3056,25 @@ model EducationMaterial {
 }
 
 model RiskDisclosure {
-  id                String                        @id @default(uuid())
-  tenantId          String                        @map("tenant_id")
-  code              String
-  titleEn           String                        @map("title_en")
-  titleAr           String                        @map("title_ar")
-  descriptionEn     String                        @map("description_en") @db.Text
-  descriptionAr     String                        @map("description_ar") @db.Text
-  riskLevel         ClinicalKnowledgeRiskLevel    @default(STANDARD) @map("risk_level")
-  incidenceRate     String?                       @map("incidence_rate")
-  specialtyIds      String[]                      @default([]) @map("specialty_ids")
-  status            ClinicalKnowledgeStatus       @default(DRAFT)
-  version           String
-  effectiveDate     DateTime                      @map("effective_date")
-  expiryDate        DateTime?                     @map("expiry_date")
-  governanceSnapshot Json?                        @map("governance_snapshot")
-  createdByUserId   String                        @map("created_by_user_id")
-  publishedByUserId String?                       @map("published_by_user_id")
-  createdAt         DateTime                      @default(now()) @map("created_at")
-  updatedAt         DateTime                      @updatedAt @map("updated_at")
+  id                 String                     @id @default(uuid())
+  tenantId           String                     @map("tenant_id")
+  code               String
+  titleEn            String                     @map("title_en")
+  titleAr            String                     @map("title_ar")
+  descriptionEn      String                     @map("description_en") @db.Text
+  descriptionAr      String                     @map("description_ar") @db.Text
+  riskLevel          ClinicalKnowledgeRiskLevel @default(STANDARD) @map("risk_level")
+  incidenceRate      String?                    @map("incidence_rate")
+  specialtyIds       String[]                   @default([]) @map("specialty_ids")
+  status             ClinicalKnowledgeStatus    @default(DRAFT)
+  version            String
+  effectiveDate      DateTime                   @map("effective_date")
+  expiryDate         DateTime?                  @map("expiry_date")
+  governanceSnapshot Json?                      @map("governance_snapshot")
+  createdByUserId    String                     @map("created_by_user_id")
+  publishedByUserId  String?                    @map("published_by_user_id")
+  createdAt          DateTime                   @default(now()) @map("created_at")
+  updatedAt          DateTime                   @updatedAt @map("updated_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -2897,22 +3084,22 @@ model RiskDisclosure {
 }
 
 model DecisionRule {
-  id               String                       @id @default(uuid())
-  tenantId         String                       @map("tenant_id")
+  id               String                              @id @default(uuid())
+  tenantId         String                              @map("tenant_id")
   code             String
-  nameEn           String                       @map("name_en")
-  nameAr           String                       @map("name_ar")
-  description      String?                      @db.Text
-  priority         Int                          @default(0)
+  nameEn           String                              @map("name_en")
+  nameAr           String                              @map("name_ar")
+  description      String?                             @db.Text
+  priority         Int                                 @default(0)
   condition        Json
   action           Json
   status           ClinicalKnowledgeDecisionRuleStatus @default(DRAFT)
-  effectiveDate    DateTime                     @map("effective_date")
-  expiryDate       DateTime?                    @map("expiry_date")
-  createdByUserId  String                       @map("created_by_user_id")
-  approvedByUserId String?                      @map("approved_by_user_id")
-  createdAt        DateTime                     @default(now()) @map("created_at")
-  updatedAt        DateTime                     @updatedAt @map("updated_at")
+  effectiveDate    DateTime                            @map("effective_date")
+  expiryDate       DateTime?                           @map("expiry_date")
+  createdByUserId  String                              @map("created_by_user_id")
+  approvedByUserId String?                             @map("approved_by_user_id")
+  createdAt        DateTime                            @default(now()) @map("created_at")
+  updatedAt        DateTime                            @updatedAt @map("updated_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -2922,18 +3109,18 @@ model DecisionRule {
 }
 
 model GovernanceEvent {
-  id            String                              @id @default(uuid())
-  tenantId      String                              @map("tenant_id")
-  entityType    ClinicalKnowledgeGovernanceEntityType @map("entity_type")
-  entityId      String                              @map("entity_id")
-  eventType     ClinicalKnowledgeGovernanceEventType  @map("event_type")
-  actorUserId   String                              @map("actor_user_id")
-  actorRole     String                              @map("actor_role")
-  comment       String?                             @db.Text
-  metadata      Json?
-  previousHash  String?                             @map("previous_hash")
-  eventHash     String                              @map("event_hash")
-  createdAt     DateTime                            @default(now()) @map("created_at")
+  id           String                                @id @default(uuid())
+  tenantId     String                                @map("tenant_id")
+  entityType   ClinicalKnowledgeGovernanceEntityType @map("entity_type")
+  entityId     String                                @map("entity_id")
+  eventType    ClinicalKnowledgeGovernanceEventType  @map("event_type")
+  actorUserId  String                                @map("actor_user_id")
+  actorRole    String                                @map("actor_role")
+  comment      String?                               @db.Text
+  metadata     Json?
+  previousHash String?                               @map("previous_hash")
+  eventHash    String                                @map("event_hash")
+  createdAt    DateTime                              @default(now()) @map("created_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 

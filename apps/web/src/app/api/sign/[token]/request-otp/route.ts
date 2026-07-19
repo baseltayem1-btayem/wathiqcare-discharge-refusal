@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requestSigningOtp } from "@/lib/server/public-signing-service";
+import { requestSigningOtp } from "@/lib/server/public-signing-otp-service";
+import { checkPublicSigningOtpRateLimit } from "@/lib/server/public-signing-rate-limit";
 import { ApiError } from "@/lib/server/http";
 
 export async function POST(
@@ -8,6 +9,7 @@ export async function POST(
 ) {
   try {
     const { token } = await params;
+    await checkPublicSigningOtpRateLimit({ token, request });
     const body = await request.json();
     const result = await requestSigningOtp({
       token,

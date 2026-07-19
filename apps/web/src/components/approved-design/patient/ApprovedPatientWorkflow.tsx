@@ -26,6 +26,8 @@ import {
   SignatureResult,
 } from "./types";
 import { PatientCompletionStep } from "./PatientCompletionStep";
+import { EducationDetailsStep } from "./EducationDetailsStep";
+import { LanguageSelectionStep } from "./LanguageSelectionStep";
 import { PatientJourneyScreen } from "./PatientJourneyScreen";
 import { PatientSignatureStep } from "./PatientSignatureStep";
 import { RefusalAcknowledgementStep } from "./RefusalAcknowledgementStep";
@@ -43,10 +45,12 @@ export type ApprovedPatientWorkflowProps = {
 const STEP_MAP: Record<Exclude<PatientScreen, "refusal-ack" | "refusal-signature" | "refusal-confirmed">, number> = {
   review: 1,
   otp: 2,
-  education: 3,
-  acknowledgement: 4,
-  signature: 5,
-  confirmation: 5,
+  language: 3,
+  education: 4,
+  disclosures: 4,
+  acknowledgement: 5,
+  signature: 6,
+  confirmation: 7,
 };
 
 export function ApprovedPatientWorkflow({
@@ -120,6 +124,8 @@ export function ApprovedPatientWorkflow({
           plannedProcedure: null,
           templateTitleAr: data.bootstrap.templateTitleAr,
           templateTitleEn: data.bootstrap.templateTitleEn,
+          approvedPdfUrl: data.bootstrap.approvedPdfUrl,
+          approvedContentAvailable: data.bootstrap.approvedContentAvailable,
           versionLabel: null,
           facilityName: data.bootstrap.facilityName,
           sections: [],
@@ -150,6 +156,8 @@ export function ApprovedPatientWorkflow({
           plannedProcedure: (data as FullDocument).plannedProcedure,
           templateTitleAr: (data as FullDocument).templateTitleAr,
           templateTitleEn: (data as FullDocument).templateTitleEn,
+          approvedPdfUrl: (data as FullDocument).approvedPdfUrl,
+          approvedContentAvailable: (data as FullDocument).approvedContentAvailable,
           versionLabel: (data as FullDocument).versionLabel,
           facilityName: (data as FullDocument).facilityName,
           sections: (data as FullDocument).sections,
@@ -304,7 +312,7 @@ export function ApprovedPatientWorkflow({
       }
       const phase = await loadDocument();
       if (phase === "full") {
-        setScreen(educationRequired ? "education" : "acknowledgement");
+        setScreen("language");
       }
     } catch (err) {
       const e = err as Error & { status?: number };
@@ -371,6 +379,14 @@ export function ApprovedPatientWorkflow({
       setEducationCompleting(false);
     }
   }, [token, lang]);
+
+  const continueFromLanguage = useCallback(() => {
+    if (educationRequired) {
+      setScreen("education");
+      return;
+    }
+    setScreen("acknowledgement");
+  }, [educationRequired]);
 
   /* ════════════════════════════════════════════════════════════════
    *  Decision actions
@@ -522,11 +538,15 @@ export function ApprovedPatientWorkflow({
       case "otp":
         return "review";
       case "education":
-        return "otp";
+        return "language";
+      case "disclosures":
+        return "education";
       case "acknowledgement":
-        return educationRequired ? "education" : "otp";
+        return educationRequired ? "disclosures" : "language";
       case "signature":
         return "acknowledgement";
+      case "language":
+        return "otp";
       case "refusal-ack":
         return "acknowledgement";
       case "refusal-signature":
@@ -582,11 +602,29 @@ export function ApprovedPatientWorkflow({
         />
       ) : null}
 
+      {screen === "language" ? (
+        <LanguageSelectionStep
+          lang={lang}
+          selectedLang={lang}
+          onSelect={setLang}
+          onContinue={continueFromLanguage}
+        />
+      ) : null}
+
       {screen === "education" && doc ? (
         <EducationMaterialsStep
           lang={lang}
           doc={doc}
-          onComplete={handleCompleteEducation}
+          onComplete={() => setScreen("disclosures")}
+          completing={false}
+        />
+      ) : null}
+
+      {screen === "disclosures" && doc ? (
+        <EducationDetailsStep
+          lang={lang}
+          doc={doc}
+          onContinue={handleCompleteEducation}
           completing={educationCompleting}
         />
       ) : null}
