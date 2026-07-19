@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { getPrisma } from "@/lib/server/prisma";
@@ -37,6 +37,7 @@ function getPilotEncounter(mrn: string) {
       currentMedications: pilot.currentMedication || "",
       physicianSpecialty: "",
       caseNumber: pilot.visitNo,
+      patientDateOfBirth: pilot.dateOfBirth || null,
       syncStatus: "SYNCED",
       source: "pilot_fallback",
       isMock: true,
@@ -122,6 +123,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         ? String((metadata.admissionDate ?? metadata.encounterDate ?? "") || "")
         : "";
 
+    const patientDateOfBirth =
+      metadata && typeof metadata === "object" && !Array.isArray(metadata)
+        ? String((metadata.dateOfBirth ?? metadata.dob ?? "") || "")
+        : "";
+
     const encounter = {
       id: caseRecord.id,
       encounterId: caseRecord.caseNumber || `ENC-${caseRecord.id.slice(0, 8).toUpperCase()}`,
@@ -136,6 +142,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       currentMedications: "",
       physicianSpecialty: physicianSpecialty || "",
       caseNumber: caseRecord.caseNumber,
+      patientDateOfBirth: patientDateOfBirth || null,
       syncStatus: "SYNCED" as const,
       source: "cached_local" as const,
     };

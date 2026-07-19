@@ -1,10 +1,12 @@
 "use client";
 
 import { AlertTriangle, ClipboardSignature, ShieldCheck } from "lucide-react";
+import { type ReactNode } from "react";
 import { useI18n } from "@/i18n/I18nProvider";
 import TabletSignaturePad from "@/components/forms/TabletSignaturePad";
 import type { ConsentFieldMappingReadiness } from "../../lib/api";
 import { analyzeDoctorReadiness } from "../../doctorReadiness";
+import { evaluateRequiredWhen } from "../../utils/evaluateRequiredWhen";
 import { WorkspaceBadge, WorkspaceCard, WorkspaceCardHeader } from "../WorkspaceAtoms";
 
 interface DoctorCompletionPanelProps {
@@ -113,12 +115,178 @@ export function DoctorCompletionPanel({
     physicianSignatureDataUrl,
   });
 
+  const effectiveAnesthesiaFields = anesthesiaFields.filter((field) =>
+    evaluateRequiredWhen(field.requiredWhen, values),
+  );
+
+  const anesthesiaReadinessReport = analyzeDoctorReadiness({
+    fields: effectiveAnesthesiaFields,
+    values,
+    physicianSignatureDataUrl,
+  });
+
   const completedDoctorFields = doctorReadinessReport.completedCount;
+  const completedAnesthesiaFields = anesthesiaReadinessReport.completedCount;
   const anesthesiaDecision = values.anesthesia_applies;
   const anesthesiaApplies = anesthesiaDecision === "true";
   const anesthesiaNotApplicable = anesthesiaDecision === "false";
 
   const pairedFields = groupFieldsIntoBilingualPairs(doctorFields);
+  const pairedAnesthesiaFields = groupFieldsIntoBilingualPairs(effectiveAnesthesiaFields);
+
+  function renderPairedFields(
+    pairs: FieldPair[],
+    report: ReturnType<typeof analyzeDoctorReadiness>,
+  ): ReactNode {
+    return pairs.map((pair) => {
+      const complete =
+        (pair.en
+          ? report.fields.find((f) => f.key === pair.en!.key)?.complete
+          : undefined) ??
+        (pair.ar
+          ? report.fields.find((f) => f.key === pair.ar!.key)?.complete
+          : undefined) ??
+        false;
+
+      const titleEn = pair.en?.labelEn ?? pair.ar?.labelEn ?? pair.key;
+      const titleAr = pair.ar?.labelEn;
+      const section = pair.section;
+      const typeLabel = clinicalTypeLabel(pair.type, lang as "en" | "ar");
+
+      return (
+        <div
+          key={pair.key}
+          id={"doctor-field-" + pair.key}
+          data-doctor-field={pair.key}
+          data-doctor-field-pair="true"
+          className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white px-4 py-4"
+        >
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <div>
+              <label className="text-sm font-semibold text-slate-900" htmlFor={pair.en?.key ?? pair.ar?.key ?? pair.key}>
+                {titleEn}
+                {titleAr ? (
+                  <span className="block text-xs font-normal text-slate-500" dir="rtl" lang="ar">
+                    {titleAr}
+                  </span>
+                ) : null}
+              </label>
+              <p className="mt-1 text-xs text-slate-500">
+                {section ? `Section ${section}` : null}
+                {section ? <span aria-hidden> · </span> : null}
+                <span data-clinical-type-label="true">{typeLabel}</span>
+              </p>
+            </div>
+            <WorkspaceBadge tone={complete ? "green" : "gold"}>{complete ? "Complete" : "Required"}</WorkspaceBadge>
+          </div>
+
+          <div className="space-y-3">
+            {pair.en && pair.en.type === "SIGNATURE" ? (
+              <div
+                role="region"
+                aria-label="Physician signature"
+                aria-describedby={`sig-desc-${pair.key}`}
+              >
+                <p id={`sig-desc-${pair.key}`} className="sr-only">
+                  Sign inside the signature area using a stylus or finger. Use Tab to reach the clear button.
+                </p>
+                <TabletSignaturePad
+                  value={physicianSignatureDataUrl}
+                  onChange={onPhysicianSignatureChange}
+                  disabled={disabled}
+                />
+              </div>
+            ) : pair.ar && pair.ar.type === "SIGNATURE" ? (
+              <div
+                role="region"
+                aria-label="Physician signature"
+                aria-describedby={`sig-desc-${pair.key}`}
+              >
+                <p id={`sig-desc-${pair.key}`} className="sr-only">
+                  Sign inside the signature area using a stylus or finger. Use Tab to reach the clear button.
+                </p>
+                <TabletSignaturePad
+                  value={physicianSignatureDataUrl}
+                  onChange={onPhysicianSignatureChange}
+                  disabled={disabled}
+                />
+              </div>
+            ) : null}
+
+            {(() => {
+              const enField = pair.en;
+              return enField && enField.type !== "SIGNATURE" ? (
+                <div>
+                  <label htmlFor={enField.key} className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                    English
+                  </label>
+                  {enField.type === "CHECKBOX" ? (
+                    <select
+                      id={enField.key}
+                      value={values[enField.key] ?? ""}
+                      disabled={disabled}
+                      onChange={(event) => onValueChange(enField.key, event.target.value)}
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    >
+                      <option value="">Select applicability</option>
+                      <option value="true">Yes / applies</option>
+                      <option value="false">No / not applicable</option>
+                    </select>
+                  ) : (
+                    <textarea
+                      id={enField.key}
+                      value={values[enField.key] ?? ""}
+                      disabled={disabled}
+                      onChange={(event) => onValueChange(enField.key, event.target.value)}
+                      placeholder="Enter physician completion value"
+                      rows={enField.type === "MULTILINE_TEXT" ? 3 : 2}
+                      className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
+                  )}
+                </div>
+              ) : null;
+            })()}
+
+            {(() => {
+              const arField = pair.ar;
+              return arField && arField.type !== "SIGNATURE" ? (
+                <div>
+                  <label htmlFor={arField.key} className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500" dir="rtl" lang="ar">
+                    العربية
+                  </label>
+                  {arField.type === "CHECKBOX" ? (
+                    <select
+                      id={arField.key}
+                      value={values[arField.key] ?? ""}
+                      disabled={disabled}
+                      onChange={(event) => onValueChange(arField.key, event.target.value)}
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    >
+                      <option value="">Select applicability</option>
+                      <option value="true">Yes / applies</option>
+                      <option value="false">No / not applicable</option>
+                    </select>
+                  ) : (
+                    <textarea
+                      id={arField.key}
+                      value={values[arField.key] ?? ""}
+                      disabled={disabled}
+                      onChange={(event) => onValueChange(arField.key, event.target.value)}
+                      placeholder="أدخل القيمة بالعربية"
+                      rows={arField.type === "MULTILINE_TEXT" ? 3 : 2}
+                      className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      dir="rtl"
+                      lang="ar"
+                    />
+                  )}
+                </div>
+              ) : null;
+            })()}
+          </div>
+        </div>
+      );
+    });
+  }
 
   if (!mapping) {
     return (
@@ -183,162 +351,25 @@ export function DoctorCompletionPanel({
         ) : null}
 
         {doctorFields.length > 0 ? (
-          <div className="space-y-3">
-            {pairedFields.map((pair) => {
-              const complete =
-                (pair.en
-                  ? doctorReadinessReport.fields.find((f) => f.key === pair.en!.key)?.complete
-                  : undefined) ??
-                (pair.ar
-                  ? doctorReadinessReport.fields.find((f) => f.key === pair.ar!.key)?.complete
-                  : undefined) ??
-                false;
-
-              const titleEn = pair.en?.labelEn ?? pair.ar?.labelEn ?? pair.key;
-              const titleAr = pair.ar?.labelEn;
-              const section = pair.section;
-              const typeLabel = clinicalTypeLabel(pair.type, lang as "en" | "ar");
-
-              return (
-                <div
-                  key={pair.key}
-                  id={"doctor-field-" + pair.key}
-                  data-doctor-field={pair.key}
-                  data-doctor-field-pair="true"
-                  className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white px-4 py-4"
-                >
-                  <div className="mb-3 flex items-start justify-between gap-3">
-                    <div>
-                      <label className="text-sm font-semibold text-slate-900" htmlFor={pair.en?.key ?? pair.ar?.key ?? pair.key}>
-                        {titleEn}
-                        {titleAr ? (
-                          <span className="block text-xs font-normal text-slate-500" dir="rtl" lang="ar">
-                            {titleAr}
-                          </span>
-                        ) : null}
-                      </label>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {section ? `Section ${section}` : null}
-                        {section ? <span aria-hidden> · </span> : null}
-                        <span data-clinical-type-label="true">{typeLabel}</span>
-                      </p>
-                    </div>
-                    <WorkspaceBadge tone={complete ? "green" : "gold"}>{complete ? "Complete" : "Required"}</WorkspaceBadge>
-                  </div>
-
-                  <div className="space-y-3">
-                    {pair.en && pair.en.type === "SIGNATURE" ? (
-                      <div
-                        role="region"
-                        aria-label="Physician signature"
-                        aria-describedby={`sig-desc-${pair.key}`}
-                      >
-                        <p id={`sig-desc-${pair.key}`} className="sr-only">
-                          Sign inside the signature area using a stylus or finger. Use Tab to reach the clear button.
-                        </p>
-                        <TabletSignaturePad
-                          value={physicianSignatureDataUrl}
-                          onChange={onPhysicianSignatureChange}
-                          disabled={disabled}
-                        />
-                      </div>
-                    ) : pair.ar && pair.ar.type === "SIGNATURE" ? (
-                      <div
-                        role="region"
-                        aria-label="Physician signature"
-                        aria-describedby={`sig-desc-${pair.key}`}
-                      >
-                        <p id={`sig-desc-${pair.key}`} className="sr-only">
-                          Sign inside the signature area using a stylus or finger. Use Tab to reach the clear button.
-                        </p>
-                        <TabletSignaturePad
-                          value={physicianSignatureDataUrl}
-                          onChange={onPhysicianSignatureChange}
-                          disabled={disabled}
-                        />
-                      </div>
-                    ) : null}
-
-                    {(() => {
-                      const enField = pair.en;
-                      return enField && enField.type !== "SIGNATURE" ? (
-                        <div>
-                          <label htmlFor={enField.key} className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">
-                            English
-                          </label>
-                          {enField.type === "CHECKBOX" ? (
-                            <select
-                              id={enField.key}
-                              value={values[enField.key] ?? ""}
-                              disabled={disabled}
-                              onChange={(event) => onValueChange(enField.key, event.target.value)}
-                              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                            >
-                              <option value="">Select applicability</option>
-                              <option value="true">Yes / applies</option>
-                              <option value="false">No / not applicable</option>
-                            </select>
-                          ) : (
-                            <textarea
-                              id={enField.key}
-                              value={values[enField.key] ?? ""}
-                              disabled={disabled}
-                              onChange={(event) => onValueChange(enField.key, event.target.value)}
-                              placeholder="Enter physician completion value"
-                              rows={enField.type === "MULTILINE_TEXT" ? 3 : 2}
-                              className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                            />
-                          )}
-                        </div>
-                      ) : null;
-                    })()}
-
-                    {(() => {
-                      const arField = pair.ar;
-                      return arField && arField.type !== "SIGNATURE" ? (
-                        <div>
-                          <label htmlFor={arField.key} className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500" dir="rtl" lang="ar">
-                            العربية
-                          </label>
-                          {arField.type === "CHECKBOX" ? (
-                            <select
-                              id={arField.key}
-                              value={values[arField.key] ?? ""}
-                              disabled={disabled}
-                              onChange={(event) => onValueChange(arField.key, event.target.value)}
-                              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                            >
-                              <option value="">Select applicability</option>
-                              <option value="true">Yes / applies</option>
-                              <option value="false">No / not applicable</option>
-                            </select>
-                          ) : (
-                            <textarea
-                              id={arField.key}
-                              value={values[arField.key] ?? ""}
-                              disabled={disabled}
-                              onChange={(event) => onValueChange(arField.key, event.target.value)}
-                              placeholder="أدخل القيمة بالعربية"
-                              rows={arField.type === "MULTILINE_TEXT" ? 3 : 2}
-                              className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                              dir="rtl"
-                              lang="ar"
-                            />
-                          )}
-                        </div>
-                      ) : null;
-                    })()}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <div className="space-y-3">{renderPairedFields(pairedFields, doctorReadinessReport)}</div>
         ) : (
           <div className="flex items-start gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
             <ShieldCheck className="mt-0.5 size-4 shrink-0" />
             <span>No physician-required fields are pending for this mapping snapshot.</span>
           </div>
         )}
+
+        {effectiveAnesthesiaFields.length > 0 ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm">
+              <span className="font-semibold text-slate-900">Anesthesia fields</span>
+              <WorkspaceBadge tone={completedAnesthesiaFields === effectiveAnesthesiaFields.length ? "green" : "gold"}>
+                {completedAnesthesiaFields} / {effectiveAnesthesiaFields.length}
+              </WorkspaceBadge>
+            </div>
+            {renderPairedFields(pairedAnesthesiaFields, anesthesiaReadinessReport)}
+          </div>
+        ) : null}
 
         {anesthesiaFields.length > 0 ? (
           <div className={anesthesiaApplies ? "rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" : "rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700"}>

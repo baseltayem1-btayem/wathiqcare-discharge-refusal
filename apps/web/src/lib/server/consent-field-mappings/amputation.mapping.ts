@@ -185,6 +185,17 @@ export const AMPUTATION_FIELD_MAPPING: ConsentFieldMapping = {
       placeholderAr: "وثّق نفس المخاطر بالعربية.",
     },
     {
+      key: "anesthesia_applies",
+      section: "F",
+      labelEn: "Anesthesia applies",
+      labelAr: "هل ينطبق التخدير",
+      role: "ANESTHESIA_REQUIRED",
+      type: "CHECKBOX",
+      required: true,
+      placeholderEn: "Select whether anesthesia applies to this procedure.",
+      placeholderAr: "حدد ما إذا كان التخدير ينطبق على هذا الإجراء.",
+    },
+    {
       key: "anaesthetic_discussed_en",
       section: "F",
       labelEn: "Type of anaesthetic discussed",

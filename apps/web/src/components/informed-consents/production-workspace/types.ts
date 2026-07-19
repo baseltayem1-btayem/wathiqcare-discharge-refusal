@@ -37,6 +37,8 @@ export type ProductionEncounter = {
   physicianSpecialtyEn?: string | null;
   physicianSpecialtyAr?: string | null;
   caseNumber?: string | null;
+  /** Patient date of birth supplied by the encounter/patient payload as a fallback. */
+  patientDateOfBirth?: string | null;
   syncStatus?: "SYNCED" | "CACHED" | "UAT_MOCK";
   isMock?: boolean;
   source?: "trakcare" | "cached_local" | "uat_mock" | "pilot_fallback";

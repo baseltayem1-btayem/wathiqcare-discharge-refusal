@@ -17,6 +17,7 @@ import { PDFDocument } from "pdf-lib";
 import { renderAcroFormFilledDraftPreview } from "@/lib/server/acroform/filled-draft-preview-service";
 import { getAcroFormTemplateDiagnostics } from "@/lib/server/acroform/acroform-diagnostics-service";
 import { launchOverlayBrowser, renderPdfPageToPng } from "@/lib/server/imc-approved-pdf-template-engine";
+import { buildAcroFormFilledDraftPreviewInput } from "@/components/informed-consents/production-workspace/utils/buildAcroFormFilledDraftPreviewInput";
 import amputationManifest from "@/lib/server/acroform/manifests/imc-mr-1135-amputation.manifest.json";
 
 const SCALE = 2;
@@ -158,49 +159,57 @@ async function main(): Promise<void> {
     const diagnostics = getAcroFormTemplateDiagnostics("imc-approved-amputation");
     const physicianSignatureDataUrl = await generateSignatureDataUrl(browser);
 
-    const result = await renderAcroFormFilledDraftPreview({
-      request: {
-        formId: "imc-approved-amputation",
-        approvedPdfUrl: "/approved-consent-forms/amputation.pdf",
-        manifestHash: diagnostics.manifestHash ?? "",
-        doctorCompletionValues: {
-          "procedure.condition.en": SYNTHETIC.condition,
-          "procedure.condition.ar": "لدى المريض عدوى شديدة وضعف في الدورة الدموية في الساق اليسرى السفلى.",
-          "procedure.site_side.en": SYNTHETIC.procedure,
-          "procedure.site_side.ar": "بتر تحت الركبة للساق اليسرى، بما في ذلك إزالة الأنسجة غير القابلة للحياة.",
-          "procedure.significant_risks.en": "Bleeding, infection, phantom limb pain, stump breakdown.",
-          "procedure.significant_risks.ar": "نزيف، عدوى، ألم الطرف الوهمي، وتفكك جرح جذع الطرف.",
-          "procedure.significant_risks_cont.en": "Additional risks include delayed wound healing and need for revision surgery.",
-          "procedure.significant_risks_cont.ar": "تشمل المخاطر الإضافية تأخر شفاء الجرح والحاجة إلى جراحة تصحيحية.",
-          "procedure.no_treatment_risks.en":
-            "Worsening infection, sepsis, gangrene, possible limb- or life-threatening progression.",
-          "procedure.no_treatment_risks.ar":
-            "تفاقم العدوى، تسمم الدم، غرغرينا، تطور يهدد الطرف أو الحياة.",
-          "anesthesia.type.en": "General anaesthesia with perioperative analgesia.",
-          "anesthesia.type.ar": "تخدير عام مع مسكنات أثناء العملية.",
-          "physician.name.en": SYNTHETIC.physicianName,
-          "physician.designation.en": SYNTHETIC.designation,
-          interpreter_required: "false",
-          interpreter_present: "false",
-          anesthesia_applies: "true",
-          education_amputation_sheet_provided: "true",
-        },
-        patientDisplay: {
-          name: SYNTHETIC.patientName,
-          mrn: SYNTHETIC.mrn,
-          dob: SYNTHETIC.dob,
-        },
-        physicianContext: {
-          name: SYNTHETIC.physicianName,
-          designation: SYNTHETIC.designation,
-          designationEn: SYNTHETIC.designation,
-          designationAr: "استشاري جراحة",
-        },
-        physicianSignatureDataUrl,
-        physicianSignedAt: SYNTHETIC.physicianSignedAt,
-        encounterReference: { id: "enc-mr1135-001", encounterId: "ENC-MR1135-001" },
-        correlationId: "corr-mr1135-001",
+    const input = buildAcroFormFilledDraftPreviewInput({
+      formId: "imc-approved-amputation",
+      approvedPdfUrl: "/approved-consent-forms/amputation.pdf",
+      manifestHash: diagnostics.manifestHash ?? "",
+      patient: {
+        id: "p-mr1135-001",
+        mrn: SYNTHETIC.mrn,
+        name: SYNTHETIC.patientName,
+        dateOfBirth: SYNTHETIC.dob,
+        source: "case_fallback",
+        languagePreference: "bilingual",
+        capacityStatus: "competent",
       },
+      encounter: { id: "enc-mr1135-001", encounterId: "ENC-MR1135-001" },
+      physician: {
+        userId: "user-mr1135-001",
+        email: "doctor@example.com",
+        name: SYNTHETIC.physicianName,
+        tenantId: "tenant-mr1135",
+        specialty: SYNTHETIC.designation,
+        specialtyEn: SYNTHETIC.designation,
+        specialtyAr: "استشاري جراحة",
+      },
+      doctorCompletionValues: {
+        "procedure.condition.en": SYNTHETIC.condition,
+        "procedure.condition.ar": "لدى المريض عدوى شديدة وضعف في الدورة الدموية في الساق اليسرى السفلى.",
+        "procedure.site_side.en": SYNTHETIC.procedure,
+        "procedure.site_side.ar": "بتر تحت الركبة للساق اليسرى، بما في ذلك إزالة الأنسجة غير القابلة للحياة.",
+        "procedure.significant_risks.en": "Bleeding, infection, phantom limb pain, stump breakdown.",
+        "procedure.significant_risks.ar": "نزيف، عدوى، ألم الطرف الوهمي، وتفكك جرح جذع الطرف.",
+        "procedure.significant_risks_cont.en": "Additional risks include delayed wound healing and need for revision surgery.",
+        "procedure.significant_risks_cont.ar": "تشمل المخاطر الإضافية تأخر شفاء الجرح والحاجة إلى جراحة تصحيحية.",
+        "procedure.no_treatment_risks.en":
+          "Worsening infection, sepsis, gangrene, possible limb- or life-threatening progression.",
+        "procedure.no_treatment_risks.ar":
+          "تفاقم العدوى، تسمم الدم، غرغرينا، تطور يهدد الطرف أو الحياة.",
+        "anesthesia.type.en": "General anaesthesia with perioperative analgesia.",
+        "anesthesia.type.ar": "تخدير عام مع مسكنات أثناء العملية.",
+        "physician.name.en": SYNTHETIC.physicianName,
+        "physician.designation.en": SYNTHETIC.designation,
+        interpreter_required: "false",
+        interpreter_present: "false",
+        anesthesia_applies: "true",
+      },
+      physicianSignatureDataUrl,
+      physicianSignedAt: SYNTHETIC.physicianSignedAt,
+      correlationId: "corr-mr1135-001",
+    });
+
+    const result = await renderAcroFormFilledDraftPreview({
+      request: input,
       browser,
       canonicalPdfBytes: pdfBytes,
       canonicalPdfHash,

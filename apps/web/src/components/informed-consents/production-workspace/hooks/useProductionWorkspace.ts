@@ -1,6 +1,8 @@
 "use client";
 
 import { isAssemblyApprovedPdfSourceVerified } from "../utils/approvedPdfSource";
+import { normalizePatientDob } from "../utils/normalizePatientDob";
+import { buildAcroFormFilledDraftPreviewInput } from "../utils/buildAcroFormFilledDraftPreviewInput";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type {
@@ -60,6 +62,8 @@ export type ProductionWorkspaceState = {
   fieldMappingReadiness?: ConsentFieldMappingReadiness;
   doctorCompletionValues: Record<string, string>;
   physicianSignatureDataUrl: string;
+  /** ISO timestamp captured when the physician signature image is set. */
+  physicianSignedAt?: string;
   filledDraftPdfUrl?: string;
   filledDraftFingerprint?: string;
   filledDraftStatus: FilledDraftStatus;
@@ -134,6 +138,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     recipientEmail: "",
     doctorCompletionValues: {},
     physicianSignatureDataUrl: "",
+    physicianSignedAt: undefined,
     filledDraftStatus: "idle",
     filledDraftReviewed: false,
     pdfViewerMode: "source",
@@ -273,16 +278,18 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       const defaultEncounter = patientEncounters[0];
       const mobile = patient.mobileNumber || "";
       const email = patient.email || "";
+      const normalizedDob = normalizePatientDob(patient.dateOfBirth) ?? null;
       setState((s) => ({
         ...s,
         ...staleFilledDraft(s),
         step: defaultEncounter ? "procedure" : "encounter",
-        patient,
+        patient: { ...patient, dateOfBirth: normalizedDob },
         encounter: defaultEncounter,
         assembly: undefined,
         fieldMappingReadiness: undefined,
         doctorCompletionValues: {},
         physicianSignatureDataUrl: "",
+        physicianSignedAt: undefined,
         selectedProcedureId: undefined,
         selectedProcedureTitle: undefined,
         selectedProcedure: undefined,
@@ -303,25 +310,36 @@ export function useProductionWorkspace(physician: PhysicianContext) {
   );
 
   const selectEncounter = useCallback((encounter: ProductionEncounter) => {
-    setState((s) => ({
-      ...s,
-      ...staleFilledDraft(s),
-      step: "procedure",
-      encounter,
-      assembly: undefined,
-      fieldMappingReadiness: undefined,
-      doctorCompletionValues: {},
-      physicianSignatureDataUrl: "",
-      selectedProcedureId: undefined,
-      selectedProcedureTitle: undefined,
-      selectedProcedure: undefined,
-      procedureQuery: "",
-      anesthesiaOverride: undefined,
-      draftApproved: false,
-      previewReviewed: false,
-      sentAt: undefined,
-      signingResult: undefined,
-    }));
+    setState((s) => {
+      const encounterDob = normalizePatientDob(encounter.patientDateOfBirth);
+      const nextPatient = s.patient
+        ? {
+            ...s.patient,
+            dateOfBirth: s.patient.dateOfBirth || encounterDob || null,
+          }
+        : s.patient;
+      return {
+        ...s,
+        ...staleFilledDraft(s),
+        step: "procedure",
+        patient: nextPatient,
+        encounter,
+        assembly: undefined,
+        fieldMappingReadiness: undefined,
+        doctorCompletionValues: {},
+        physicianSignatureDataUrl: "",
+        physicianSignedAt: undefined,
+        selectedProcedureId: undefined,
+        selectedProcedureTitle: undefined,
+        selectedProcedure: undefined,
+        procedureQuery: "",
+        anesthesiaOverride: undefined,
+        draftApproved: false,
+        previewReviewed: false,
+        sentAt: undefined,
+        signingResult: undefined,
+      };
+    });
   }, []);
 
   const setProcedureQuery = useCallback((procedureQuery: string) => {
@@ -340,6 +358,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       fieldMappingReadiness: undefined,
       doctorCompletionValues: {},
       physicianSignatureDataUrl: "",
+      physicianSignedAt: undefined,
       draftApproved: false,
       previewReviewed: false,
     }));
@@ -496,6 +515,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         ...current,
         ...staleFilledDraft(current),
         physicianSignatureDataUrl,
+        physicianSignedAt: physicianSignatureDataUrl ? new Date().toISOString() : undefined,
         draftApproved: false,
         previewReviewed: false,
         signingResult: undefined,
@@ -548,31 +568,18 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     }));
 
     try {
-      const result = await createAcroFormFilledDraftPreview(
-        {
-          formId,
-          approvedPdfUrl,
-          manifestHash,
-          doctorCompletionValues: state.doctorCompletionValues,
-          patientDisplay: {
-            name: state.patient.name,
-            mrn: state.patient.mrn,
-            dob: state.patient.dateOfBirth,
-          },
-          physicianContext: {
-            name: physician.name,
-            designation: physician.specialty || state.encounter.physicianSpecialty || undefined,
-            designationEn: physician.specialtyEn || state.encounter.physicianSpecialtyEn || undefined,
-            designationAr: physician.specialtyAr || state.encounter.physicianSpecialtyAr || undefined,
-          },
-          encounterReference: {
-            id: state.encounter.id,
-            encounterId: state.encounter.encounterId,
-          },
-          physicianSignatureDataUrl: state.physicianSignatureDataUrl,
-        },
-        controller.signal,
-      );
+      const input = buildAcroFormFilledDraftPreviewInput({
+        formId,
+        approvedPdfUrl,
+        manifestHash,
+        patient: state.patient,
+        encounter: state.encounter,
+        physician,
+        doctorCompletionValues: state.doctorCompletionValues,
+        physicianSignatureDataUrl: state.physicianSignatureDataUrl,
+        physicianSignedAt: state.physicianSignedAt,
+      });
+      const result = await createAcroFormFilledDraftPreview(input, controller.signal);
 
       if (controller.signal.aborted) {
         URL.revokeObjectURL(result.url);
@@ -612,6 +619,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     state.doctorCompletionValues,
     state.fieldMappingReadiness,
     state.physicianSignatureDataUrl,
+    state.physicianSignedAt,
     physician,
   ]);
 
