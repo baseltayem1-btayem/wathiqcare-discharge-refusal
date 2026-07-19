@@ -54,6 +54,12 @@ export type AcroFormFilledDraftRequest = {
    * captured separately at send time and used for the final patient copy.
    */
   physicianSignatureDataUrl?: string;
+  /**
+   * Timestamp of physician signature capture. When absent but a signature image
+   * is provided, the preview uses the current time so the physician date/time
+   * block can be reviewed before finalization.
+   */
+  physicianSignedAt?: Date | string;
 };
 
 export type AcroFormFilledDraftResult = {
@@ -162,13 +168,28 @@ function buildFieldAddressedDraftValues(args: {
   patientDisplay: DraftPatientDisplay;
   physicianContext: DraftPhysicianContext;
   physicianSignatureDataUrl?: string;
+  physicianSignedAt?: Date | string;
 }): ReturnType<typeof buildAmputationFieldAddressedValues> {
-  // Filled draft preview is generated before final patient signing. Physician
-  // date/time are intentionally deferred until finalization, when the server
-  // has the authenticated signature timestamp; the preview only shows the
-  // physician-completed identity fields and the captured signature image.
+  // Filled draft preview is generated before final patient signing. Patient
+  // consent date/time remain intentionally blank until finalization. Physician
+  // date/time should be visible once a signature image has been captured so the
+  // signing block can be reviewed. When the caller does not supply a timestamp,
+  // use the current time as the preview signing timestamp.
+  const effectivePhysicianSignedAt =
+    args.physicianSignedAt ?? (args.physicianSignatureDataUrl ? new Date().toISOString() : null);
+
+  const physicianDateTimeValues: Record<string, string> = {};
+  if (effectivePhysicianSignedAt) {
+    const iso = new Date(effectivePhysicianSignedAt).toISOString();
+    physicianDateTimeValues["physician.date"] = iso;
+    physicianDateTimeValues["physician.time"] = iso;
+  }
+
   return buildAmputationFieldAddressedValues({
-    doctorCompletionValues: args.doctorCompletionValues,
+    doctorCompletionValues: {
+      ...args.doctorCompletionValues,
+      ...physicianDateTimeValues,
+    },
     physicianSignatureDataUrl: args.physicianSignatureDataUrl,
     patientSignatureDataUrl: undefined,
     physicianName: args.physicianContext.name,
@@ -222,6 +243,7 @@ export async function renderAcroFormFilledDraftPreview(args: {
     patientDisplay: request.patientDisplay,
     physicianContext: request.physicianContext,
     physicianSignatureDataUrl: request.physicianSignatureDataUrl,
+    physicianSignedAt: request.physicianSignedAt,
   });
 
   const result = await renderFieldAddressedPdf({

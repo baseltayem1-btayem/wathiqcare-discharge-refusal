@@ -760,6 +760,12 @@ export type AcroFormFilledDraftPreviewInput = {
    * captured separately at send time.
    */
   physicianSignatureDataUrl?: string;
+  /**
+   * Timestamp of physician signature capture. When provided, the preview renders
+   * the physician date/time block. When absent but a signature image is present,
+   * the server applies the current time.
+   */
+  physicianSignedAt?: Date | string;
 };
 
 export type AcroFormFilledDraftPreviewResult = {
@@ -787,6 +793,10 @@ export async function createAcroFormFilledDraftPreview(
         encounterReference: args.encounterReference,
         correlationId: args.correlationId,
         physicianSignatureDataUrl: args.physicianSignatureDataUrl,
+        physicianSignedAt:
+          args.physicianSignedAt instanceof Date
+            ? args.physicianSignedAt.toISOString()
+            : args.physicianSignedAt,
       }),
     },
   );
