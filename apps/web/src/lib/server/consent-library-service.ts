@@ -24,8 +24,6 @@ import { hasInformedConsentPermission } from "@/lib/modules/informed-consents-rb
 import { computeFinalConsentPdfByteHash } from "@/lib/server/informed-consents-final-pdf-payload";
 import { logRuntimeIncident } from "@/lib/server/runtime-observability";
 
-import { logRuntimeIncident } from "@/lib/server/runtime-observability";
-
 const prisma = () => getPrisma();
 
 export const CONSENT_TYPE_OPTIONS = [
