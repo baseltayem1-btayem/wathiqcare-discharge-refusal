@@ -21,6 +21,7 @@ import { renderFieldAddressedOverlays } from "@/lib/server/acroform/field-addres
 import type { AcroFormTemplateManifest } from "@/lib/server/acroform/field-addressed-template-manifest";
 import amputationManifest from "@/lib/server/acroform/manifests/imc-mr-1135-amputation.manifest.json";
 import { buildAmputationFieldAddressedValues } from "@/lib/server/acroform/field-mapping/amputation-field-mapping";
+import { isAcroFormBackedTemplate } from "@/lib/server/acroform/acroform-template-identity";
 import { resolveConsentSignaturePresentation } from "@/lib/signature/signature-display";
 
 import {
@@ -2340,6 +2341,13 @@ export async function renderImcApprovedDoctorDraftPdf(args: {
   doctorCompletionValues: Record<string, unknown>;
   physicianSignatureDataUrl?: string | null;
 }) {
+  if (isAcroFormBackedTemplate(args.formId)) {
+    throw new ApiError(
+      409,
+      "PDF generation blocked: AcroForm-backed templates must use the field-addressed renderer, not the legacy coordinate-based engine.",
+    );
+  }
+
   const mapping =
     getConsentFieldMappingByFormId(
       args.formId,

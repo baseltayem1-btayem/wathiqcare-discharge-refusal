@@ -326,3 +326,220 @@ test("buildAmputationFieldAddressedValues defers physician date/time until final
   assert.equal(values.doctor_delegate_date, undefined, "Preview must not fabricate physician date");
   assert.equal(values.doctor_delegate_time, undefined, "Preview must not fabricate physician time");
 });
+
+test("buildAmputationFieldAddressedValues maps canonical clinical ontology keys to manifest fields", () => {
+  const values = buildAmputationFieldAddressedValues({
+    doctorCompletionValues: {
+      "procedure.condition.en": "Severe infection and poor circulation in the left lower leg.",
+      "procedure.condition.ar": "عدوى شديدة وضعف الدورة الدموية في الساق اليسرى السفلى.",
+      "procedure.site_side.en": "Left below-knee amputation.",
+      "procedure.site_side.ar": "بتر تحت الركبة للساق اليسرى.",
+      "procedure.significant_risks.en": "Bleeding, infection, phantom limb pain.",
+      "procedure.significant_risks.ar": "نزيف، عدوى، ألم العضو الوهمي.",
+      "procedure.no_treatment_risks.en": "Worsening infection, sepsis, tissue death.",
+      "procedure.no_treatment_risks.ar": "تفاقم العدوى، تسمم الدم، موت الأنسجة.",
+      "anesthesia.type.en": "General anaesthesia.",
+      "anesthesia.type.ar": "تخدير عام.",
+    },
+    physicianSignatureDataUrl: undefined,
+    patientSignatureDataUrl: undefined,
+    physicianName: "Dr. Ahmed",
+    physicianSpecialty: "Orthopedic Surgery",
+    patientName: "Najib Al-Rashid",
+    mrn: "IMC-2026-02000",
+    dob: "1985-03-15",
+    signedAt: null,
+  });
+
+  assert.equal(
+    (values.condition_description_en as { kind: "text"; value: string }).value,
+    "Severe infection and poor circulation in the left lower leg.",
+  );
+  assert.equal(
+    (values.proposed_procedure_en as { kind: "text"; value: string }).value,
+    "Left below-knee amputation.",
+  );
+  assert.equal(
+    (values.significant_risks_options_en as { kind: "text"; value: string }).value,
+    "Bleeding, infection, phantom limb pain.",
+  );
+  assert.equal(
+    (values.risks_without_procedure_en as { kind: "text"; value: string }).value,
+    "Worsening infection, sepsis, tissue death.",
+  );
+  assert.equal(
+    (values.anaesthetic_discussed_en as { kind: "text"; value: string }).value,
+    "General anaesthesia.",
+  );
+  assert.ok(/[\u0600-\u06FF]/.test((values.condition_description_ar as { kind: "text"; value: string }).value));
+});
+
+test("buildAmputationFieldAddressedValues gives legacy keys precedence over canonical keys", () => {
+  const values = buildAmputationFieldAddressedValues({
+    doctorCompletionValues: {
+      condition_description_en: "Legacy condition.",
+      "procedure.condition.en": "Canonical condition.",
+    },
+    physicianSignatureDataUrl: undefined,
+    patientSignatureDataUrl: undefined,
+    physicianName: "Dr. Ahmed",
+    physicianSpecialty: "Orthopedic Surgery",
+    patientName: "Najib Al-Rashid",
+    mrn: "IMC-2026-02000",
+    dob: "1985-03-15",
+    signedAt: null,
+  });
+
+  assert.equal(
+    (values.condition_description_en as { kind: "text"; value: string }).value,
+    "Legacy condition.",
+  );
+});
+
+test("buildAmputationFieldAddressedValues maps canonical physician identity keys", () => {
+  const values = buildAmputationFieldAddressedValues({
+    doctorCompletionValues: {
+      "physician.name.en": "Dr. Wathiq Test",
+      "physician.designation.en": "Consultant Surgeon",
+    },
+    physicianSignatureDataUrl: undefined,
+    patientSignatureDataUrl: undefined,
+    physicianName: "Dr. Ahmed",
+    physicianSpecialty: "Orthopedic Surgery",
+    patientName: "Najib Al-Rashid",
+    mrn: "IMC-2026-02000",
+    dob: "1985-03-15",
+    signedAt: null,
+  });
+
+  assert.equal((values.doctor_delegate_name as { kind: "text"; value: string }).value, "Dr. Wathiq Test");
+  assert.equal(
+    (values.doctor_delegate_designation as { kind: "text"; value: string }).value,
+    "Consultant Surgeon",
+  );
+});
+
+test("buildAmputationFieldAddressedValues uses canonical physician signature when no explicit data URL is provided", () => {
+  const signatureDataUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=";
+  const values = buildAmputationFieldAddressedValues({
+    doctorCompletionValues: {
+      "physician.signature": signatureDataUrl,
+    },
+    physicianSignatureDataUrl: undefined,
+    patientSignatureDataUrl: undefined,
+    physicianName: "Dr. Ahmed",
+    physicianSpecialty: "Orthopedic Surgery",
+    patientName: "Najib Al-Rashid",
+    mrn: "IMC-2026-02000",
+    dob: "1985-03-15",
+    signedAt: null,
+  });
+
+  assert.equal(values.doctor_delegate_signature_en?.kind, "signature");
+  assert.equal(values.doctor_delegate_signature_ar?.kind, "signature");
+  assert.equal(
+    (values.doctor_delegate_signature_en as { kind: "signature"; imageDataUrl: string }).imageDataUrl,
+    signatureDataUrl,
+  );
+});
+
+test("buildAmputationFieldAddressedValues explicit physician signature data URL takes precedence over canonical key", () => {
+  const explicitSignature = "data:image/png;base64,EXPLICIT";
+  const canonicalSignature = "data:image/png;base64,CANONICAL";
+  const values = buildAmputationFieldAddressedValues({
+    doctorCompletionValues: {
+      "physician.signature": canonicalSignature,
+    },
+    physicianSignatureDataUrl: explicitSignature,
+    patientSignatureDataUrl: undefined,
+    physicianName: "Dr. Ahmed",
+    physicianSpecialty: "Orthopedic Surgery",
+    patientName: "Najib Al-Rashid",
+    mrn: "IMC-2026-02000",
+    dob: "1985-03-15",
+    signedAt: null,
+  });
+
+  assert.equal(
+    (values.doctor_delegate_signature_en as { kind: "signature"; imageDataUrl: string }).imageDataUrl,
+    explicitSignature,
+  );
+});
+
+test("buildAmputationFieldAddressedValues maps canonical physician date and time", () => {
+  const values = buildAmputationFieldAddressedValues({
+    doctorCompletionValues: {
+      "physician.date": "2026-07-15",
+      "physician.time": "14:30",
+    },
+    physicianSignatureDataUrl: undefined,
+    patientSignatureDataUrl: undefined,
+    physicianName: "Dr. Ahmed",
+    physicianSpecialty: "Orthopedic Surgery",
+    patientName: "Najib Al-Rashid",
+    mrn: "IMC-2026-02000",
+    dob: "1985-03-15",
+    signedAt: null,
+  });
+
+  assert.ok(values.doctor_delegate_date);
+  assert.ok(values.doctor_delegate_time);
+  assert.ok(
+    (values.doctor_delegate_date as { kind: "text"; value: string }).value.includes("2026"),
+    "Canonical physician date must be rendered",
+  );
+  assert.equal(
+    (values.doctor_delegate_time as { kind: "text"; value: string }).value,
+    "14:30",
+    "Canonical physician time must be rendered as provided",
+  );
+});
+
+
+test("buildAmputationFieldAddressedValues maps continuation-risk canonical keys and defers witness fields until named", () => {
+  const valuesWithWitness = buildAmputationFieldAddressedValues({
+    doctorCompletionValues: {
+      "procedure.significant_risks_cont.en": "Continuation risk English.",
+      "procedure.significant_risks_cont.ar": "مخاطر الاستمرار بالعربية.",
+      witness1_name: "Sara Ali",
+    },
+    physicianSignatureDataUrl: undefined,
+    patientSignatureDataUrl: undefined,
+    physicianName: "Dr. Ahmed",
+    physicianSpecialty: "Orthopedic Surgery",
+    patientName: "Najib Al-Rashid",
+    mrn: "IMC-2026-02000",
+    dob: "1985-03-15",
+    signedAt: "2026-07-15T09:30:00.000Z",
+  });
+
+  assert.equal(
+    (valuesWithWitness.significant_risks_options_cont_en as { kind: "text"; value: string }).value,
+    "Continuation risk English.",
+  );
+  assert.ok(
+    /[\u0600-\u06FF]/.test(
+      (valuesWithWitness.significant_risks_options_cont_ar as { kind: "text"; value: string }).value,
+    ),
+  );
+  assert.ok(valuesWithWitness.witness1_date_en, "Witness date should be set when witness name is present");
+
+  const valuesWithoutWitness = buildAmputationFieldAddressedValues({
+    doctorCompletionValues: {
+      "procedure.significant_risks_cont.en": "Continuation risk English.",
+    },
+    physicianSignatureDataUrl: undefined,
+    patientSignatureDataUrl: undefined,
+    physicianName: "Dr. Ahmed",
+    physicianSpecialty: "Orthopedic Surgery",
+    patientName: "Najib Al-Rashid",
+    mrn: "IMC-2026-02000",
+    dob: "1985-03-15",
+    signedAt: "2026-07-15T09:30:00.000Z",
+  });
+
+  assert.ok(valuesWithoutWitness.significant_risks_options_cont_en);
+  assert.ok(!valuesWithoutWitness.witness1_date_en, "Witness date should not be set when witness name is absent");
+  assert.ok(!valuesWithoutWitness.witness1_time_en, "Witness time should not be set when witness name is absent");
+  assert.ok(!valuesWithoutWitness.witness1_signature_en, "Witness signature should not be set when witness name is absent");
+});

@@ -24,6 +24,55 @@ function compactWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
+/**
+ * Canonical workspace ontology keys may be submitted instead of the legacy
+ * manifest field names. This map translates canonical dotted keys to the
+ * legacy keys that the rest of the builder already understands. Legacy keys
+ * take precedence when both are present with a non-empty value.
+ */
+const CANONICAL_KEY_TO_LEGACY: Record<string, string> = {
+  "procedure.condition.en": "condition_description_en",
+  "procedure.condition.ar": "condition_description_ar",
+  "procedure.site_side.en": "proposed_procedure_en",
+  "procedure.site_side.ar": "proposed_procedure_ar",
+  "procedure.significant_risks.en": "significant_risks_options_en",
+  "procedure.significant_risks.ar": "significant_risks_options_ar",
+  "procedure.significant_risks_cont.en": "significant_risks_options_cont_en",
+  "procedure.significant_risks_cont.ar": "significant_risks_options_cont_ar",
+  "procedure.no_treatment_risks.en": "risks_without_procedure_en",
+  "procedure.no_treatment_risks.ar": "risks_without_procedure_ar",
+  "anesthesia.type.en": "anaesthetic_discussed_en",
+  "anesthesia.type.ar": "anaesthetic_discussed_ar",
+  "physician.name.en": "physician_name",
+  "physician.designation.en": "physician_designation",
+  "physician.signature": "physician_signature",
+  "physician.date": "physician_signed_date",
+  "physician.time": "physician_signed_time",
+};
+
+function normalizeCanonicalKeys(doctorCompletionValues: Record<string, unknown>): Record<string, unknown> {
+  const normalized: Record<string, unknown> = { ...doctorCompletionValues };
+
+  for (const [canonicalKey, legacyKey] of Object.entries(CANONICAL_KEY_TO_LEGACY)) {
+    if (!(canonicalKey in normalized)) continue;
+
+    const legacyValue = normalized[legacyKey];
+    const hasLegacyValue =
+      legacyValue !== undefined &&
+      legacyValue !== null &&
+      asString(legacyValue) !== null;
+
+    if (hasLegacyValue) {
+      // Legacy key wins when both are supplied so existing callers are stable.
+      continue;
+    }
+
+    normalized[legacyKey] = normalized[canonicalKey];
+  }
+
+  return normalized;
+}
+
 function asString(value: unknown): string | null {
   if (value === null || value === undefined) return null;
   if (typeof value === "string") return compactWhitespace(value) || null;
@@ -159,6 +208,14 @@ function setValue(
  * Builds the field-addressed value map for IMC MR 1135 Amputation from the
  * doctor completion payload and captured signatures.
  */
+function formatTimeValue(value: unknown): string | null {
+  const str = asString(value);
+  if (!str) return null;
+  // Accept canonical time strings (HH:mm or HH:mm:ss) as-is.
+  if (/^\d{1,2}:\d{2}(?::\d{2})?$/.test(str)) return str;
+  return formatTime(str);
+}
+
 export function buildAmputationFieldAddressedValues(
   input: BuildAmputationFieldAddressedValuesInput,
 ): Record<string, FieldAddressedRenderValue> {
@@ -176,6 +233,8 @@ export function buildAmputationFieldAddressedValues(
     signedAt,
   } = input;
 
+  const normalizedDoctorValues = normalizeCanonicalKeys(doctorCompletionValues);
+
   const values: Record<string, FieldAddressedRenderValue> = {};
 
   // Header demographics
@@ -184,8 +243,8 @@ export function buildAmputationFieldAddressedValues(
   setValue(values, "date_of_birth", text(formatDateOfBirth(dob)));
 
   // Interpreter
-  const interpreterRequired = asBoolean(doctorCompletionValues.interpreter_required);
-  const interpreterPresent = asBoolean(doctorCompletionValues.interpreter_present);
+  const interpreterRequired = asBoolean(normalizedDoctorValues.interpreter_required);
+  const interpreterPresent = asBoolean(normalizedDoctorValues.interpreter_present);
   if (interpreterRequired !== null) {
     setValue(values, "interpreter_required_yes", checkbox(interpreterRequired === true));
     setValue(values, "interpreter_required_no", checkbox(interpreterRequired === false));
@@ -212,24 +271,24 @@ export function buildAmputationFieldAddressedValues(
   ] as const;
 
   for (const key of clinicalTextKeys) {
-    setValue(values, key, text(asString(doctorCompletionValues[key])));
+    setValue(values, key, text(asString(normalizedDoctorValues[key])));
   }
 
   // Education information sheets
   setValue(
     values,
     "info_sheet_anaesthetic",
-    checkbox(asBoolean(doctorCompletionValues.education_anaesthetic_sheet_provided)),
+    checkbox(asBoolean(normalizedDoctorValues.education_anaesthetic_sheet_provided)),
   );
   setValue(
     values,
     "info_sheet_epidural_spinal",
-    checkbox(asBoolean(doctorCompletionValues.education_epidural_spinal_sheet_provided)),
+    checkbox(asBoolean(normalizedDoctorValues.education_epidural_spinal_sheet_provided)),
   );
   setValue(
     values,
     "info_sheet_amputation",
-    checkbox(asBoolean(doctorCompletionValues.education_amputation_sheet_provided)),
+    checkbox(asBoolean(normalizedDoctorValues.education_amputation_sheet_provided)),
   );
 
   // Patient consent block
@@ -240,41 +299,41 @@ export function buildAmputationFieldAddressedValues(
   setValue(values, "consent_time", text(formatTime(signedAt)));
 
   // Substitute decision-maker
-  setValue(values, "substitute_name", text(asString(doctorCompletionValues.substitute_name)));
+  setValue(values, "substitute_name", text(asString(normalizedDoctorValues.substitute_name)));
   setValue(
     values,
     "substitute_signature_en",
-    signature(extractSignatureDataUrl(doctorCompletionValues.substitute_signature) ?? undefined),
+    signature(extractSignatureDataUrl(normalizedDoctorValues.substitute_signature) ?? undefined),
   );
   setValue(
     values,
     "substitute_signature_ar",
-    signature(extractSignatureDataUrl(doctorCompletionValues.substitute_signature) ?? undefined),
+    signature(extractSignatureDataUrl(normalizedDoctorValues.substitute_signature) ?? undefined),
   );
   setValue(
     values,
     "substitute_relationship",
-    text(asString(doctorCompletionValues.substitute_relationship)),
+    text(asString(normalizedDoctorValues.substitute_relationship)),
   );
   const substituteSignedAt =
-    parseDate(asString(doctorCompletionValues.substitute_date) ?? undefined) ?? parseDate(signedAt);
+    parseDate(asString(normalizedDoctorValues.substitute_date) ?? undefined) ?? parseDate(signedAt);
   setValue(values, "substitute_date", text(formatDate(substituteSignedAt)));
   setValue(values, "substitute_time", text(formatTime(substituteSignedAt)));
-  setValue(values, "substitute_contact", text(asString(doctorCompletionValues.substitute_contact)));
+  setValue(values, "substitute_contact", text(asString(normalizedDoctorValues.substitute_contact)));
 
   // Physician block
   // The physician-entered professional identity is the primary printable value;
   // the authenticated session name (which may fall back to email) is only a
   // fallback so the field is never blank when the doctor has completed it.
-  const printablePhysicianName = asString(doctorCompletionValues.physician_name) ?? physicianName;
+  const printablePhysicianName = asString(normalizedDoctorValues.physician_name) ?? physicianName;
 
   // The physician-entered designation is primary; support the canonical mapping
   // key and a small set of legacy/alternate keys. Never use an email address as
   // a printable designation.
   const rawDesignation =
-    asString(doctorCompletionValues.physician_designation) ??
-    asString(doctorCompletionValues.designation) ??
-    asString(doctorCompletionValues.doctor_designation) ??
+    asString(normalizedDoctorValues.physician_designation) ??
+    asString(normalizedDoctorValues.designation) ??
+    asString(normalizedDoctorValues.doctor_designation) ??
     physicianSpecialty;
   const printablePhysicianDesignation =
     rawDesignation && !rawDesignation.includes("@") ? rawDesignation : physicianSpecialty;
@@ -284,6 +343,18 @@ export function buildAmputationFieldAddressedValues(
   const separateDesignationEn = asString(physicianDesignationEn);
   const separateDesignationAr = asString(physicianDesignationAr);
   const hasSeparateDesignations = separateDesignationEn && separateDesignationAr;
+
+  // Physician signature may arrive as a canonical key in the completion payload
+  // when the caller does not pass an explicit data URL.
+  const effectivePhysicianSignatureDataUrl =
+    physicianSignatureDataUrl ?? extractSignatureDataUrl(normalizedDoctorValues.physician_signature);
+
+  // Physician date/time may be supplied as canonical keys. Prefer them, then
+  // fall back to the authenticated signature timestamp.
+  const physicianSignedDate =
+    parseDate(asString(normalizedDoctorValues.physician_signed_date) ?? undefined) ?? parseDate(signedAt);
+  const physicianSignedTime =
+    formatTimeValue(normalizedDoctorValues.physician_signed_time) ?? formatTime(signedAt);
 
   setValue(values, "doctor_delegate_name", text(printablePhysicianName));
   if (hasSeparateDesignations) {
@@ -295,36 +366,40 @@ export function buildAmputationFieldAddressedValues(
   } else {
     setValue(values, "doctor_delegate_designation", text(printablePhysicianDesignation));
   }
-  setValue(values, "doctor_delegate_signature_en", signature(physicianSignatureDataUrl));
-  setValue(values, "doctor_delegate_signature_ar", signature(physicianSignatureDataUrl));
-  setValue(values, "doctor_delegate_date", text(formatDate(signedAt)));
-  setValue(values, "doctor_delegate_time", text(formatTime(signedAt)));
+  setValue(values, "doctor_delegate_signature_en", signature(effectivePhysicianSignatureDataUrl));
+  setValue(values, "doctor_delegate_signature_ar", signature(effectivePhysicianSignatureDataUrl));
+  setValue(values, "doctor_delegate_date", text(formatDate(physicianSignedDate)));
+  setValue(values, "doctor_delegate_time", text(physicianSignedTime));
 
-  // Witnesses
+  // Witnesses: only populate signature/date/time when a witness name is present.
+  // This prevents empty-witness fields from receiving the patient signature
+  // timestamp and overflowing small boxes.
   for (const n of [1, 2] as const) {
     const prefix = `witness${n}`;
-    const witnessName = asString(doctorCompletionValues[`${prefix}_name`]);
-    const witnessSignature = extractSignatureDataUrl(doctorCompletionValues[`${prefix}_signature`]);
-    const witnessDateRaw = asString(doctorCompletionValues[`${prefix}_date`]);
-    const witnessTimeRaw = asString(doctorCompletionValues[`${prefix}_time`]);
+    const witnessName = asString(normalizedDoctorValues[`${prefix}_name`]);
+    const witnessSignature = extractSignatureDataUrl(normalizedDoctorValues[`${prefix}_signature`]);
+    const witnessDateRaw = asString(normalizedDoctorValues[`${prefix}_date`]);
+    const witnessTimeRaw = asString(normalizedDoctorValues[`${prefix}_time`]);
     const witnessSignedAt = parseDate(witnessDateRaw ?? undefined) ?? parseDate(signedAt);
 
     setValue(values, `${prefix}_name_en`, text(witnessName));
     setValue(values, `${prefix}_name_ar`, text(witnessName));
-    setValue(values, `${prefix}_signature_en`, signature(witnessSignature ?? undefined));
-    setValue(values, `${prefix}_signature_ar`, signature(witnessSignature ?? undefined));
-    setValue(values, `${prefix}_date_en`, text(formatDate(witnessSignedAt)));
-    setValue(values, `${prefix}_date_ar`, text(formatDate(witnessSignedAt)));
-    setValue(
-      values,
-      `${prefix}_time_en`,
-      text(witnessTimeRaw ?? formatTime(witnessSignedAt)),
-    );
-    setValue(
-      values,
-      `${prefix}_time_ar`,
-      text(witnessTimeRaw ?? formatTime(witnessSignedAt)),
-    );
+    if (witnessName) {
+      setValue(values, `${prefix}_signature_en`, signature(witnessSignature ?? undefined));
+      setValue(values, `${prefix}_signature_ar`, signature(witnessSignature ?? undefined));
+      setValue(values, `${prefix}_date_en`, text(formatDate(witnessSignedAt)));
+      setValue(values, `${prefix}_date_ar`, text(formatDate(witnessSignedAt)));
+      setValue(
+        values,
+        `${prefix}_time_en`,
+        text(witnessTimeRaw ?? formatTime(witnessSignedAt)),
+      );
+      setValue(
+        values,
+        `${prefix}_time_ar`,
+        text(witnessTimeRaw ?? formatTime(witnessSignedAt)),
+      );
+    }
   }
 
   return values;

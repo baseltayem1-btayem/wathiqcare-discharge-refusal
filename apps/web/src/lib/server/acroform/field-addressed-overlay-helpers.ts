@@ -181,11 +181,10 @@ export function buildOverlayPrepareScript(args: {
         if (mode === "single") {
           // Measure as a single unwrapped line so the width check is accurate.
           element.style.whiteSpace = "nowrap";
-          // Identity fields must remain legible for long legal names; allow the
-          // rendered width to use the full box (including padding band) rather
-          // than the strict content area. Non-identity fields respect padding.
-          const isIdentityField = element.getAttribute("data-identity") === "true";
-          const widthLimit = isIdentityField ? element.clientWidth : availableWidth;
+          // scrollWidth is measured against the padding box, so the width limit
+          // must be the full box width (clientWidth) for every field. Padding
+          // still keeps text visually away from the edges.
+          const widthLimit = element.clientWidth;
           while (high - low > 0.25) {
             const mid = (low + high) / 2;
             element.style.fontSize = mid + "px";

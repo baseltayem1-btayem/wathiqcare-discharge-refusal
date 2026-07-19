@@ -1,13 +1,23 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import crypto from "node:crypto";
 import { PDFDocument } from "pdf-lib";
 import type { Browser } from "puppeteer";
-import { renderFieldAddressedPdf } from "@/lib/server/acroform/field-addressed-pdf-renderer";
+import {
+  assertCanonicalPdfHashMatches,
+  assertRequiredFieldsPresent,
+  assertValueKeysAreKnown,
+  renderFieldAddressedPdf,
+} from "@/lib/server/acroform/field-addressed-pdf-renderer";
 import type { AcroFormTemplateManifest } from "@/lib/server/acroform/field-addressed-template-manifest";
 
 // 1x1 transparent PNG
 const TINY_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=";
+
+function sha256Hex(data: Uint8Array): string {
+  return crypto.createHash("sha256").update(Buffer.from(data)).digest("hex");
+}
 
 function createMockBrowser(): Browser {
   return {
@@ -29,7 +39,7 @@ async function buildCanonicalPdf(): Promise<Uint8Array> {
   return pdfDoc.save();
 }
 
-function buildManifest(): AcroFormTemplateManifest {
+function buildManifest(canonicalPdfBytes: Uint8Array): AcroFormTemplateManifest {
   return {
     templateCode: "IMC TEST",
     templateVersion: "1.0",
@@ -45,8 +55,8 @@ function buildManifest(): AcroFormTemplateManifest {
       notes: "test manifest",
     },
     canonicalApprovedPdf: {
-      sha256: "abc",
-      sizeBytes: 0,
+      sha256: sha256Hex(canonicalPdfBytes),
+      sizeBytes: canonicalPdfBytes.length,
       pageCount: 1,
       pageSizePoints: { width: 612, height: 792 },
     },
@@ -116,19 +126,25 @@ function buildManifest(): AcroFormTemplateManifest {
   };
 }
 
+function buildRequiredValues(): Record<string, { kind: "text"; value: string } | { kind: "signature"; imageDataUrl: string }> {
+  return {
+    patient_name: { kind: "text", value: "Najib" },
+    patient_signature: { kind: "signature", imageDataUrl: `data:image/png;base64,${TINY_PNG_BASE64}` },
+  };
+}
+
 test("renderFieldAddressedPdf renders text, checkbox and signature, then flattens the PDF", async () => {
   const browser = createMockBrowser();
   const canonicalBytes = await buildCanonicalPdf();
-  const manifest = buildManifest();
+  const manifest = buildManifest(canonicalBytes);
 
   const result = await renderFieldAddressedPdf({
     canonicalPdfBytes: canonicalBytes,
     manifest,
     input: {
       values: {
-        patient_name: { kind: "text", value: "Najib" },
+        ...buildRequiredValues(),
         interpreter_required: { kind: "checkbox", checked: true },
-        patient_signature: { kind: "signature", imageDataUrl: `data:image/png;base64,${TINY_PNG_BASE64}` },
       },
     },
     browser,
@@ -152,14 +168,14 @@ test("renderFieldAddressedPdf throws on page count mismatch", async () => {
   pdfDoc.addPage([612, 792]);
   pdfDoc.addPage([612, 792]);
   const canonicalBytes = await pdfDoc.save();
-  const manifest = buildManifest();
+  const manifest = buildManifest(canonicalBytes);
 
   await assert.rejects(
     async () =>
       renderFieldAddressedPdf({
         canonicalPdfBytes: canonicalBytes,
         manifest,
-        input: { values: {} },
+        input: { values: buildRequiredValues() },
         browser,
       }),
     /Page count mismatch/,
@@ -170,7 +186,7 @@ test("renderFieldAddressedPdf throws on page count mismatch", async () => {
 test("renderFieldAddressedPdf preserves Arabic letters in rendered text summary", async () => {
   const browser = createMockBrowser();
   const canonicalBytes = await buildCanonicalPdf();
-  const manifest = buildManifest();
+  const manifest = buildManifest(canonicalBytes);
 
   const arabicValue = "اختبار CA2011E1 رقم 006";
   const result = await renderFieldAddressedPdf({
@@ -178,6 +194,7 @@ test("renderFieldAddressedPdf preserves Arabic letters in rendered text summary"
     manifest,
     input: {
       values: {
+        ...buildRequiredValues(),
         patient_name: { kind: "text", value: arabicValue },
       },
     },
@@ -187,4 +204,35 @@ test("renderFieldAddressedPdf preserves Arabic letters in rendered text summary"
   assert.ok(result.summary.fieldsRendered.includes("patient_name"));
   // The renderer must not drop the field; actual glyph coverage is enforced by
   // the embedded WathiqOverlayArabic font and explicit document.fonts.load().
+});
+
+test("assertCanonicalPdfHashMatches rejects mismatched canonical PDF hash", () => {
+  const manifest = buildManifest(new Uint8Array([1, 2, 3]));
+  assert.throws(
+    () => assertCanonicalPdfHashMatches({ canonicalPdfBytes: new Uint8Array([4, 5, 6]), manifest }),
+    /Canonical approved PDF hash mismatch/,
+  );
+});
+
+test("assertValueKeysAreKnown rejects unknown value keys", () => {
+  const manifest = buildManifest(new Uint8Array([1, 2, 3]));
+  assert.throws(
+    () =>
+      assertValueKeysAreKnown({
+        values: {
+          patient_name: { kind: "text", value: "Najib" },
+          unknown_field: { kind: "text", value: "X" },
+        },
+        manifest,
+      }),
+    /Unknown value keys/,
+  );
+});
+
+test("assertRequiredFieldsPresent rejects missing required fields", () => {
+  const manifest = buildManifest(new Uint8Array([1, 2, 3]));
+  assert.throws(
+    () => assertRequiredFieldsPresent({ values: {}, manifest }),
+    /Required manifest fields are missing/,
+  );
 });

@@ -7,6 +7,7 @@
  * actions remain.
  */
 
+import crypto from "node:crypto";
 import type { Browser } from "puppeteer";
 import { PDFArray, PDFDict, PDFDocument, PDFName, StandardFonts, rgb } from "pdf-lib";
 import { isArabicText, normalizeArabicText } from "@/lib/pdf-engine/core/pdf-rtl";
@@ -625,6 +626,54 @@ export function flattenPdfDocument(pdfDoc: PDFDocument): void {
   }
 }
 
+function sha256Hex(data: Uint8Array): string {
+  return crypto.createHash("sha256").update(Buffer.from(data)).digest("hex");
+}
+
+export function assertCanonicalPdfHashMatches(args: {
+  canonicalPdfBytes: Uint8Array;
+  manifest: AcroFormTemplateManifest;
+}): void {
+  const actualHash = sha256Hex(args.canonicalPdfBytes);
+  const expectedHash = args.manifest.canonicalApprovedPdf.sha256;
+  if (actualHash !== expectedHash) {
+    throw new Error(
+      `Canonical approved PDF hash mismatch: expected ${expectedHash}, received ${actualHash}.`,
+    );
+  }
+}
+
+export function assertValueKeysAreKnown(args: {
+  values: Record<string, FieldAddressedRenderValue>;
+  manifest: AcroFormTemplateManifest;
+}): void {
+  const knownFields = new Set(args.manifest.fields.map((field) => field.name));
+  const unknownKeys = Object.keys(args.values).filter((key) => !knownFields.has(key));
+  if (unknownKeys.length > 0) {
+    throw new Error(
+      `Unknown value keys cannot be rendered against this manifest: ${unknownKeys.join(", ")}`,
+    );
+  }
+}
+
+export function assertRequiredFieldsPresent(args: {
+  values: Record<string, FieldAddressedRenderValue>;
+  manifest: AcroFormTemplateManifest;
+}): void {
+  const missing: string[] = [];
+  for (const field of args.manifest.fields) {
+    if (!field.required) continue;
+    if (args.values[field.name] === undefined) {
+      missing.push(field.name);
+    }
+  }
+  if (missing.length > 0) {
+    throw new Error(
+      `Required manifest fields are missing values: ${missing.join(", ")}`,
+    );
+  }
+}
+
 async function validateAndPreparePdf(args: {
   manifest: AcroFormTemplateManifest;
   pdfDoc: PDFDocument;
@@ -660,8 +709,20 @@ export async function renderFieldAddressedOverlays(args: {
   manifest: AcroFormTemplateManifest;
   values: Record<string, FieldAddressedRenderValue>;
   browser: Browser;
+  canonicalPdfBytes?: Uint8Array;
+  /** When false, required-field validation is skipped (e.g. draft preview). Defaults to true. */
+  strict?: boolean;
 }): Promise<FieldAddressedOverlayResult> {
-  const { pdfDoc, manifest, values, browser } = args;
+  const { pdfDoc, manifest, values, browser, canonicalPdfBytes, strict = true } = args;
+
+  if (canonicalPdfBytes) {
+    assertCanonicalPdfHashMatches({ canonicalPdfBytes, manifest });
+  }
+  assertValueKeysAreKnown({ values, manifest });
+  if (strict) {
+    assertRequiredFieldsPresent({ values, manifest });
+  }
+
   await validateAndPreparePdf({ manifest, pdfDoc });
 
   const { fieldsRendered, widgetsRendered } = await drawTextOverlays({
@@ -690,8 +751,16 @@ export async function renderFieldAddressedPdf(args: {
   manifest: AcroFormTemplateManifest;
   input: FieldAddressedRenderInput;
   browser: Browser;
+  /** When false, required-field validation is skipped (e.g. draft preview). Defaults to true. */
+  strict?: boolean;
 }): Promise<FieldAddressedRenderResult> {
-  const { canonicalPdfBytes, manifest, input, browser } = args;
+  const { canonicalPdfBytes, manifest, input, browser, strict = true } = args;
+
+  assertCanonicalPdfHashMatches({ canonicalPdfBytes, manifest });
+  assertValueKeysAreKnown({ values: input.values, manifest });
+  if (strict) {
+    assertRequiredFieldsPresent({ values: input.values, manifest });
+  }
 
   const pdfDoc = await PDFDocument.load(canonicalPdfBytes, { updateMetadata: false });
   const pages = pdfDoc.getPages();
@@ -701,6 +770,8 @@ export async function renderFieldAddressedPdf(args: {
     manifest,
     values: input.values,
     browser,
+    canonicalPdfBytes,
+    strict,
   });
 
   await redrawPagination(pdfDoc);

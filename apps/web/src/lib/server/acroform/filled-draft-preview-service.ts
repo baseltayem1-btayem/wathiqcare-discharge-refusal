@@ -229,6 +229,7 @@ export async function renderAcroFormFilledDraftPreview(args: {
     manifest,
     input: { values },
     browser,
+    strict: false,
   });
 
   const fingerprint = computeDraftFingerprint({
@@ -253,12 +254,13 @@ function buildFieldAddressedPatientCopyValues(args: {
   doctorCompletionValues: Record<string, unknown>;
   patientDisplay: DraftPatientDisplay;
   physicianContext: DraftPhysicianContext;
+  physicianSignatureDataUrl?: string;
   patientSignature?: AcroFormPatientCopySignature;
 }): ReturnType<typeof buildAmputationFieldAddressedValues> {
   const signedAt = args.patientSignature?.signedAt ?? null;
   return buildAmputationFieldAddressedValues({
     doctorCompletionValues: args.doctorCompletionValues,
-    physicianSignatureDataUrl: undefined,
+    physicianSignatureDataUrl: args.physicianSignatureDataUrl,
     patientSignatureDataUrl: args.patientSignature?.dataUrl,
     physicianName: args.physicianContext.name,
     physicianSpecialty: args.physicianContext.designation,
@@ -310,6 +312,7 @@ export async function renderAcroFormPatientCopy(args: {
     doctorCompletionValues: request.doctorCompletionValues,
     patientDisplay: request.patientDisplay,
     physicianContext: request.physicianContext,
+    physicianSignatureDataUrl: request.physicianSignatureDataUrl,
     patientSignature: request.patientSignature,
   });
 
