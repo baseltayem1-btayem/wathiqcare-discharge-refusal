@@ -375,7 +375,8 @@
       "agreements": "Agreements",
       "roi": "Release of Information",
       "archive": "Archive",
-      "audit": "Audit"
+      "audit": "Audit",
+      "documents": "Documents"
     },
     "overview": {
       "caseProfile": "Case Profile",
@@ -494,6 +495,33 @@
       "missing": "Missing Documentation",
       "completed": "Documented",
       "pending": "Pending"
+    },
+    "documents": {
+      "title": "Document Library",
+      "subtitle": "All case forms linked to the current workflow stage. Generate, view, download, or send for signature.",
+      "generateDocumentsBtn": "Generate Documents",
+      "stage": "Stage",
+      "status": "Status",
+      "actions": "Actions",
+      "generate": "Generate",
+      "view": "View",
+      "download": "Download",
+      "sendForSignature": "Send for Signature",
+      "statusRequired": "Required",
+      "statusNotGenerated": "Not Generated",
+      "statusGenerated": "Generated",
+      "statusSigned": "Signed",
+      "statusMissingSignature": "Missing Signature",
+      "noWorkflow": "No active workflow. Start the discharge refusal workflow to see document requirements.",
+      "stageLabel": {
+        "initial_communication": "Stage 2 - Initial Communication",
+        "support_and_intervention": "Stage 3 - Support & Intervention",
+        "refusal_form": "Stage 4 - Refusal Form",
+        "official_notification": "Stage 5 - Official Notification",
+        "promissory_note": "Stage 6 - Promissory Note (Uninsured)",
+        "escalation": "Stage 7 - Escalation",
+        "closure": "Stage 8 - Closure"
+      }
     }
   },
   "documents": {
