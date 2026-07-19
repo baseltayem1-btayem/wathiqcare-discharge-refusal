@@ -146,7 +146,7 @@ async function buildSharedContext() {
           "procedure.site_side.en": SYNTHETIC.procedure,
           "procedure.site_side.ar": "بتر تحت الركبة للساق اليسرى، بما في ذلك إزالة الأنسجة غير القابلة للحياة.",
           "procedure.significant_risks.en": "Bleeding, infection, phantom limb pain, stump breakdown.",
-          "procedure.significant_risks.ar": "نزيف، عدوى، ألم العضو الوهمي، ت breakdown الجذع.",
+          "procedure.significant_risks.ar": "نزيف، عدوى، ألم الطرف الوهمي، وتفكك جرح جذع الطرف.",
           "procedure.significant_risks_cont.en": "Additional risks include delayed wound healing and need for revision surgery.",
           "procedure.significant_risks_cont.ar": "تشمل المخاطر الإضافية تأخر شفاء الجرح والحاجة إلى جراحة تصحيحية.",
           "procedure.no_treatment_risks.en":

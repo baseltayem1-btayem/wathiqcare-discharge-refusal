@@ -543,3 +543,29 @@ test("buildAmputationFieldAddressedValues maps continuation-risk canonical keys 
   assert.ok(!valuesWithoutWitness.witness1_time_en, "Witness time should not be set when witness name is absent");
   assert.ok(!valuesWithoutWitness.witness1_signature_en, "Witness signature should not be set when witness name is absent");
 });
+
+
+test("buildAmputationFieldAddressedValues suppresses substitute fields when name and signature are empty", () => {
+  const values = buildAmputationFieldAddressedValues({
+    doctorCompletionValues: {
+      substitute_relationship: "Brother",
+      substitute_contact: "0500000000",
+    },
+    physicianSignatureDataUrl: undefined,
+    patientSignatureDataUrl: undefined,
+    physicianName: "Dr. Ahmed",
+    physicianSpecialty: "Orthopedic Surgery",
+    patientName: "Najib Al-Rashid",
+    mrn: "IMC-2026-02000",
+    dob: "1985-03-15",
+    signedAt: "2026-07-15T09:30:00.000Z",
+  });
+
+  assert.ok(!values.substitute_name, "substitute_name must not render without name/signature");
+  assert.ok(!values.substitute_relationship, "substitute_relationship must not render without name/signature");
+  assert.ok(!values.substitute_contact, "substitute_contact must not render without name/signature");
+  assert.ok(!values.substitute_date, "substitute_date must not render without name/signature");
+  assert.ok(!values.substitute_time, "substitute_time must not render without name/signature");
+  assert.ok(!values.substitute_signature_en, "substitute_signature_en must not render without name/signature");
+  assert.ok(!values.substitute_signature_ar, "substitute_signature_ar must not render without name/signature");
+});

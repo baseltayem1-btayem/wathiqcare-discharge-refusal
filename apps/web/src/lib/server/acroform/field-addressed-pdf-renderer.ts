@@ -9,7 +9,7 @@
 
 import crypto from "node:crypto";
 import type { Browser } from "puppeteer";
-import { PDFArray, PDFDict, PDFDocument, PDFName, StandardFonts, rgb } from "pdf-lib";
+import { PDFArray, PDFDict, PDFDocument, PDFName, rgb } from "pdf-lib";
 import { isArabicText, normalizeArabicText } from "@/lib/pdf-engine/core/pdf-rtl";
 import type { AcroFormTemplateManifest } from "./field-addressed-template-manifest";
 import { parseWidgetRect } from "./field-addressed-template-manifest";
@@ -564,39 +564,6 @@ async function drawTextOverlays(args: {
   return { fieldsRendered: Array.from(fieldsRendered), widgetsRendered };
 }
 
-async function redrawPagination(pdfDoc: PDFDocument): Promise<void> {
-  const pages = pdfDoc.getPages();
-  const totalPages = pages.length;
-  if (totalPages === 0) return;
-
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const footerY = 18;
-  const footerHeight = 22;
-  const footerLeft = 360;
-  const footerWidth = 220;
-
-  for (let index = 0; index < pages.length; index += 1) {
-    const page = pages[index];
-    const pageNumber = index + 1;
-
-    page.drawRectangle({
-      x: footerLeft,
-      y: footerY,
-      width: footerWidth,
-      height: footerHeight,
-      color: rgb(1, 1, 1),
-    });
-
-    page.drawText(`Page ${pageNumber} of ${totalPages}`, {
-      x: footerLeft + 4,
-      y: footerY + 6,
-      size: 8,
-      font,
-      color: rgb(0.2, 0.2, 0.2),
-    });
-  }
-}
-
 export function flattenPdfDocument(pdfDoc: PDFDocument): void {
   const catalog = pdfDoc.catalog;
 
@@ -774,7 +741,6 @@ export async function renderFieldAddressedPdf(args: {
     strict,
   });
 
-  await redrawPagination(pdfDoc);
   flattenPdfDocument(pdfDoc);
 
   const bytes = await pdfDoc.save({

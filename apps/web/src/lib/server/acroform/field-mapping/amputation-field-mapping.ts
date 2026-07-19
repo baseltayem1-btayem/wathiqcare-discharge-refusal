@@ -298,28 +298,25 @@ export function buildAmputationFieldAddressedValues(
   setValue(values, "consent_date", text(formatDate(signedAt)));
   setValue(values, "consent_time", text(formatTime(signedAt)));
 
-  // Substitute decision-maker
-  setValue(values, "substitute_name", text(asString(normalizedDoctorValues.substitute_name)));
-  setValue(
-    values,
-    "substitute_signature_en",
-    signature(extractSignatureDataUrl(normalizedDoctorValues.substitute_signature) ?? undefined),
-  );
-  setValue(
-    values,
-    "substitute_signature_ar",
-    signature(extractSignatureDataUrl(normalizedDoctorValues.substitute_signature) ?? undefined),
-  );
-  setValue(
-    values,
-    "substitute_relationship",
-    text(asString(normalizedDoctorValues.substitute_relationship)),
-  );
-  const substituteSignedAt =
-    parseDate(asString(normalizedDoctorValues.substitute_date) ?? undefined) ?? parseDate(signedAt);
-  setValue(values, "substitute_date", text(formatDate(substituteSignedAt)));
-  setValue(values, "substitute_time", text(formatTime(substituteSignedAt)));
-  setValue(values, "substitute_contact", text(asString(normalizedDoctorValues.substitute_contact)));
+  // Substitute decision-maker: only render when a name or signature is present.
+  const substituteName = asString(normalizedDoctorValues.substitute_name);
+  const substituteSignatureDataUrl = extractSignatureDataUrl(normalizedDoctorValues.substitute_signature);
+  if (substituteName || substituteSignatureDataUrl) {
+    setValue(values, "substitute_name", text(substituteName));
+    setValue(values, "substitute_signature_en", signature(substituteSignatureDataUrl ?? undefined));
+    setValue(values, "substitute_signature_ar", signature(substituteSignatureDataUrl ?? undefined));
+    setValue(
+      values,
+      "substitute_relationship",
+      text(asString(normalizedDoctorValues.substitute_relationship)),
+    );
+    const substituteSignedAt =
+      parseDate(asString(normalizedDoctorValues.substitute_date) ?? undefined) ??
+      parseDate(signedAt);
+    setValue(values, "substitute_date", text(formatDate(substituteSignedAt)));
+    setValue(values, "substitute_time", text(formatTime(substituteSignedAt)));
+    setValue(values, "substitute_contact", text(asString(normalizedDoctorValues.substitute_contact)));
+  }
 
   // Physician block
   // The physician-entered professional identity is the primary printable value;

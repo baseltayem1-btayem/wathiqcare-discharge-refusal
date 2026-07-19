@@ -170,7 +170,7 @@ async function main(): Promise<void> {
           "procedure.site_side.en": SYNTHETIC.procedure,
           "procedure.site_side.ar": "بتر تحت الركبة للساق اليسرى، بما في ذلك إزالة الأنسجة غير القابلة للحياة.",
           "procedure.significant_risks.en": "Bleeding, infection, phantom limb pain, stump breakdown.",
-          "procedure.significant_risks.ar": "نزيف، عدوى، ألم العضو الوهمي، ت breakdown الجذع.",
+          "procedure.significant_risks.ar": "نزيف، عدوى، ألم الطرف الوهمي، وتفكك جرح جذع الطرف.",
           "procedure.significant_risks_cont.en": "Additional risks include delayed wound healing and need for revision surgery.",
           "procedure.significant_risks_cont.ar": "تشمل المخاطر الإضافية تأخر شفاء الجرح والحاجة إلى جراحة تصحيحية.",
           "procedure.no_treatment_risks.en":
@@ -211,7 +211,7 @@ async function main(): Promise<void> {
       canonicalPdfHash,
     });
 
-    const pdfPath = path.join(OUTPUT_DIR, "MR1135-Fixed-Synthetic-Test.pdf");
+    const pdfPath = path.join(OUTPUT_DIR, "MR1135-Final-Acceptance-Test.pdf");
     fs.writeFileSync(pdfPath, Buffer.from(result.bytes));
 
     const reopened = await PDFDocument.load(result.bytes);
@@ -232,7 +232,7 @@ async function main(): Promise<void> {
     for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
       const pngBytes = await renderPdfPageToPng({ pdfBytes: result.bytes, pageIndex, scale: SCALE });
       const png = PNG.sync.read(Buffer.from(pngBytes));
-      const pngPath = path.join(OUTPUT_DIR, `MR1135-Fixed-Synthetic-Test-page-${pageIndex + 1}.png`);
+      const pngPath = path.join(OUTPUT_DIR, `MR1135-Final-Acceptance-Test-page-${pageIndex + 1}.png`);
       fs.writeFileSync(pngPath, Buffer.from(pngBytes));
 
       const regions: Array<{ field: string; bluePixels: number; rect: [number, number, number, number] }> = [];
@@ -300,7 +300,7 @@ async function main(): Promise<void> {
 
     console.log(`Wrote ${pdfPath}`);
     for (let i = 1; i <= pageCount; i++) {
-      console.log(`Wrote ${path.join(OUTPUT_DIR, `MR1135-Fixed-Synthetic-Test-page-${i}.png`)}`);
+      console.log(`Wrote ${path.join(OUTPUT_DIR, `MR1135-Final-Acceptance-Test-page-${i}.png`)}`);
     }
     console.log(`Wrote ${path.join(OUTPUT_DIR, "field-binding-report.json")}`);
     console.log(`Wrote ${path.join(OUTPUT_DIR, "visual-qa-report.json")}`);
