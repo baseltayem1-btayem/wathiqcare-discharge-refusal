@@ -288,7 +288,7 @@ export function ApprovedPdfViewer({
                       <ExternalLink className="size-3.5" /> {lang === "ar" ? "فتح نسخة المريض" : "Open patient copy"}
                     </a>
                   ) : null}
-                  {viewerMode === "filled" ? (
+                  {isAcroFormBacked || viewerMode === "filled" ? (
                     <Button
                       variant={filledDraftReviewed ? "outline" : "default"}
                       size="sm"
