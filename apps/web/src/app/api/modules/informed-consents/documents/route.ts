@@ -821,24 +821,72 @@ function buildApprovedLibraryPdfPath(
   );
 }
 
-function resolveApprovedLibraryItem(
+function resolveApprovedLibraryAliases(
   identifier: string,
-) {
-  const normalizedIdentifier =
+): string[] {
+  const normalized =
     normalizeApprovedLibraryValue(
       identifier,
     );
 
-  if (!normalizedIdentifier) {
+  if (!normalized) {
+    return [];
+  }
+
+  const aliases = new Set<string>([
+    normalized,
+  ]);
+
+  if (
+    normalized.startsWith(
+      "imc-approved-",
+    )
+  ) {
+    aliases.add(
+      normalized.replace(
+        /^imc-approved-/,
+        "imc-",
+      ),
+    );
+  }
+
+  if (
+    normalized.startsWith("imc-")
+    && !normalized.startsWith(
+      "imc-approved-",
+    )
+  ) {
+    aliases.add(
+      normalized.replace(
+        /^imc-/,
+        "imc-approved-",
+      ),
+    );
+  }
+
+  return Array.from(aliases);
+}
+
+function resolveApprovedLibraryItem(
+  identifier: string,
+) {
+  const aliases =
+    resolveApprovedLibraryAliases(
+      identifier,
+    );
+
+  if (aliases.length === 0) {
     return null;
   }
 
   return (
     imcApprovedConsentLibraryGenerated.find(
       (item) =>
-        normalizeApprovedLibraryValue(
-          item.id,
-        ) === normalizedIdentifier,
+        aliases.includes(
+          normalizeApprovedLibraryValue(
+            item.id,
+          ),
+        ),
     )
     || imcApprovedConsentLibraryGenerated.find(
       (item) => {
@@ -848,10 +896,10 @@ function resolveApprovedLibraryItem(
             unknown
           >;
 
-        return (
+        return aliases.includes(
           normalizeApprovedLibraryValue(
             record.slug,
-          ) === normalizedIdentifier
+          ),
         );
       },
     )
