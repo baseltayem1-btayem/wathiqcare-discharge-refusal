@@ -141,6 +141,14 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
 
   const effectivePreviewReviewed = supportsFilledDraftPreview ? state.filledDraftReviewed : state.previewReviewed;
 
+  const showMarkFilledPreviewReviewedButton =
+    supportsFilledDraftPreview &&
+    state.filledDraftStatus === "current" &&
+    Boolean(state.filledDraftPdfUrl) &&
+    !state.filledDraftReviewed;
+
+  const showApproveDraftButton = effectivePreviewReviewed && !state.draftApproved;
+
   const sendReason = (() => {
     if (sendLoading) return "Sending…";
     if (!readiness.patientReady) return "Select a patient first";
@@ -295,6 +303,36 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
 
           <div className="space-y-6">
             <ComplianceReadinessPanel assembly={state.assembly} readiness={readiness} reviewMode={state.reviewMode} />
+            <div className="space-y-3">
+              {showMarkFilledPreviewReviewedButton ? (
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="h-11 w-full rounded-2xl"
+                  disabled={sendLoading}
+                  onClick={() => setFilledDraftReviewed(true)}
+                >
+                  {lang === "ar" ? "تأكيد مراجعة المعاينة المعبأة" : "Mark Filled Preview Reviewed"}
+                </Button>
+              ) : null}
+              {showApproveDraftButton ? (
+                <Button
+                  variant={state.draftApproved ? "outline" : "default"}
+                  size="sm"
+                  className="h-11 w-full rounded-2xl"
+                  disabled={state.draftApproved || !effectivePreviewReviewed}
+                  onClick={handleApprove}
+                >
+                  {state.draftApproved
+                    ? lang === "ar"
+                      ? "تم اعتماد المسودة"
+                      : "Draft Approved"
+                    : lang === "ar"
+                      ? "اعتماد المسودة"
+                      : "Approve Draft"}
+                </Button>
+              ) : null}
+            </div>
             <SendToPatientPanel
               mobile={state.recipientMobile}
               email={state.recipientEmail}
