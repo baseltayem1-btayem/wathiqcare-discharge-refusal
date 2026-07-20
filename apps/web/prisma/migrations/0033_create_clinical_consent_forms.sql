@@ -2,6 +2,51 @@
 -- This table is referenced by existing migrations 0028, 0029, and 0032,
 -- but was never created by a numbered SQL migration.
 
+-- Guarded enum creation: safe to re-run if types already exist.
+DO $$
+BEGIN
+    CREATE TYPE "ClinicalKnowledgeConsentFormType" AS ENUM (
+        'PROCEDURE_CONSENT',
+        'ANESTHESIA_CONSENT',
+        'BLOOD_TRANSFUSION_CONSENT',
+        'HIGH_RISK_PROCEDURE_CONSENT',
+        'DIAGNOSTIC_IMAGING_CONSENT',
+        'RESEARCH_CLINICAL_TRIAL_CONSENT',
+        'TELEMEDICINE_CONSENT',
+        'VACCINATION_CONSENT'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$
+BEGIN
+    CREATE TYPE "ClinicalKnowledgeRiskLevel" AS ENUM (
+        'STANDARD',
+        'MEDIUM',
+        'HIGH',
+        'CRITICAL'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$
+BEGIN
+    CREATE TYPE "ClinicalKnowledgeStatus" AS ENUM (
+        'DRAFT',
+        'UNDER_REVIEW',
+        'MEDICALLY_APPROVED',
+        'LEGALLY_APPROVED',
+        'PUBLISHED',
+        'SUPERSEDED',
+        'ARCHIVED',
+        'REJECTED'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
 CREATE TABLE IF NOT EXISTS "clinical_consent_forms" (
     "id" TEXT NOT NULL,
     "tenant_id" TEXT NOT NULL,
