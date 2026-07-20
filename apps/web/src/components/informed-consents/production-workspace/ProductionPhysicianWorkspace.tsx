@@ -307,9 +307,13 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
               sendReason={sendReason}
               sendLoading={sendLoading}
               signingResult={state.signingResult}
+              supportsFilledDraftPreview={supportsFilledDraftPreview}
+              filledDraftStatus={state.filledDraftStatus}
+              draftPdfUrl={state.filledDraftPdfUrl}
               onMobileChange={setRecipientMobile}
               onEmailChange={setRecipientEmail}
               onApproveDraft={handleApprove}
+              onMarkFilledDraftReviewed={() => setFilledDraftReviewed(true)}
               onSend={handleSend}
             />
           </div>
