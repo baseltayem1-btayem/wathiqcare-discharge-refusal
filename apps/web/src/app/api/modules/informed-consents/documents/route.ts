@@ -1224,9 +1224,13 @@ export async function POST(request: NextRequest) {
       && requestMetadata.secureSigningBlocked === true
       && requestMetadata.patientMessagingBlocked === true;
 
+    const previewLibraryMaterializationAllowed =
+      process.env.VERCEL_ENV === "preview"
+      && ENABLE_IMC_PILOT_PATIENTS;
+
     if (
       !approvedConsentForm
-      && pilotLibraryMaterializationAllowed
+      && (pilotLibraryMaterializationAllowed || previewLibraryMaterializationAllowed)
     ) {
       await listRuntimeConsentTemplates(
         auth,
@@ -1263,7 +1267,7 @@ export async function POST(request: NextRequest) {
 
     if (
       !sourceInfo.available
-      && pilotLibraryMaterializationAllowed
+      && (pilotLibraryMaterializationAllowed || previewLibraryMaterializationAllowed)
     ) {
       const approvedLibraryItem =
         resolveApprovedLibraryItem(
