@@ -135,7 +135,19 @@ export function resolveAcroFormPatientCopyInputs(document: ConsentDocumentForPat
   const acroForm = asRecord(fieldMappingReadiness?.acroForm);
   const manifestState = asRecord(acroForm?.manifestState);
 
-  const formId = readString(metadata.approvedConsentFormId || fieldMappingReadiness?.formId);
+  // The create-document API stores the approved consent form's database UUID in
+  // metadata.approvedConsentFormId. That UUID is not a known AcroForm library
+  // alias and must not be used as the canonical form identity. Fall back to the
+  // governed field-mapping readiness formId, which is the source-controlled
+  // AcroForm manifest identifier (e.g. "imc-approved-amputation").
+  const explicitFormId = readString(metadata.approvedConsentFormId);
+  const fieldMappingFormId =
+    readString(asRecord(acroForm?.canonicalTemplateIdentity)?.formId) ||
+    readString(fieldMappingReadiness?.formId);
+  const resolvedExplicit = explicitFormId ? resolveCanonicalAcroFormTemplateId(explicitFormId) : null;
+  const resolvedFieldMapping = fieldMappingFormId ? resolveCanonicalAcroFormTemplateId(fieldMappingFormId) : null;
+  const canonicalFormId = resolvedExplicit ?? resolvedFieldMapping;
+  const formId = canonicalFormId?.canonicalFormId ?? explicitFormId ?? fieldMappingFormId ?? "";
   const approvedPdfUrl = readApprovedPdfUrl(document);
   const manifestHash = readString(manifestState?.hash);
   const doctorCompletionValues = readDoctorCompletionValues(metadata);
@@ -162,8 +174,12 @@ export function resolveAcroFormPatientCopyInputs(document: ConsentDocumentForPat
 
 export function isAcroFormBackedPatientCopy(document: ConsentDocumentForPatientCopy): boolean {
   const inputs = resolveAcroFormPatientCopyInputs(document);
+  // Only treat the document as AcroForm-backed when the resolved formId maps to
+  // a known, source-controlled AcroForm alias/manifest. Database UUIDs or other
+  // unknown identifiers must not pass this gate.
+  const canonical = resolveCanonicalAcroFormTemplateId(inputs.formId);
   return Boolean(
-    inputs.formId &&
+    canonical &&
       inputs.approvedPdfUrl &&
       inputs.manifestHash &&
       inputs.filledDraftFingerprint &&
