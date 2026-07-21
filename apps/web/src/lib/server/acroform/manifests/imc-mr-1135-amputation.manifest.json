@@ -1,0 +1,1909 @@
+{
+  "templateCode": "IMC MR 1135",
+  "templateVersion": "2018-02",
+  "titleEn": "Amputation",
+  "titleAr": "البتر",
+  "canonicalApprovedPdf": {
+    "sha256": "ed69899c66be8ef768072fb2e4e6002a152f426dfd6b98a52bbd19a640d16083",
+    "sizeBytes": 627252,
+    "pageCount": 5,
+    "pageSizePoints": {
+      "width": 612,
+      "height": 792
+    }
+  },
+  "acroFormAuthoringArtifact": {
+    "sha256": "5f9109c99544aefe7765239f7a3985bbe1324bd8fe0648f9e6ca966dc812a553",
+    "sizeBytes": 700370,
+    "pageCount": 5,
+    "pageSizePoints": {
+      "width": 612,
+      "height": 792
+    },
+    "hasJavaScript": true,
+    "hasOpenAction": false,
+    "hasActiveActions": true,
+    "runtimeUsage": "AUTHORING_INPUT_ONLY"
+  },
+  "status": "VERIFIED",
+  "provenance": {
+    "importedAt": "2026-07-15T00:00:00.000Z",
+    "reviewedAt": "2026-07-15T00:00:00.000Z",
+    "reviewedBy": "wathiqcare-acroform-adapter",
+    "sourceTool": "pdf-lib-acroform-importer",
+    "notes": "Verified against supplied expected manifest. Authoring artifact contains JavaScript actions and is used offline only."
+  },
+  "fieldCounts": {
+    "total": 56,
+    "text": 39,
+    "button": 7,
+    "signature": 10
+  },
+  "fields": [
+    {
+      "name": "patient_name",
+      "semanticKey": "patient_name",
+      "altName": "Patient Name / اسم المريض",
+      "role": "SYSTEM",
+      "language": "BILINGUAL",
+      "type": "/Tx",
+      "flags": 4096,
+      "required": false,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": true,
+      "autofit": true,
+      "widgets": [
+        {
+          "page": 1,
+          "rect": [
+            360,
+            730,
+            560,
+            762
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 2,
+          "rect": [
+            360,
+            730,
+            560,
+            762
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 3,
+          "rect": [
+            360,
+            730,
+            560,
+            762
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 4,
+          "rect": [
+            360,
+            730,
+            560,
+            762
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 5,
+          "rect": [
+            360,
+            730,
+            560,
+            762
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "mrn",
+      "semanticKey": "mrn",
+      "altName": "Medical Record Number / رقم الملف الطبي",
+      "role": "SYSTEM",
+      "language": "BILINGUAL",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 1,
+          "rect": [
+            375,
+            711,
+            535,
+            729
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 2,
+          "rect": [
+            375,
+            711,
+            535,
+            729
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 3,
+          "rect": [
+            375,
+            711,
+            535,
+            729
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 4,
+          "rect": [
+            375,
+            711,
+            535,
+            729
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 5,
+          "rect": [
+            375,
+            711,
+            535,
+            729
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "date_of_birth",
+      "semanticKey": "date_of_birth",
+      "altName": "Date of Birth / تاريخ الميلاد",
+      "role": "SYSTEM",
+      "language": "BILINGUAL",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 1,
+          "rect": [
+            369,
+            684,
+            535,
+            702
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 2,
+          "rect": [
+            369,
+            684,
+            535,
+            702
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 3,
+          "rect": [
+            369,
+            684,
+            535,
+            702
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 4,
+          "rect": [
+            369,
+            684,
+            535,
+            702
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 5,
+          "rect": [
+            369,
+            684,
+            535,
+            702
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "interpreter_required_yes",
+      "semanticKey": "interpreter_required",
+      "altName": "Interpreter required - Yes / نعم",
+      "role": "INTERPRETER",
+      "language": "BILINGUAL",
+      "type": "/Btn",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "interpreter_decision_required",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 1,
+          "rect": [
+            236.2,
+            573.5,
+            246,
+            582.4
+          ],
+          "appearanceStates": [
+            "/Off",
+            "/Yes"
+          ]
+        },
+        {
+          "page": 1,
+          "rect": [
+            369.8,
+            574.6,
+            379.6,
+            583.5
+          ],
+          "appearanceStates": [
+            "/Off",
+            "/Yes"
+          ]
+        }
+      ],
+      "renderingStrategy": "CHECKBOX_MARK"
+    },
+    {
+      "name": "interpreter_required_no",
+      "semanticKey": "interpreter_required_no",
+      "altName": "Interpreter required - No / لا",
+      "role": "INTERPRETER",
+      "language": "BILINGUAL",
+      "type": "/Btn",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "interpreter_decision_required",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 1,
+          "rect": [
+            270,
+            573.5,
+            279.8,
+            582.4
+          ],
+          "appearanceStates": [
+            "/Off",
+            "/Yes"
+          ]
+        },
+        {
+          "page": 1,
+          "rect": [
+            336,
+            574.6,
+            345.8,
+            583.5
+          ],
+          "appearanceStates": [
+            "/Off",
+            "/Yes"
+          ]
+        }
+      ],
+      "renderingStrategy": "CHECKBOX_MARK"
+    },
+    {
+      "name": "interpreter_present_yes",
+      "semanticKey": "interpreter_present",
+      "altName": "Interpreter present - Yes / نعم",
+      "role": "INTERPRETER",
+      "language": "BILINGUAL",
+      "type": "/Btn",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "interpreter_decision_required",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 1,
+          "rect": [
+            236.2,
+            561.5,
+            246,
+            570.4
+          ],
+          "appearanceStates": [
+            "/Off",
+            "/Yes"
+          ]
+        },
+        {
+          "page": 1,
+          "rect": [
+            369.8,
+            561.5,
+            379.6,
+            570.4
+          ],
+          "appearanceStates": [
+            "/Off",
+            "/Yes"
+          ]
+        }
+      ],
+      "renderingStrategy": "CHECKBOX_MARK"
+    },
+    {
+      "name": "interpreter_present_no",
+      "semanticKey": "interpreter_present_no",
+      "altName": "Interpreter present - No / لا",
+      "role": "INTERPRETER",
+      "language": "BILINGUAL",
+      "type": "/Btn",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "interpreter_decision_required",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 1,
+          "rect": [
+            270,
+            558.2,
+            279.8,
+            567
+          ],
+          "appearanceStates": [
+            "/Off",
+            "/Yes"
+          ]
+        },
+        {
+          "page": 1,
+          "rect": [
+            336,
+            561.5,
+            345.8,
+            570.4
+          ],
+          "appearanceStates": [
+            "/Off",
+            "/Yes"
+          ]
+        }
+      ],
+      "renderingStrategy": "CHECKBOX_MARK"
+    },
+    {
+      "name": "condition_description_en",
+      "semanticKey": "condition_description_en",
+      "altName": "Condition in patient own words - English",
+      "role": "PHYSICIAN",
+      "language": "EN",
+      "type": "/Tx",
+      "flags": 4096,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": true,
+      "autofit": true,
+      "widgets": [
+        {
+          "page": 1,
+          "rect": [
+            54,
+            445,
+            286,
+            470
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "condition_description_ar",
+      "semanticKey": "condition_description_ar",
+      "altName": "وصف الحالة المرضية بكلمات المريض - عربي",
+      "role": "PHYSICIAN",
+      "language": "AR",
+      "type": "/Tx",
+      "flags": 4096,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": true,
+      "autofit": true,
+      "widgets": [
+        {
+          "page": 1,
+          "rect": [
+            338,
+            445,
+            560,
+            470
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "proposed_procedure_en",
+      "semanticKey": "proposed_procedure_en",
+      "altName": "Proposed procedure, including site and side - English",
+      "role": "PHYSICIAN",
+      "language": "EN",
+      "type": "/Tx",
+      "flags": 4096,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": true,
+      "autofit": true,
+      "widgets": [
+        {
+          "page": 1,
+          "rect": [
+            54,
+            368,
+            286,
+            393
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "proposed_procedure_ar",
+      "semanticKey": "proposed_procedure_ar",
+      "altName": "الإجراء المقترح مع الموضع والجهة - عربي",
+      "role": "PHYSICIAN",
+      "language": "AR",
+      "type": "/Tx",
+      "flags": 4096,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": true,
+      "autofit": true,
+      "widgets": [
+        {
+          "page": 1,
+          "rect": [
+            338,
+            368,
+            560,
+            393
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "significant_risks_options_en",
+      "semanticKey": "significant_risks_options_en",
+      "altName": "Significant risks and procedure options - English",
+      "role": "PHYSICIAN",
+      "language": "EN",
+      "type": "/Tx",
+      "flags": 4096,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": true,
+      "autofit": true,
+      "widgets": [
+        {
+          "page": 2,
+          "rect": [
+            54,
+            80,
+            291,
+            150
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "significant_risks_options_ar",
+      "semanticKey": "significant_risks_options_ar",
+      "altName": "المخاطر الهامة وخيارات الإجراء - عربي",
+      "role": "PHYSICIAN",
+      "language": "AR",
+      "type": "/Tx",
+      "flags": 4096,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": true,
+      "autofit": true,
+      "widgets": [
+        {
+          "page": 2,
+          "rect": [
+            337,
+            80,
+            560,
+            150
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "significant_risks_options_cont_en",
+      "semanticKey": "significant_risks_options_cont_en",
+      "altName": "Significant risks/options continuation - English",
+      "role": "PHYSICIAN",
+      "language": "EN",
+      "type": "/Tx",
+      "flags": 4096,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": true,
+      "autofit": true,
+      "widgets": [
+        {
+          "page": 3,
+          "rect": [
+            54,
+            580,
+            291,
+            630
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "significant_risks_options_cont_ar",
+      "semanticKey": "significant_risks_options_cont_ar",
+      "altName": "تكملة المخاطر الهامة وخيارات الإجراء - عربي",
+      "role": "PHYSICIAN",
+      "language": "AR",
+      "type": "/Tx",
+      "flags": 4096,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": true,
+      "autofit": true,
+      "widgets": [
+        {
+          "page": 3,
+          "rect": [
+            337,
+            570,
+            560,
+            630
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "risks_without_procedure_en",
+      "semanticKey": "risks_without_procedure_en",
+      "altName": "Risks of not having the procedure - English",
+      "role": "PHYSICIAN",
+      "language": "EN",
+      "type": "/Tx",
+      "flags": 4096,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": true,
+      "autofit": true,
+      "widgets": [
+        {
+          "page": 3,
+          "rect": [
+            54,
+            440,
+            291,
+            560
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "risks_without_procedure_ar",
+      "semanticKey": "risks_without_procedure_ar",
+      "altName": "مخاطر عدم الخضوع للإجراء - عربي",
+      "role": "PHYSICIAN",
+      "language": "AR",
+      "type": "/Tx",
+      "flags": 4096,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": true,
+      "autofit": true,
+      "widgets": [
+        {
+          "page": 3,
+          "rect": [
+            337,
+            470,
+            560,
+            570
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "anaesthetic_discussed_en",
+      "semanticKey": "anaesthetic_discussed_en",
+      "altName": "Type of anaesthetic discussed - English",
+      "role": "PHYSICIAN",
+      "language": "EN",
+      "type": "/Tx",
+      "flags": 4096,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": true,
+      "autofit": true,
+      "widgets": [
+        {
+          "page": 3,
+          "rect": [
+            54,
+            245,
+            292,
+            390
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "anaesthetic_discussed_ar",
+      "semanticKey": "anaesthetic_discussed_ar",
+      "altName": "نوع التخدير الذي تمت مناقشته - عربي",
+      "role": "PHYSICIAN",
+      "language": "AR",
+      "type": "/Tx",
+      "flags": 4096,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": true,
+      "autofit": true,
+      "widgets": [
+        {
+          "page": 3,
+          "rect": [
+            337,
+            245,
+            560,
+            390
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "info_sheet_anaesthetic",
+      "semanticKey": "education_anaesthetic_sheet_provided",
+      "altName": "Anaesthetic information sheet provided / ورقة معلومات التخدير",
+      "role": "READ_ONLY",
+      "language": "BILINGUAL",
+      "type": "/Btn",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "education_decision_driven",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 4,
+          "rect": [
+            57,
+            407,
+            67,
+            418
+          ],
+          "appearanceStates": [
+            "/Off",
+            "/Yes"
+          ]
+        },
+        {
+          "page": 4,
+          "rect": [
+            549,
+            407,
+            559,
+            418
+          ],
+          "appearanceStates": [
+            "/Off",
+            "/Yes"
+          ]
+        }
+      ],
+      "renderingStrategy": "CHECKBOX_MARK"
+    },
+    {
+      "name": "info_sheet_epidural_spinal",
+      "semanticKey": "education_epidural_spinal_sheet_provided",
+      "altName": "Epidural and spinal information sheet provided / ورقة التخدير النصفي",
+      "role": "READ_ONLY",
+      "language": "BILINGUAL",
+      "type": "/Btn",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "education_decision_driven",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 4,
+          "rect": [
+            57,
+            386,
+            67,
+            397
+          ],
+          "appearanceStates": [
+            "/Off",
+            "/Yes"
+          ]
+        },
+        {
+          "page": 4,
+          "rect": [
+            549,
+            386,
+            559,
+            397
+          ],
+          "appearanceStates": [
+            "/Off",
+            "/Yes"
+          ]
+        }
+      ],
+      "renderingStrategy": "CHECKBOX_MARK"
+    },
+    {
+      "name": "info_sheet_amputation",
+      "semanticKey": "education_amputation_sheet_provided",
+      "altName": "Amputation information sheet provided / ورقة معلومات البتر",
+      "role": "READ_ONLY",
+      "language": "BILINGUAL",
+      "type": "/Btn",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "education_decision_driven",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 4,
+          "rect": [
+            57,
+            365,
+            67,
+            376
+          ],
+          "appearanceStates": [
+            "/Off",
+            "/Yes"
+          ]
+        },
+        {
+          "page": 4,
+          "rect": [
+            549,
+            365,
+            559,
+            376
+          ],
+          "appearanceStates": [
+            "/Off",
+            "/Yes"
+          ]
+        }
+      ],
+      "renderingStrategy": "CHECKBOX_MARK"
+    },
+    {
+      "name": "consent_patient_name",
+      "semanticKey": "consent_patient_name",
+      "altName": "Patient consent name / اسم المريض",
+      "role": "PATIENT",
+      "language": "BILINGUAL",
+      "type": "/Tx",
+      "flags": 0,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 4,
+          "rect": [
+            130,
+            90,
+            300,
+            118
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 4,
+          "rect": [
+            330,
+            100,
+            520,
+            130
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "patient_signature_en",
+      "semanticKey": "patient_signature",
+      "altName": "Patient signature - English side",
+      "role": "PATIENT",
+      "language": "EN",
+      "type": "/Sig",
+      "flags": 0,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 4,
+          "rect": [
+            104,
+            73,
+            287,
+            93
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "SIGNATURE_IMAGE"
+    },
+    {
+      "name": "patient_signature_ar",
+      "semanticKey": "patient_signature",
+      "altName": "توقيع المريض - الجانب العربي",
+      "role": "PATIENT",
+      "language": "AR",
+      "type": "/Sig",
+      "flags": 0,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 4,
+          "rect": [
+            346,
+            85,
+            529,
+            106
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "SIGNATURE_IMAGE"
+    },
+    {
+      "name": "consent_date",
+      "semanticKey": "consent_date",
+      "altName": "Consent date / تاريخ الإقرار",
+      "role": "SYSTEM",
+      "language": "BILINGUAL",
+      "type": "/Tx",
+      "flags": 0,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 4,
+          "rect": [
+            83,
+            52,
+            197,
+            73
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 4,
+          "rect": [
+            358,
+            64,
+            451,
+            86
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "DATE"
+    },
+    {
+      "name": "consent_time",
+      "semanticKey": "consent_time",
+      "altName": "Consent time / وقت الإقرار",
+      "role": "SYSTEM",
+      "language": "BILINGUAL",
+      "type": "/Tx",
+      "flags": 0,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 4,
+          "rect": [
+            226,
+            52,
+            290,
+            73
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 4,
+          "rect": [
+            468,
+            64,
+            529,
+            86
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TIME"
+    },
+    {
+      "name": "substitute_name",
+      "semanticKey": "substitute_name",
+      "altName": "Substitute decision-maker name / اسم من ينوب عن المريض",
+      "role": "SUBSTITUTE",
+      "language": "BILINGUAL",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "substitute_decision_required",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            144,
+            568,
+            293,
+            585
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 5,
+          "rect": [
+            337,
+            562,
+            529,
+            582
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "substitute_signature_en",
+      "semanticKey": "substitute_signature",
+      "altName": "Substitute decision-maker signature - English side",
+      "role": "SUBSTITUTE",
+      "language": "EN",
+      "type": "/Sig",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "substitute_decision_required",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            102,
+            547,
+            293,
+            564
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "SIGNATURE_IMAGE"
+    },
+    {
+      "name": "substitute_signature_ar",
+      "semanticKey": "substitute_signature",
+      "altName": "توقيع من ينوب عن المريض - الجانب العربي",
+      "role": "SUBSTITUTE",
+      "language": "AR",
+      "type": "/Sig",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "substitute_decision_required",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            337,
+            541,
+            529,
+            561
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "SIGNATURE_IMAGE"
+    },
+    {
+      "name": "substitute_relationship",
+      "semanticKey": "substitute_relationship",
+      "altName": "Relationship to patient / صلته بالمريض",
+      "role": "SUBSTITUTE",
+      "language": "BILINGUAL",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "substitute_decision_required",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            168,
+            526,
+            299,
+            543
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 5,
+          "rect": [
+            337,
+            520,
+            496,
+            540
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "substitute_date",
+      "semanticKey": "substitute_date",
+      "altName": "Substitute consent date / التاريخ",
+      "role": "SUBSTITUTE",
+      "language": "BILINGUAL",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "substitute_decision_required",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            80,
+            505,
+            164,
+            522
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 5,
+          "rect": [
+            334,
+            499,
+            398,
+            519
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "DATE"
+    },
+    {
+      "name": "substitute_time",
+      "semanticKey": "substitute_time",
+      "altName": "Substitute consent time / الوقت",
+      "role": "SUBSTITUTE",
+      "language": "BILINGUAL",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "substitute_decision_required",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            208,
+            505,
+            293,
+            522
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 5,
+          "rect": [
+            441,
+            499,
+            531,
+            519
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TIME"
+    },
+    {
+      "name": "substitute_contact",
+      "semanticKey": "substitute_contact",
+      "altName": "Substitute contact number / رقم الاتصال",
+      "role": "SUBSTITUTE",
+      "language": "BILINGUAL",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "substitute_decision_required",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            112,
+            484,
+            293,
+            501
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 5,
+          "rect": [
+            337,
+            478,
+            507,
+            498
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "doctor_delegate_name",
+      "semanticKey": "physician_name",
+      "altName": "Doctor or delegate name / اسم الطبيب أو المندوب",
+      "role": "PHYSICIAN",
+      "language": "BILINGUAL",
+      "type": "/Tx",
+      "flags": 0,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            135,
+            370,
+            293,
+            392
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 5,
+          "rect": [
+            339,
+            365,
+            470,
+            388
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "doctor_delegate_designation",
+      "semanticKey": "physician_designation",
+      "altName": "Doctor/delegate designation / طبيعة الإنابة",
+      "role": "PHYSICIAN",
+      "language": "BILINGUAL",
+      "type": "/Tx",
+      "flags": 0,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            124,
+            345,
+            293,
+            366
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 5,
+          "rect": [
+            338,
+            340,
+            520,
+            362
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "doctor_delegate_signature_en",
+      "semanticKey": "physician_signature",
+      "altName": "Doctor/delegate signature - English side",
+      "role": "PHYSICIAN",
+      "language": "EN",
+      "type": "/Sig",
+      "flags": 0,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            104,
+            315,
+            293,
+            340
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "SIGNATURE_IMAGE"
+    },
+    {
+      "name": "doctor_delegate_signature_ar",
+      "semanticKey": "physician_signature",
+      "altName": "توقيع الطبيب أو المندوب - الجانب العربي",
+      "role": "PHYSICIAN",
+      "language": "AR",
+      "type": "/Sig",
+      "flags": 0,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            337,
+            310,
+            529,
+            340
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "SIGNATURE_IMAGE"
+    },
+    {
+      "name": "doctor_delegate_date",
+      "semanticKey": "physician_signed_date",
+      "altName": "Doctor/delegate date / التاريخ",
+      "role": "SYSTEM",
+      "language": "BILINGUAL",
+      "type": "/Tx",
+      "flags": 0,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            85,
+            298,
+            188,
+            318
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 5,
+          "rect": [
+            334,
+            292,
+            431,
+            313
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "DATE"
+    },
+    {
+      "name": "doctor_delegate_time",
+      "semanticKey": "physician_signed_time",
+      "altName": "Doctor/delegate time / الوقت",
+      "role": "SYSTEM",
+      "language": "BILINGUAL",
+      "type": "/Tx",
+      "flags": 0,
+      "required": true,
+      "applicabilityRule": "always",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            221,
+            298,
+            290,
+            318
+          ],
+          "appearanceStates": null
+        },
+        {
+          "page": 5,
+          "rect": [
+            464,
+            292,
+            531,
+            313
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TIME"
+    },
+    {
+      "name": "witness1_name_en",
+      "semanticKey": "witness1_name",
+      "altName": "Witness 1 name - English side",
+      "role": "WITNESS",
+      "language": "EN",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "conditional_witness_policy",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            96,
+            250,
+            178,
+            271
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "witness1_signature_en",
+      "semanticKey": "witness1_signature",
+      "altName": "Witness 1 signature - English side",
+      "role": "WITNESS",
+      "language": "EN",
+      "type": "/Sig",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "conditional_witness_policy",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            239,
+            250,
+            293,
+            271
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "SIGNATURE_IMAGE"
+    },
+    {
+      "name": "witness1_date_en",
+      "semanticKey": "witness1_date",
+      "altName": "Witness 1 date - English side",
+      "role": "WITNESS",
+      "language": "EN",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "conditional_witness_policy",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            96,
+            222,
+            178,
+            243
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "DATE"
+    },
+    {
+      "name": "witness1_time_en",
+      "semanticKey": "witness1_time",
+      "altName": "Witness 1 time - English side",
+      "role": "WITNESS",
+      "language": "EN",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "conditional_witness_policy",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            220,
+            222,
+            293,
+            243
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TIME"
+    },
+    {
+      "name": "witness1_name_ar",
+      "semanticKey": "witness1_name",
+      "altName": "اسم الشاهد الأول",
+      "role": "WITNESS",
+      "language": "AR",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "conditional_witness_policy",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            322,
+            244,
+            394,
+            265
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "witness1_date_ar",
+      "semanticKey": "witness1_date",
+      "altName": "تاريخ الشاهد الأول",
+      "role": "WITNESS",
+      "language": "AR",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "conditional_witness_policy",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            470,
+            244,
+            502,
+            265
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "DATE"
+    },
+    {
+      "name": "witness1_signature_ar",
+      "semanticKey": "witness1_signature",
+      "altName": "توقيع الشاهد الأول",
+      "role": "WITNESS",
+      "language": "AR",
+      "type": "/Sig",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "conditional_witness_policy",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            322,
+            216,
+            395,
+            237
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "SIGNATURE_IMAGE"
+    },
+    {
+      "name": "witness1_time_ar",
+      "semanticKey": "witness1_time",
+      "altName": "وقت الشاهد الأول",
+      "role": "WITNESS",
+      "language": "AR",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "conditional_witness_policy",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            464,
+            216,
+            502,
+            237
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TIME"
+    },
+    {
+      "name": "witness2_name_en",
+      "semanticKey": "witness2_name",
+      "altName": "Witness 2 name - English side",
+      "role": "WITNESS",
+      "language": "EN",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "conditional_witness_policy",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            96,
+            194,
+            178,
+            215
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "witness2_signature_en",
+      "semanticKey": "witness2_signature",
+      "altName": "Witness 2 signature - English side",
+      "role": "WITNESS",
+      "language": "EN",
+      "type": "/Sig",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "conditional_witness_policy",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            239,
+            194,
+            293,
+            215
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "SIGNATURE_IMAGE"
+    },
+    {
+      "name": "witness2_date_en",
+      "semanticKey": "witness2_date",
+      "altName": "Witness 2 date - English side",
+      "role": "WITNESS",
+      "language": "EN",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "conditional_witness_policy",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            96,
+            167,
+            178,
+            188
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "DATE"
+    },
+    {
+      "name": "witness2_time_en",
+      "semanticKey": "witness2_time",
+      "altName": "Witness 2 time - English side",
+      "role": "WITNESS",
+      "language": "EN",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "conditional_witness_policy",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            220,
+            167,
+            293,
+            188
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TIME"
+    },
+    {
+      "name": "witness2_name_ar",
+      "semanticKey": "witness2_name",
+      "altName": "اسم الشاهد الثاني",
+      "role": "WITNESS",
+      "language": "AR",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "conditional_witness_policy",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            324,
+            188,
+            396,
+            209
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TEXT"
+    },
+    {
+      "name": "witness2_date_ar",
+      "semanticKey": "witness2_date",
+      "altName": "تاريخ الشاهد الثاني",
+      "role": "WITNESS",
+      "language": "AR",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "conditional_witness_policy",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            467,
+            188,
+            503,
+            209
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "DATE"
+    },
+    {
+      "name": "witness2_signature_ar",
+      "semanticKey": "witness2_signature",
+      "altName": "توقيع الشاهد الثاني",
+      "role": "WITNESS",
+      "language": "AR",
+      "type": "/Sig",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "conditional_witness_policy",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            327,
+            160,
+            399,
+            181
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "SIGNATURE_IMAGE"
+    },
+    {
+      "name": "witness2_time_ar",
+      "semanticKey": "witness2_time",
+      "altName": "وقت الشاهد الثاني",
+      "role": "WITNESS",
+      "language": "AR",
+      "type": "/Tx",
+      "flags": 0,
+      "required": false,
+      "applicabilityRule": "conditional_witness_policy",
+      "checkboxOnState": null,
+      "multiline": false,
+      "autofit": false,
+      "widgets": [
+        {
+          "page": 5,
+          "rect": [
+            440,
+            160,
+            503,
+            181
+          ],
+          "appearanceStates": null
+        }
+      ],
+      "renderingStrategy": "TIME"
+    }
+  ],
+  "manifestHash": "843fe2af33d866bc640cf2fd4998355faef4887cf6ff4e765b3fb0a410816e47"
+}

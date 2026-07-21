@@ -15,7 +15,7 @@
     "auth:ensure-user": "tsx -r dotenv/config scripts/ensure-auth-user.ts",
     "lint": "eslint",
     "check:lightningcss-native": "node -e \"require('lightningcss'); console.log('lightningcss native package loaded')\"",
-    "test": "tsx --test src/lib/server/*.test.ts src/components/cases/*.test.ts",
+    "test": "tsx --test src/lib/server/*.test.ts src/components/cases/*.test.ts src/components/approved-design/patient/*.test.ts",
     "test:promissory-pdf": "tsx --tsconfig tsconfig.json --test src/lib/server/promissory-note-pdf.test.ts",
     "prisma:generate": "npx prisma generate --schema=./prisma/schema.prisma",
     "admin:reset-password": "tsx -r dotenv/config scripts/admin-reset-password.ts",
@@ -71,6 +71,7 @@
     "next-themes": "^0.4.6",
     "nodemailer": "^8.0.5",
     "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.1.200",
     "puppeteer": "^24.42.0",
     "qrcode": "^1.5.4",
     "react": "19.2.3",
@@ -87,6 +88,7 @@
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
+    "@types/fontkit": "^2.0.9",
     "@types/jsrsasign": "^10.5.15",
     "@types/node": "^20",
     "@types/nodemailer": "^7.0.11",
@@ -96,11 +98,14 @@
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "fontkit": "^2.0.4",
     "madge": "^8.0.0",
+    "pngjs": "^7.0.0",
     "postcss": "^8.5.10",
     "prisma": "^6.19.2",
     "tailwindcss": "^4",
     "tsx": "^4.22.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wawoff2": "^2.0.1"
   }
 }

@@ -49,3 +49,6 @@ next-env.d.ts
 
 # Promissory PDF validation evidence artifacts (screenshots, generated PDFs, reports)
 /artifacts/promissory-evidence/
+
+# Local conditional-witness preview acceptance artifacts (TEST ONLY - never commit binaries)
+/test-output/

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { submitPublicSigningSignature } from "@/lib/server/public-signing-signature-service";
+import { mapPublicSignRequestBody } from "@/lib/server/public-signing-sign-body";
 import { ApiError } from "@/lib/server/http";
 
 export async function POST(
@@ -10,10 +11,8 @@ export async function POST(
     const { token } = await params;
     const body = await request.json();
     const result = await submitPublicSigningSignature({
-      token,
+      ...mapPublicSignRequestBody(body, token),
       request,
-      signerName: body.signerName,
-      signatureDataUrl: body.signatureDataUrl,
     });
     return NextResponse.json(result);
   } catch (error) {

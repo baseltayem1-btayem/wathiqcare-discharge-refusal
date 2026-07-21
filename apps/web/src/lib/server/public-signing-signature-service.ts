@@ -1,3 +1,4 @@
+import { buildConsentSignaturePersistencePayload, buildTabletSignatureEvidence } from "@/lib/signature/signature-evidence";
 import crypto from "node:crypto";
 import {
   $Enums,
@@ -25,6 +26,12 @@ import {
   validatePublicSigningSession,
   writePublicConsentAudit,
 } from "@/lib/server/public-signing-decision-service";
+import { computeFixedClauseChecksum } from "@/lib/server/consent-library-service";
+import {
+  assertPatientDeclarationsComplete,
+  buildPatientDeclarationRecord,
+} from "@/lib/server/patient-declarations-service";
+import { extractStoredPolicyDecision } from "@/lib/server/witness-policy-service";
 
 const prisma = () => getPrisma();
 
@@ -418,6 +425,8 @@ export async function submitPublicSigningSignature(args: {
   token: string;
   signerName: string;
   signatureDataUrl?: string;
+  /** Patient declaration keys accepted in the signing journey (routine path). */
+  declarations?: unknown;
   request: NextRequest;
 }): Promise<PublicSignatureResult> {
   const context = await validatePublicSigningSession({
@@ -628,6 +637,38 @@ export async function submitPublicSigningSignature(args: {
 
   const signerCompletesWorkflow = signerRole === ConsentSignatureRole.PATIENT || signerRole === ConsentSignatureRole.GUARDIAN;
 
+  // Routine electronic path (zero required human witnesses): the patient
+  // declarations must be complete and are bound to the exact finalized
+  // document content hash. Human-witness cases do not require them here;
+  // the witness workflow supplies the additional assurance instead.
+  const storedWitnessDecision = extractStoredPolicyDecision(doc.metadata);
+  const routineElectronicPath = (storedWitnessDecision?.requiredWitnessCount ?? 0) === 0;
+  const consentContentHash = computeFixedClauseChecksum(doc as unknown as Record<string, unknown>);
+  let patientDeclarationRecord: ReturnType<typeof buildPatientDeclarationRecord> | null = null;
+  if (routineElectronicPath && signerCompletesWorkflow) {
+    patientDeclarationRecord = buildPatientDeclarationRecord({
+      actorId: context.publicSession.challengeId ?? null,
+      actorRole: signerRole === ConsentSignatureRole.GUARDIAN ? "GUARDIAN" : "PATIENT",
+      documentHash: consentContentHash,
+      acceptedKeys: args.declarations,
+      locale: "bilingual",
+    });
+    assertPatientDeclarationsComplete(patientDeclarationRecord, consentContentHash);
+  }
+
+  const signaturePersistenceMetadata = args.signatureDataUrl
+    ? buildConsentSignaturePersistencePayload(
+        buildTabletSignatureEvidence({
+          signerRole,
+          signerName,
+          acknowledgmentAccepted: true,
+          otpVerified: true,
+          signatureDataUrl: args.signatureDataUrl,
+          deviceLabel: "public-signing-web",
+        }),
+      ).metadata
+    : {};
+
   const { signature, nextStatus, hasPhysician } = await prisma().$transaction(async (tx) => {
     const signature = await tx.consentDocumentSignature.create({
       data: {
@@ -640,6 +681,7 @@ export async function submitPublicSigningSignature(args: {
         userAgent: requestUserAgent,
         signatureHash,
         metadata: {
+          ...signaturePersistenceMetadata,
           capturedBy: "public_signer",
           tokenHash: context.publicSession.tokenHash,
           challengeId: context.publicSession.challengeId,
@@ -663,6 +705,14 @@ export async function submitPublicSigningSignature(args: {
       where: { id: context.documentId },
       data: {
         status: nextStatus,
+        ...(patientDeclarationRecord
+          ? {
+              metadata: {
+                ...((doc.metadata as Record<string, unknown> | null) ?? {}),
+                patientDeclarations: patientDeclarationRecord,
+              } as Prisma.InputJsonValue,
+            }
+          : {}),
       },
     });
 

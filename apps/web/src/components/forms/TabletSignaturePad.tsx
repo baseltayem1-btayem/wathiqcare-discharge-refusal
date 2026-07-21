@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
-import SignaturePad from "signature_pad";
 
 type Props = {
     value: string;
@@ -150,7 +149,10 @@ export default function TabletSignaturePad({ value, onChange, disabled = false }
             <canvas
                 ref={canvasRef}
                 data-testid="signature-pad-canvas"
-                className="w-full touch-none rounded-lg border border-slate-200 bg-white"
+                role="img"
+                aria-label="Signature capture area"
+                tabIndex={0}
+                className="w-full touch-none rounded-lg border border-slate-200 bg-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 onPointerDown={beginDraw}
                 onPointerMove={draw}
                 onPointerUp={endDraw}

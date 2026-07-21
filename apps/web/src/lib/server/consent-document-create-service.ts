@@ -1,13 +1,30 @@
 import crypto from "node:crypto";
-import { Prisma } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { $Enums, ConsentDocumentStatus, ConsentSectionKind } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
-import { writeConsentAudit } from "@/lib/server/consent-audit-service";
+import { writeConsentAuditInTx } from "@/lib/server/consent-audit-service";
+import {
+  computePayloadFingerprint,
+  validateIdempotencyKey,
+} from "@/lib/server/idempotency-core";
+import { evaluateWitnessPolicy } from "@/lib/server/witness-policy-service";
+import { resolveTemplateWitnessPolicy } from "@/lib/server/witness-policy-profiles";
 
 const prisma = () => getPrisma();
+
+export class IdempotencyConflictError extends ApiError {
+  public readonly existingDocumentId: string;
+
+  constructor(existingDocumentId: string) {
+    super(409, `Idempotency conflict: existing document ${existingDocumentId}`, {
+      code: "IDEMPOTENCY_CONFLICT",
+    });
+    this.existingDocumentId = existingDocumentId;
+  }
+}
 
 type GovernanceEditableBy = "PHYSICIAN" | "AI_ASSIST" | "SYSTEM" | "GOVERNANCE";
 
@@ -376,16 +393,73 @@ export type CreateConsentDocumentPayload = {
   department?: string;
   diagnosis?: string;
   plannedProcedure?: string;
+  dob?: string;
+  gender?: string;
   admissionDetails?: string;
   procedureDetails?: string;
   physicianNotesAr?: string;
   physicianNotesEn?: string;
+  idempotencyKey?: string;
+  idempotencyFingerprint?: string;
   metadata?: Record<string, unknown>;
+  /** Initial lifecycle status. Defaults to DRAFT. Production workspace may use READY_FOR_SIGNATURE. */
+  initialStatus?: ConsentDocumentStatus;
+  /** Runtime witness-policy trigger facts captured at creation time. */
+  witnessTriggerFacts?: {
+    substituteDecisionMaker?: boolean;
+    lacksCapacity?: boolean;
+    cannotReadOrUseJourney?: boolean;
+    communicationBarrier?: boolean;
+    disputedOrObjected?: boolean;
+    refusalOrAma?: boolean;
+  };
 };
 
-async function getConsentDocument(auth: AuthContext, id: string) {
+export function buildConsentDocumentFingerprint(
+  payload: CreateConsentDocumentPayload,
+  templateVersionId: string,
+): string {
+  const medicalPayload = {
+    caseId: payload.caseId?.trim(),
+    templateId: payload.templateId?.trim(),
+    templateVersionId: templateVersionId.trim(),
+    language: payload.language || "bilingual",
+    physicianName: payload.physicianName?.trim() || null,
+    physicianLicense: payload.physicianLicense?.trim() || null,
+    physicianSpecialty: payload.physicianSpecialty?.trim() || null,
+    department: payload.department?.trim() || null,
+    diagnosis: payload.diagnosis?.trim() || null,
+    plannedProcedure: payload.plannedProcedure?.trim() || null,
+    admissionDetails: payload.admissionDetails?.trim() || null,
+    procedureDetails: payload.procedureDetails?.trim() || null,
+    physicianNotesAr: payload.physicianNotesAr?.trim() || null,
+    physicianNotesEn: payload.physicianNotesEn?.trim() || null,
+  };
+  return computePayloadFingerprint(medicalPayload);
+}
+
+async function findExistingConsentDocumentByKey(
+  client: PrismaClient | Prisma.TransactionClient,
+  tenantId: string,
+  idempotencyKey: string,
+): Promise<{ id: string; idempotencyFingerprint: string | null } | null> {
+  const doc = await client.consentDocument.findFirst({
+    where: { tenantId, idempotencyKey },
+    select: { id: true, idempotencyFingerprint: true },
+  });
+  return doc
+    ? { id: doc.id, idempotencyFingerprint: doc.idempotencyFingerprint }
+    : null;
+}
+
+async function getConsentDocument(
+  auth: AuthContext,
+  id: string,
+  client?: PrismaClient | Prisma.TransactionClient,
+) {
   const tenantId = requireTenantId(auth);
-  const document = await prisma().consentDocument.findFirst({
+  const db = client ?? prisma();
+  const document = await db.consentDocument.findFirst({
     where: { tenantId, id },
     include: {
       case: true,
@@ -408,7 +482,9 @@ export async function createConsentDocument(
   auth: AuthContext,
   payload: CreateConsentDocumentPayload,
   request?: NextRequest,
+  client?: PrismaClient,
 ) {
+  const db = client ?? prisma();
   const tenantId = requireTenantId(auth);
   const caseId = payload.caseId?.trim();
   const templateId = payload.templateId?.trim();
@@ -417,7 +493,7 @@ export async function createConsentDocument(
     throw new ApiError(400, "caseId and templateId are required");
   }
 
-  const caseRecord = await prisma().case.findFirst({
+  const caseRecord = await db.case.findFirst({
     where: { id: caseId, tenantId },
     select: {
       id: true,
@@ -433,7 +509,7 @@ export async function createConsentDocument(
     throw new ApiError(404, "Case not found");
   }
 
-  const template = await prisma().consentTemplate.findFirst({
+  const template = await db.consentTemplate.findFirst({
     where: { id: templateId, tenantId },
   });
 
@@ -441,10 +517,14 @@ export async function createConsentDocument(
     throw new ApiError(404, "Template not found");
   }
 
-  if (template.requiresWitness || template.requiresInterpreter) {
+  // Interpreter signing workflows remain outside the current scope.
+  // Witness requirements are no longer a creation blocker: the typed,
+  // versioned witness policy is evaluated at runtime and enforced at the
+  // send/signature/finalization transitions instead.
+  if (template.requiresInterpreter) {
     throw new ApiError(
       422,
-      "This consent template requires a witness or interpreter, which is not yet supported in the pilot scope.",
+      "This consent template requires an interpreter, which is not yet supported in the pilot scope.",
     );
   }
 
@@ -453,7 +533,7 @@ export async function createConsentDocument(
     throw new ApiError(400, "Template has no active version");
   }
 
-  const version = await prisma().consentTemplateVersion.findFirst({
+  const version = await db.consentTemplateVersion.findFirst({
     where: {
       id: templateVersionId,
       tenantId,
@@ -463,6 +543,47 @@ export async function createConsentDocument(
 
   if (!version) {
     throw new ApiError(404, "Template version not found");
+  }
+
+  // Resolve the effective witness policy: explicit template metadata policy
+  // wins; otherwise a governed code-controlled registry profile may apply
+  // (exact templateCode + version gate, fail closed on mismatch).
+  const resolvedWitnessPolicy = resolveTemplateWitnessPolicy({
+    metadata: template.metadata,
+    templateCode: template.templateCode,
+    templateVersionLabel: version.versionLabel,
+  });
+  const witnessPolicyDecision = evaluateWitnessPolicy({
+    templateRequiresWitness: template.requiresWitness,
+    templateRiskLevel: template.riskLevel,
+    templatePolicy: resolvedWitnessPolicy.policy,
+    templatePolicySource: resolvedWitnessPolicy.policySource ?? undefined,
+    triggers: payload.witnessTriggerFacts,
+  });
+
+  let idempotencyKey: string | undefined;
+  let idempotencyFingerprint: string | undefined;
+
+  if (payload.idempotencyKey) {
+    validateIdempotencyKey(payload.idempotencyKey);
+    idempotencyKey = payload.idempotencyKey;
+    idempotencyFingerprint = buildConsentDocumentFingerprint(payload, version.id);
+
+    if (
+      payload.idempotencyFingerprint &&
+      payload.idempotencyFingerprint !== idempotencyFingerprint
+    ) {
+      const existing = await findExistingConsentDocumentByKey(db, tenantId, idempotencyKey);
+      throw new IdempotencyConflictError(existing?.id ?? "unknown");
+    }
+
+    const existing = await findExistingConsentDocumentByKey(db, tenantId, idempotencyKey);
+    if (existing) {
+      if (existing.idempotencyFingerprint !== idempotencyFingerprint) {
+        throw new IdempotencyConflictError(existing.id);
+      }
+      return getConsentDocument(auth, existing.id, db);
+    }
   }
 
   const creationSyncIssues = validateBilingualSync({
@@ -476,7 +597,7 @@ export async function createConsentDocument(
     throw new ApiError(409, `Template bilingual synchronization failed: ${creationSyncIssues.map((item) => item.message).join("; ")}`);
   }
 
-  const versionSections = await prisma().consentTemplateSection.findMany({
+  const versionSections = await db.consentTemplateSection.findMany({
     where: {
       tenantId,
       templateVersionId: version.id,
@@ -486,130 +607,188 @@ export async function createConsentDocument(
 
   const emrMeta = (caseRecord.metadata || {}) as Record<string, unknown>;
 
-  const created = await prisma().$transaction(async (tx) => {
-    const consentDocument = await tx.consentDocument.create({
-      data: {
+  const fixedClausePayload: Record<string, string> = {};
+  for (const field of FIXED_CLAUSE_FIELDS) {
+    fixedClausePayload[field] = normalizeText((version as unknown as Record<string, string>)[field]);
+  }
+  const immutablePdfHash = computeFixedClauseChecksum(fixedClausePayload);
+
+  try {
+    const created = await db.$transaction(async (tx) => {
+      const consentDocument = await tx.consentDocument.create({
+        data: {
+          tenantId,
+          caseId,
+          templateId,
+          templateVersionId: version.id,
+          consentReference: generateReference("IC"),
+          status: payload.initialStatus ?? ConsentDocumentStatus.DRAFT,
+          language: payload.language || "bilingual",
+          idempotencyKey: idempotencyKey ?? null,
+          idempotencyFingerprint: idempotencyFingerprint ?? null,
+          immutablePdfHash,
+          patientName: caseRecord.patientName || "Unknown Patient",
+          mrn: caseRecord.medicalRecordNo || null,
+          dob: payload.dob?.trim() || (typeof emrMeta.dob === "string" ? emrMeta.dob : null),
+          gender: payload.gender?.trim() || (typeof emrMeta.gender === "string" ? emrMeta.gender : null),
+          physicianName: payload.physicianName?.trim() || auth.email || "Assigned Physician",
+          physicianLicense: payload.physicianLicense?.trim() || null,
+          physicianSpecialty: payload.physicianSpecialty?.trim() || template.specialty,
+          department: payload.department?.trim() || template.department || null,
+          diagnosis: payload.diagnosis?.trim() || (typeof emrMeta.diagnosis === "string" ? emrMeta.diagnosis : null),
+          plannedProcedure:
+            payload.plannedProcedure?.trim() || (typeof emrMeta.plannedProcedure === "string" ? emrMeta.plannedProcedure : null),
+          admissionDetails:
+            payload.admissionDetails?.trim() || (typeof emrMeta.admissionDetails === "string" ? emrMeta.admissionDetails : null),
+          procedureDetails: payload.procedureDetails?.trim() || null,
+          physicianNotesAr: payload.physicianNotesAr?.trim() || null,
+          physicianNotesEn: payload.physicianNotesEn?.trim() || null,
+          legalTextAr: version.legalTextAr,
+          legalTextEn: version.legalTextEn,
+          pdplTextAr: version.pdplTextAr,
+          pdplTextEn: version.pdplTextEn,
+          witnessDeclAr: version.witnessDeclAr,
+          witnessDeclEn: version.witnessDeclEn,
+          physicianCertAr: version.physicianCertAr,
+          physicianCertEn: version.physicianCertEn,
+          aiWarningAr: version.aiWarningAr,
+          aiWarningEn: version.aiWarningEn,
+          documentVersion: version.versionLabel,
+          metadata: {
+            emrAutoPopulation: {
+              patientName: caseRecord.patientName || null,
+              mrn: caseRecord.medicalRecordNo || null,
+              diagnosis: typeof emrMeta.diagnosis === "string" ? emrMeta.diagnosis : null,
+              plannedProcedure: typeof emrMeta.plannedProcedure === "string" ? emrMeta.plannedProcedure : null,
+            },
+            patientIdentity: {
+              name: caseRecord.patientName || null,
+              mrn: caseRecord.medicalRecordNo || null,
+            },
+            demographics: {
+              dob: payload.dob?.trim() || (typeof emrMeta.dob === "string" ? emrMeta.dob : null),
+              gender: payload.gender?.trim() || (typeof emrMeta.gender === "string" ? emrMeta.gender : null),
+            },
+            physicianIdentity: {
+              name: payload.physicianName?.trim() || auth.email || "Assigned Physician",
+              license: payload.physicianLicense?.trim() || null,
+              specialty: payload.physicianSpecialty?.trim() || template.specialty,
+              department: payload.department?.trim() || template.department || null,
+            },
+            source: "modules.informed-consents",
+            immutablePdfHash,
+            witnessPolicyDecision: witnessPolicyDecision as unknown as Prisma.InputJsonValue,
+            governance: {
+              fieldPolicy: DYNAMIC_FIELD_GOVERNANCE,
+              prohibitedAiFields: Array.from(PROHIBITED_AI_FIELDS),
+              aiEditableFields: Array.from(AI_EDITABLE_FIELDS),
+              lifecycle: {
+                stage: "Draft",
+                initializedAt: new Date().toISOString(),
+              },
+            },
+            wordingSnapshot: buildDocumentWordingSnapshot({
+              doc: {
+                legalTextAr: version.legalTextAr,
+                legalTextEn: version.legalTextEn,
+                pdplTextAr: version.pdplTextAr,
+                pdplTextEn: version.pdplTextEn,
+                witnessDeclAr: version.witnessDeclAr,
+                witnessDeclEn: version.witnessDeclEn,
+                physicianCertAr: version.physicianCertAr,
+                physicianCertEn: version.physicianCertEn,
+                documentVersion: version.versionLabel,
+              },
+              templateVersion: {
+                id: version.id,
+                versionLabel: version.versionLabel,
+                versionNumber: version.versionNumber,
+                approvedByUserId: version.approvedByUserId,
+                approvedAt: version.approvedAt,
+                effectiveFrom: version.effectiveFrom,
+                effectiveTo: version.effectiveTo,
+              },
+              status: ConsentDocumentStatus.DRAFT,
+            }),
+            ...(payload.metadata || {}),
+          } as Prisma.InputJsonValue,
+        },
+      });
+
+      if (versionSections.length > 0) {
+        await tx.consentDocumentSection.createMany({
+          data: versionSections.map((section) => ({
+            tenantId,
+            consentDocumentId: consentDocument.id,
+            sourceTemplateSectionId: section.id,
+            sectionKey: section.sectionKey,
+            sectionKind: section.sectionKind,
+            titleAr: section.titleAr,
+            titleEn: section.titleEn,
+            contentAr: section.contentAr,
+            contentEn: section.contentEn,
+            isEditableByPhysician: section.isEditableByPhysician,
+            sortOrder: section.sortOrder,
+            metadata: {
+              ...(asRecord(section.metadata) || {}),
+              governance: resolveSectionGovernance(section.sectionKind, section.isEditableByPhysician),
+            } as Prisma.InputJsonValue,
+          })),
+        });
+      }
+
+      await writeConsentAuditInTx(tx, {
         tenantId,
-        caseId,
+        actorUserId: auth.sub,
+        actorRole: auth.role || null,
+        action: "WITNESS_POLICY_EVALUATED",
+        summary: `Witness policy evaluated for ${consentDocument.consentReference}: ${witnessPolicyDecision.witnessMode} (required witnesses: ${witnessPolicyDecision.requiredWitnessCount})`,
+        source: "policy",
+        consentDocumentId: consentDocument.id,
         templateId,
         templateVersionId: version.id,
-        consentReference: generateReference("IC"),
-        status: ConsentDocumentStatus.DRAFT,
-        language: payload.language || "bilingual",
-        patientName: caseRecord.patientName || "Unknown Patient",
-        mrn: caseRecord.medicalRecordNo || null,
-        dob: typeof emrMeta.dob === "string" ? emrMeta.dob : null,
-        gender: typeof emrMeta.gender === "string" ? emrMeta.gender : null,
-        physicianName: payload.physicianName?.trim() || auth.email || "Assigned Physician",
-        physicianLicense: payload.physicianLicense?.trim() || null,
-        physicianSpecialty: payload.physicianSpecialty?.trim() || template.specialty,
-        department: payload.department?.trim() || template.department || null,
-        diagnosis: payload.diagnosis?.trim() || (typeof emrMeta.diagnosis === "string" ? emrMeta.diagnosis : null),
-        plannedProcedure:
-          payload.plannedProcedure?.trim() || (typeof emrMeta.plannedProcedure === "string" ? emrMeta.plannedProcedure : null),
-        admissionDetails:
-          payload.admissionDetails?.trim() || (typeof emrMeta.admissionDetails === "string" ? emrMeta.admissionDetails : null),
-        procedureDetails: payload.procedureDetails?.trim() || null,
-        physicianNotesAr: payload.physicianNotesAr?.trim() || null,
-        physicianNotesEn: payload.physicianNotesEn?.trim() || null,
-        legalTextAr: version.legalTextAr,
-        legalTextEn: version.legalTextEn,
-        pdplTextAr: version.pdplTextAr,
-        pdplTextEn: version.pdplTextEn,
-        witnessDeclAr: version.witnessDeclAr,
-        witnessDeclEn: version.witnessDeclEn,
-        physicianCertAr: version.physicianCertAr,
-        physicianCertEn: version.physicianCertEn,
-        aiWarningAr: version.aiWarningAr,
-        aiWarningEn: version.aiWarningEn,
-        documentVersion: version.versionLabel,
+        caseId,
         metadata: {
-          emrAutoPopulation: {
-            patientName: caseRecord.patientName || null,
-            mrn: caseRecord.medicalRecordNo || null,
-            diagnosis: typeof emrMeta.diagnosis === "string" ? emrMeta.diagnosis : null,
-            plannedProcedure: typeof emrMeta.plannedProcedure === "string" ? emrMeta.plannedProcedure : null,
-          },
-          source: "modules.informed-consents",
-          governance: {
-            fieldPolicy: DYNAMIC_FIELD_GOVERNANCE,
-            prohibitedAiFields: Array.from(PROHIBITED_AI_FIELDS),
-            aiEditableFields: Array.from(AI_EDITABLE_FIELDS),
-            lifecycle: {
-              stage: "Draft",
-              initializedAt: new Date().toISOString(),
-            },
-          },
-          wordingSnapshot: buildDocumentWordingSnapshot({
-            doc: {
-              legalTextAr: version.legalTextAr,
-              legalTextEn: version.legalTextEn,
-              pdplTextAr: version.pdplTextAr,
-              pdplTextEn: version.pdplTextEn,
-              witnessDeclAr: version.witnessDeclAr,
-              witnessDeclEn: version.witnessDeclEn,
-              physicianCertAr: version.physicianCertAr,
-              physicianCertEn: version.physicianCertEn,
-              documentVersion: version.versionLabel,
-            },
-            templateVersion: {
-              id: version.id,
-              versionLabel: version.versionLabel,
-              versionNumber: version.versionNumber,
-              approvedByUserId: version.approvedByUserId,
-              approvedAt: version.approvedAt,
-              effectiveFrom: version.effectiveFrom,
-              effectiveTo: version.effectiveTo,
-            },
-            status: ConsentDocumentStatus.DRAFT,
-          }),
-          ...(payload.metadata || {}),
-        } as Prisma.InputJsonValue,
-      },
+          decision: witnessPolicyDecision as unknown as Prisma.InputJsonValue,
+        },
+      });
+
+      await writeConsentAuditInTx(tx, {
+        tenantId,
+        actorUserId: auth.sub,
+        actorRole: auth.role || null,
+        action: "consent_document_created",
+        summary: `Consent document ${consentDocument.consentReference} created`,
+        source: "workflow",
+        consentDocumentId: consentDocument.id,
+        templateId,
+        templateVersionId: version.id,
+        caseId,
+        metadata: {
+          consentReference: consentDocument.consentReference,
+          templateCode: template.templateCode,
+          status: consentDocument.status,
+          idempotencyKey: idempotencyKey ?? null,
+          idempotencyFingerprint: idempotencyFingerprint ?? null,
+        },
+      });
+
+      return consentDocument;
     });
 
-    if (versionSections.length > 0) {
-      await tx.consentDocumentSection.createMany({
-        data: versionSections.map((section) => ({
-          tenantId,
-          consentDocumentId: consentDocument.id,
-          sourceTemplateSectionId: section.id,
-          sectionKey: section.sectionKey,
-          sectionKind: section.sectionKind,
-          titleAr: section.titleAr,
-          titleEn: section.titleEn,
-          contentAr: section.contentAr,
-          contentEn: section.contentEn,
-          isEditableByPhysician: section.isEditableByPhysician,
-          sortOrder: section.sortOrder,
-          metadata: {
-            ...(asRecord(section.metadata) || {}),
-            governance: resolveSectionGovernance(section.sectionKind, section.isEditableByPhysician),
-          } as Prisma.InputJsonValue,
-        })),
-      });
+    return getConsentDocument(auth, created.id, db);
+  } catch (error) {
+    const isUniqueViolation =
+      error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
+    if (isUniqueViolation && idempotencyKey) {
+      const existing = await findExistingConsentDocumentByKey(db, tenantId, idempotencyKey);
+      if (existing) {
+        if (existing.idempotencyFingerprint !== idempotencyFingerprint) {
+          throw new IdempotencyConflictError(existing.id);
+        }
+        return getConsentDocument(auth, existing.id, db);
+      }
     }
-
-    return consentDocument;
-  });
-
-  await writeConsentAudit({
-    tenantId,
-    auth,
-    action: "consent_document_created",
-    summary: `Consent document ${created.consentReference} created`,
-    source: "workflow",
-    consentDocumentId: created.id,
-    templateId,
-    templateVersionId: version.id,
-    caseId,
-    metadata: {
-      consentReference: created.consentReference,
-      templateCode: template.templateCode,
-      status: created.status,
-    },
-    request,
-  });
-
-  return getConsentDocument(auth, created.id);
+    throw error;
+  }
 }

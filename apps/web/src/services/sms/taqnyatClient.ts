@@ -98,7 +98,8 @@ export function normalizeSaudiMobileForSms(recipient: string): string {
 }
 
 export function isTaqnyatReady(): boolean {
-  return isSmsProxyConfigured() || (isSmsEnabled() && Boolean(getBearerToken()));
+  // Patient messaging must always pass through the fixed-IP SMS Gateway.
+  return isSmsProxyConfigured();
 }
 
 function buildSendResult(
@@ -225,10 +226,23 @@ async function sendViaDirectTaqnyat(args: TaqnyatSendArgs): Promise<TaqnyatSendR
   }
 }
 
+// Retained internally for historical comparison only.
+// Runtime patient messaging is gateway-only and never calls this transport.
+void sendViaDirectTaqnyat;
+
 export async function sendTaqnyatMessage(args: TaqnyatSendArgs): Promise<TaqnyatSendResult> {
-  if (isSmsProxyConfigured()) {
-    return sendViaSmsProxy(args);
+  if (!isSmsProxyConfigured()) {
+    return {
+      ok: false,
+      statusCode: 503,
+      providerMessageId: null,
+      response: {
+        code: "SMS_GATEWAY_NOT_CONFIGURED",
+        error: "Patient SMS delivery requires the configured fixed-IP SMS Gateway.",
+      },
+      provider: null,
+    };
   }
 
-  return sendViaDirectTaqnyat(args);
+  return sendViaSmsProxy(args);
 }

@@ -13,7 +13,12 @@ import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { normalizeArabicForPatientFacingText } from "@/lib/server/arabic-mojibake-guard";
 import { resolveConsentSignaturePresentation } from "@/lib/signature/signature-display";
+import {
+  isSignatureHashStale,
+  resolveTrustedDocumentHash,
+} from "@/lib/server/signature-hash-binding";
 import { logRuntimeEvent, logRuntimeIncident } from "@/lib/server/runtime-observability";
+import { extractStoredPolicyDecision } from "@/lib/server/witness-policy-service";
 
 const prisma = () => getPrisma();
 
@@ -685,6 +690,23 @@ export async function buildFinalConsentPdfPayload(args: {
   });
 
   const metadata = asRecord(document.metadata);
+
+  // PDF generation gate: a required but unsigned human witness blocks final
+  // PDF generation. The no-witness authentication label may only appear for
+  // routine cases (zero required witnesses) with complete evidence.
+  const witnessDecision = extractStoredPolicyDecision(metadata);
+  if (witnessDecision && witnessDecision.requiredWitnessCount > 0) {
+    const witnessSignatureCount = document.signatures.filter(
+      (signature) => signature.role === "WITNESS",
+    ).length;
+    if (witnessSignatureCount < witnessDecision.requiredWitnessCount) {
+      throw new ApiError(
+        409,
+        "Required human witness signature is missing; final PDF generation is blocked.",
+        { code: "WITNESS_REQUIRED_NOT_SATISFIED" },
+      );
+    }
+  }
   const approvedConsentSourceAvailable = firstBoolean(metadata, [["approvedConsentSourceAvailable"]]);
   if (approvedConsentSourceAvailable === false && document.sections.length === 0) {
     throw new ApiError(
@@ -775,7 +797,20 @@ export async function buildFinalConsentPdfPayload(args: {
 
   const patientSignature = toPresentation(patientSignatureRaw);
   const guardianSignature = toPresentation(guardianSignatureRaw);
-  const physicianSignature = toPresentation(physicianSignatureRaw);
+  const physicianSignatureStale =
+    physicianSignatureRaw !== null && isSignatureHashStale(physicianSignatureRaw, document);
+  const physicianSignature = physicianSignatureStale
+    ? null
+    : toPresentation(physicianSignatureRaw);
+
+  if (physicianSignatureStale) {
+    throw new ApiError(
+      409,
+      "Final PDF generation blocked: the treating physician signature is bound to an outdated document version.",
+      { code: "PHYSICIAN_SIGNATURE_STALE" },
+    );
+  }
+
   const interpreterSignature = toPresentation(interpreterSignatureRaw);
   const witnessSignature = toPresentation(witnessSignatureRaw);
 
@@ -798,9 +833,7 @@ export async function buildFinalConsentPdfPayload(args: {
 
   const qrVerificationUrl = `${PRODUCTION_VERIFY_BASE_URL}/verify/consent/${document.id}`;
 
-  const effectiveHash = normalizeText(
-    document.auditChecksum || document.immutablePdfHash || computeFixedClauseChecksum(document),
-  );
+  const effectiveHash = normalizeText(resolveTrustedDocumentHash(document));
 
   const qrPayload =
     document.qrPayload ||
