@@ -6,9 +6,8 @@
  * Visual-only landing layer for the public-signing workflow.
  *
  * Wired ONLY when FEATURE_UI_REFRESH_V1_1 is enabled. When the
- * flag is off, `PublicSigningWorkflow` keeps rendering its
- * legacy step-indicator + header pair and this file is unused
- * (the boundary returns a pass-through fragment).
+ * flag is off, the legacy landing header is rendered by the caller
+ * and this file is unused (the boundary returns a pass-through fragment).
  *
  * This component:
  *   - Does NOT fetch data or perform any side effects.

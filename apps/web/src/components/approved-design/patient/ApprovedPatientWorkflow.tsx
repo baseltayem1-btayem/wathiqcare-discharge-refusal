@@ -36,6 +36,10 @@ import { OtpVerificationStep } from "./OtpVerificationStep";
 import { EducationMaterialsStep } from "./EducationMaterialsStep";
 import { UnderstandingAcknowledgementStep } from "./UnderstandingAcknowledgementStep";
 import { SignaturePadHandle } from "./SignaturePad";
+import {
+  allDeclarationsAccepted,
+  buildDeclarationsPayload,
+} from "./PatientDeclarationsPanel";
 
 export type ApprovedPatientWorkflowProps = {
   token: string;
@@ -97,6 +101,11 @@ export function ApprovedPatientWorkflow({
   const [signing, setSigning] = useState(false);
   const [signError, setSignError] = useState<string | null>(null);
   const [signResult, setSignResult] = useState<SignatureResult | null>(null);
+
+  /* Patient declaration state (routine electronic consent path) */
+  const [acceptedDeclarations, setAcceptedDeclarations] = useState<string[]>(
+    [],
+  );
 
   const toggleLang = useCallback(
     () => setLang((l) => (l === "ar" ? "en" : "ar")),
@@ -473,6 +482,14 @@ export function ApprovedPatientWorkflow({
         );
         return;
       }
+      if (mode === "consent" && !allDeclarationsAccepted(acceptedDeclarations)) {
+        setSignError(
+          lang === "ar"
+            ? "يجب الموافقة على جميع الإقرارات قبل تأكيد التوقيع"
+            : "All declarations must be accepted before confirming the signature",
+        );
+        return;
+      }
       setSigning(true);
       setSignError(null);
       try {
@@ -484,6 +501,10 @@ export function ApprovedPatientWorkflow({
             body: JSON.stringify({
               signerName: name,
               signatureDataUrl: dataUrl,
+              declarations: buildDeclarationsPayload(
+                acceptedDeclarations,
+                mode,
+              ),
             }),
           },
         );
@@ -501,7 +522,7 @@ export function ApprovedPatientWorkflow({
         setSigning(false);
       }
     },
-    [signerName, token, lang],
+    [signerName, token, lang, acceptedDeclarations],
   );
 
   /* ════════════════════════════════════════════════════════════════
@@ -657,6 +678,8 @@ export function ApprovedPatientWorkflow({
           error={signError}
           mode="consent"
           onBack={() => setScreen("acknowledgement")}
+          declarationsAccepted={acceptedDeclarations}
+          setDeclarationsAccepted={setAcceptedDeclarations}
         />
       ) : null}
 

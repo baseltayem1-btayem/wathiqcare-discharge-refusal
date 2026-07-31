@@ -34,6 +34,8 @@ export type ProductionEncounter = {
   allergies?: string | null;
   currentMedications?: string | null;
   physicianSpecialty?: string | null;
+  physicianSpecialtyEn?: string | null;
+  physicianSpecialtyAr?: string | null;
   caseNumber?: string | null;
   syncStatus?: "SYNCED" | "CACHED" | "UAT_MOCK";
   isMock?: boolean;
@@ -64,18 +66,30 @@ export type PhysicianContext = {
   tenantId: string;
   licenseNumber?: string;
   specialty?: string;
+  specialtyEn?: string;
+  specialtyAr?: string;
   department?: string;
 };
 
 export type SecureSigningResult = {
-  ok: true;
   sessionId: string;
   documentId: string;
-  signingUrl: string;
-  recipientMobile: string;
-  recipientEmail?: string;
-  smsDeliveryStatus: "sent" | "failed";
-  emailDeliveryStatus?: "sent" | "failed";
+  dispatchStatuses: {
+    sms: string;
+    email: string;
+  };
+  status: {
+    linkCreated: boolean;
+    smsSent: boolean;
+    opened: boolean;
+    otpRequested: boolean;
+    otpVerified: boolean;
+    signed: boolean;
+    expired: boolean;
+    revoked: boolean;
+    failed: boolean;
+    failedAttempts: number;
+  };
   createdAt: string;
   expiresAt?: string;
 };

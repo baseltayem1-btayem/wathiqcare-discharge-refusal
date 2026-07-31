@@ -3,8 +3,15 @@ import { createConsentDocument } from "@/lib/server/consent-library-service";
 import type { AuthContext } from "@/lib/server/auth";
 import { resolveApprovedProcedureConsentLink } from "@/lib/server/content-mapping-service";
 import { resolveApprovedConsentSource } from "@/lib/server/approved-consent-source";
-import { ENABLE_IMC_PILOT_PATIENTS } from "@/lib/config/feature-flags";
-import { imcPilotPatients } from "@/components/informed-consents/production-workspace/lib/pilot-patients";
+import {
+  ENABLE_IMC_PILOT_PATIENTS,
+  ENABLE_IMC_PILOT_REAL_SEND,
+} from "@/lib/config/feature-flags";
+
+function isProductionDeployment(): boolean {
+  const env = process.env.VERCEL_ENV?.trim() || process.env.NODE_ENV?.trim() || "";
+  return env === "production";
+}
 
 export function envBool(key: string): boolean {
   const raw = process.env[key]?.trim().toLowerCase();
@@ -31,30 +38,34 @@ export function normalizeRecipientEmail(value: string): string {
   return value.trim().toLowerCase();
 }
 
-function isPreviewPilotRecipient(mobileNumber: string, recipientEmail: string): boolean {
-  if (process.env.VERCEL_ENV !== "preview" || !ENABLE_IMC_PILOT_PATIENTS) {
-    return false;
-  }
-
-  const normalizedMobile = normalizePhoneNumber(mobileNumber);
-  const normalizedEmail = normalizeRecipientEmail(recipientEmail);
-
-  return imcPilotPatients.some((patient) => {
-    const pilotMobile = normalizePhoneNumber(patient.mobile || "");
-    const pilotEmail = normalizeRecipientEmail(patient.email || "");
-    return Boolean(
-      (normalizedMobile && pilotMobile && normalizedMobile === pilotMobile)
-      || (normalizedEmail && pilotEmail && normalizedEmail === pilotEmail),
-    );
-  });
-}
-
 export function isPilotPatientSendEnabled(): boolean {
   return envBool("FF_PATIENT_FACING_PILOT_SEND") || (process.env.VERCEL_ENV === "preview" && ENABLE_IMC_PILOT_PATIENTS);
 }
 
-export function isAllowlistedRecipient(mobileNumber: string, recipientEmail: string): boolean {
-  if (!isPilotPatientSendEnabled()) return false;
+export type AllowlistEvaluation = {
+  allowlisted: boolean;
+  mobileAllowed: boolean;
+  emailAllowed: boolean;
+  configMissing: boolean;
+  pilotEnabled: boolean;
+  reason: string;
+};
+
+const ALLOWLIST_CONFIG_KEYS = [
+  "FF_PATIENT_FACING_PILOT_SEND",
+  "PILOT_PATIENT_SEND_ALLOWLIST_MOBILE",
+  "PILOT_PATIENT_SEND_ALLOWLIST_EMAIL",
+];
+
+function buildConfigMissingReason(): string {
+  return `Pilot allowlist configuration is missing for this environment. Required keys: ${ALLOWLIST_CONFIG_KEYS.join(", ")}.`;
+}
+
+export function evaluateAllowlistedRecipient(
+  mobileNumber: string,
+  recipientEmail: string,
+): AllowlistEvaluation {
+  const pilotEnabled = isPilotPatientSendEnabled();
 
   const allowedMobiles = envList("PILOT_PATIENT_SEND_ALLOWLIST_MOBILE").map(normalizePhoneNumber);
   const allowedEmails = envList("PILOT_PATIENT_SEND_ALLOWLIST_EMAIL").map(normalizeRecipientEmail);
@@ -64,8 +75,109 @@ export function isAllowlistedRecipient(mobileNumber: string, recipientEmail: str
 
   const mobileAllowed = normalizedMobile.length > 0 && allowedMobiles.includes(normalizedMobile);
   const emailAllowed = normalizedEmail.length > 0 && allowedEmails.includes(normalizedEmail);
+  const allowlisted = pilotEnabled && (mobileAllowed || emailAllowed);
+  const configMissing = pilotEnabled && allowedMobiles.length === 0 && allowedEmails.length === 0;
 
-  return mobileAllowed || emailAllowed || isPreviewPilotRecipient(mobileNumber, recipientEmail);
+  let reason: string;
+  if (!pilotEnabled) {
+    reason = "Patient-facing pilot send is disabled.";
+  } else if (configMissing) {
+    reason = buildConfigMissingReason();
+  } else if (allowlisted) {
+    reason = "Recipient is approved for pilot send.";
+  } else {
+    reason = "Recipient is not in the pilot allowlist.";
+  }
+
+  return {
+    allowlisted,
+    mobileAllowed,
+    emailAllowed,
+    configMissing,
+    pilotEnabled,
+    reason,
+  };
+}
+
+export function isAllowlistedRecipient(mobileNumber: string, recipientEmail: string): boolean {
+  return evaluateAllowlistedRecipient(mobileNumber, recipientEmail).allowlisted;
+}
+
+export type PilotRealSendEvaluation = {
+  allowed: boolean;
+  reason: string;
+};
+
+/**
+ * Evaluate whether a real patient send is permitted in the active IMC pilot.
+ *
+ * Allowed only when:
+ * - the FF_IMC_PILOT_REAL_SEND flag is true,
+ * - the deployment is not Production,
+ * - the caller is an authenticated module user (auth present),
+ * - the recipient has been explicitly confirmed by the caller.
+ */
+export function evaluatePilotRealSendEligibility(
+  mobileNumber: string,
+  recipientEmail: string,
+  recipientConfirmed: boolean,
+  auth?: AuthContext | null,
+): PilotRealSendEvaluation {
+  if (!ENABLE_IMC_PILOT_REAL_SEND) {
+    return {
+      allowed: false,
+      reason: "IMC pilot real send is not enabled.",
+    };
+  }
+
+  if (isProductionDeployment()) {
+    return {
+      allowed: false,
+      reason: "Real pilot send is not permitted in Production.",
+    };
+  }
+
+  if (!auth || !auth.sub) {
+    return {
+      allowed: false,
+      reason: "Authenticated user is required for pilot real send.",
+    };
+  }
+
+  const normalizedMobile = normalizePhoneNumber(mobileNumber);
+  const normalizedEmail = normalizeRecipientEmail(recipientEmail);
+  if (!normalizedMobile && !normalizedEmail) {
+    return {
+      allowed: false,
+      reason: "A valid mobile number or email address is required.",
+    };
+  }
+
+  if (!recipientConfirmed) {
+    return {
+      allowed: false,
+      reason: "Recipient must be explicitly confirmed before real send.",
+    };
+  }
+
+  return {
+    allowed: true,
+    reason: "IMC pilot real send authorized for confirmed recipient.",
+  };
+}
+
+export function isPilotRealSendAllowed(
+  mobileNumber: string,
+  recipientEmail: string,
+  recipientConfirmed: boolean,
+  auth?: AuthContext | null,
+): boolean {
+  return evaluatePilotRealSendEligibility(
+    mobileNumber,
+    recipientEmail,
+    recipientConfirmed,
+    auth,
+  ).allowed;
 }
 
 export function extractContactDetails(metadata: unknown): {

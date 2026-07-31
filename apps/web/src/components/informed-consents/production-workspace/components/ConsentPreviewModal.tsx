@@ -1,4 +1,5 @@
 "use client";
+import { isAssemblyApprovedPdfSourceVerified, resolveAssemblyApprovedPdfUrl } from "../utils/approvedPdfSource";
 
 import { useMemo } from "react";
 import { Eye, AlertTriangle, Check, X } from "lucide-react";
@@ -48,15 +49,8 @@ export function ConsentPreviewModal({
   const sections = useMemo(() => {
     return (consentForm?.sections || []).slice().sort((a, b) => a.orderIndex - b.orderIndex);
   }, [consentForm]);
-  const approvedPdfUrl = consentForm?.pdfTemplateUrl?.trim() || "";
-  const consentFormMeta = consentForm as unknown as Record<string, unknown> | undefined;
-  const governanceSnapshot = consentForm?.governanceSnapshot as Record<string, unknown> | null | undefined;
-  const sourceVerified = Boolean(
-    consentFormMeta?.sourceVerified === true ||
-      governanceSnapshot?.sourceVerified === true,
-  );
-  const hasApprovedPdfSource = Boolean(approvedPdfUrl && sourceVerified);
-
+  const approvedPdfUrl = resolveAssemblyApprovedPdfUrl(assembly);
+  const hasApprovedPdfSource = isAssemblyApprovedPdfSourceVerified(assembly);
   const approvedIllustrations = useMemo(
     () =>
       (assembly?.illustrations || []).filter(

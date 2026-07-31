@@ -1,13 +1,69 @@
-﻿import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
 import chromium from "@sparticuz/chromium";
+import {
+  TAJAWAL_ARABIC_400_WOFF2,
+  TAJAWAL_ARABIC_700_WOFF2,
+  TAJAWAL_LATIN_400_WOFF2,
+  TAJAWAL_LATIN_700_WOFF2,
+} from "@/lib/server/acroform/fonts/bundled-font-data";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import puppeteer from "puppeteer";
-import type { Browser, LaunchOptions, Page } from "puppeteer";
+import type { Browser, LaunchOptions } from "puppeteer";
 import QRCode from "qrcode";
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
+import { getConsentFieldMappingByFormId } from "@/lib/server/consent-field-mappings";
+import type { ConsentFieldDefinition, ConsentFieldMapping } from "@/lib/consents/field-mapping/types";
+import { isSignatureHashStale } from "@/lib/server/signature-hash-binding";
+import { renderFieldAddressedOverlays } from "@/lib/server/acroform/field-addressed-pdf-renderer";
+import type { AcroFormTemplateManifest } from "@/lib/server/acroform/field-addressed-template-manifest";
+import amputationManifest from "@/lib/server/acroform/manifests/imc-mr-1135-amputation.manifest.json";
+import { buildAmputationFieldAddressedValues } from "@/lib/server/acroform/field-mapping/amputation-field-mapping";
+import { resolveConsentSignaturePresentation } from "@/lib/signature/signature-display";
+
+import {
+  IMC_MR_1168_PAGE2_CALIBRATION,
+  assertLabelContentSafe,
+  assertLabelFits,
+  assertLabelRectsValid,
+  autoFitLabelText,
+  buildElectronicAuthenticationLabel,
+  buildHumanWitnessLabel,
+  buildWitnessAuthLabelRects,
+  ENGLISH_HUMAN_WITNESS_TITLE,
+  labelToTextLines,
+  type AuthenticationLabel,
+  type LabelTextLine,
+} from "@/lib/server/witness-auth-label";
+import { extractStoredPolicyDecision } from "@/lib/server/witness-policy-service";
+import { formatSaudiArabiaTimestamp } from "@/lib/server/witness-requirement-service";
+
+type PdfjsLibApi = {
+  getDocument: (args: { data: Uint8Array }) => { promise: Promise<PdfjsDocument> };
+  GlobalWorkerOptions: { workerSrc: string };
+};
+
+type PdfjsDocument = {
+  getPage: (pageNumber: number) => Promise<PdfjsPage>;
+};
+
+type PdfjsPage = {
+  getViewport: (args: { scale: number }) => PdfjsViewport;
+  render: (args: { canvasContext: CanvasRenderingContext2D; viewport: PdfjsViewport }) => { promise: Promise<void> };
+};
+
+type PdfjsViewport = {
+  width: number;
+  height: number;
+};
+
+declare global {
+  interface Window {
+    pdfjsLib?: PdfjsLibApi;
+  }
+}
 
 type ImcManifestItem = {
   id: string;
@@ -128,19 +184,53 @@ function formatDateTime(value: Date | string | null | undefined, locale: "ar" | 
   });
 }
 
-function formatAge(dob: string | null | undefined): string | null {
-  const parsed = dob ? new Date(dob) : null;
-  if (!parsed || Number.isNaN(parsed.getTime())) return null;
+function formatAge(
+  dob: string | null | undefined,
+  referenceDate: Date | string | null | undefined,
+): string | null {
+  const parsed =
+    dob
+      ? new Date(dob)
+      : null;
 
-  const now = new Date();
-  let years = now.getFullYear() - parsed.getFullYear();
-  const monthDelta = now.getMonth() - parsed.getMonth();
+  const reference =
+    referenceDate instanceof Date
+      ? referenceDate
+      : referenceDate
+        ? new Date(referenceDate)
+        : null;
 
-  if (monthDelta < 0 || (monthDelta === 0 && now.getDate() < parsed.getDate())) {
+  if (
+    !parsed
+    || Number.isNaN(parsed.getTime())
+    || !reference
+    || Number.isNaN(reference.getTime())
+  ) {
+    return null;
+  }
+
+  let years =
+    reference.getFullYear()
+    - parsed.getFullYear();
+
+  const monthDelta =
+    reference.getMonth()
+    - parsed.getMonth();
+
+  if (
+    monthDelta < 0
+    || (
+      monthDelta === 0
+      && reference.getDate()
+        < parsed.getDate()
+    )
+  ) {
     years -= 1;
   }
 
-  return years >= 0 ? String(years) : null;
+  return years >= 0
+    ? String(years)
+    : null;
 }
 
 function pickFirstString(source: Record<string, unknown>, paths: string[][]): string | null {
@@ -182,25 +272,6 @@ function renderWatermarkMarkup(): string {
   `).join("");
 }
 
-function buildMainPageStickerRows(context: OverlayDocumentContext): Array<{ label: string; value: string | null }> {
-  return [
-    { label: "Patient Name / اسم المريض", value: context.patientName },
-    { label: "MRN / رقم الملف الطبي", value: context.patientMrn },
-    { label: "DOB / تاريخ الميلاد", value: context.patientDob },
-    { label: "Age / العمر", value: context.patientAge },
-    { label: "Gender / الجنس", value: context.gender },
-    { label: "Encounter ID / رقم الزيارة", value: context.encounterId },
-    { label: "Case ID / رقم الحالة", value: context.caseId },
-    { label: "Visit ID / رقم الزيارة البديل", value: context.visitId },
-    { label: "Facility / المنشأة", value: context.facilityName },
-    { label: "Location / الموقع", value: context.location || context.wardBed },
-    { label: "Procedure / الإجراء", value: context.procedure },
-    { label: "Document ID / رقم المستند", value: context.documentId },
-    { label: "Signature ID / رقم التوقيع", value: context.signatureId },
-    { label: "Consent Reference / مرجع الموافقة", value: context.consentReference },
-    { label: "Signed At / تاريخ ووقت التوقيع", value: context.signedAtEn },
-  ];
-}
 
 function buildAppendixRows(context: OverlayDocumentContext): Array<{ label: string; value: string | null }> {
   return [
@@ -232,48 +303,16 @@ function buildAppendixRows(context: OverlayDocumentContext): Array<{ label: stri
 }
 
 function buildInlinePdfFontFaceCss(): string {
-  const candidates = [
-    path.join("@fontsource", "ibm-plex-sans-arabic", "files", "ibm-plex-sans-arabic-arabic-400-normal.woff2"),
-    path.join("@fontsource", "ibm-plex-sans-arabic", "files", "ibm-plex-sans-arabic-arabic-700-normal.woff2"),
-    path.join("@fontsource", "tajawal", "files", "tajawal-arabic-400-normal.woff2"),
-    path.join("@fontsource", "tajawal", "files", "tajawal-arabic-700-normal.woff2"),
+  const faces = [
+    `@font-face{font-family:"WathiqOverlaySans";src:url("${TAJAWAL_LATIN_400_WOFF2}") format("woff2");font-weight:400;font-style:normal;}`,
+    `@font-face{font-family:"WathiqOverlaySans";src:url("${TAJAWAL_LATIN_700_WOFF2}") format("woff2");font-weight:700;font-style:normal;}`,
+    `@font-face{font-family:"WathiqOverlayArabic";src:url("${TAJAWAL_ARABIC_400_WOFF2}") format("woff2");font-weight:400;font-style:normal;}`,
+    `@font-face{font-family:"WathiqOverlayArabic";src:url("${TAJAWAL_ARABIC_700_WOFF2}") format("woff2");font-weight:700;font-style:normal;}`,
   ];
-
-  const resolveBase64 = (relativePath: string): string => {
-    const absoluteCandidates = [
-      path.join(process.cwd(), "node_modules", relativePath),
-      path.join(process.cwd(), "..", "..", "node_modules", relativePath),
-    ];
-
-    for (const candidate of absoluteCandidates) {
-      if (existsSync(candidate)) {
-        return readFileSync(candidate).toString("base64");
-      }
-    }
-
-    return "";
-  };
-
-  const [plex400, plex700, tajawal400, tajawal700] = candidates.map(resolveBase64);
-  const faces: string[] = [];
-
-  if (plex400) {
-    faces.push(`@font-face{font-family:"WathiqOverlaySans";src:url("data:font/woff2;base64,${plex400}") format("woff2");font-weight:400;font-style:normal;}`);
-  }
-  if (plex700) {
-    faces.push(`@font-face{font-family:"WathiqOverlaySans";src:url("data:font/woff2;base64,${plex700}") format("woff2");font-weight:700;font-style:normal;}`);
-  }
-  if (tajawal400) {
-    faces.push(`@font-face{font-family:"WathiqOverlayArabic";src:url("data:font/woff2;base64,${tajawal400}") format("woff2");font-weight:400;font-style:normal;}`);
-  }
-  if (tajawal700) {
-    faces.push(`@font-face{font-family:"WathiqOverlayArabic";src:url("data:font/woff2;base64,${tajawal700}") format("woff2");font-weight:700;font-style:normal;}`);
-  }
-
   return faces.join("\n");
 }
 
-async function launchOverlayBrowser(): Promise<Browser> {
+export async function launchOverlayBrowser(): Promise<Browser> {
   const defaultArgs = [
     "--no-sandbox",
     "--disable-setuid-sandbox",
@@ -341,6 +380,7 @@ function buildOverlayShell(args: { body: string; transparent?: boolean }): strin
     <!doctype html>
     <html lang="ar">
       <head>
+<meta charset="utf-8">
         <meta charset="utf-8" />
         <style>
           ${buildInlinePdfFontFaceCss()}
@@ -652,22 +692,6 @@ function buildSharedMetaItems(context: OverlayDocumentContext): string {
     .join("");
 }
 
-function buildCompactIdentityItems(context: OverlayDocumentContext): string {
-  const rows = [
-    { label: "Procedure / الإجراء", value: context.procedure },
-    { label: "Verify / التحقق", value: truncateForHeader(context.verificationUrl, 26) },
-  ];
-
-  return rows
-    .filter((row) => Boolean(compactWhitespace(row.value)))
-    .map((row) => `
-      <div class="wc-meta-item">
-        <div class="wc-meta-label">${escapeHtml(row.label)}</div>
-        <div class="wc-meta-value">${escapeHtml(compactWhitespace(row.value) || "")}</div>
-      </div>
-    `)
-    .join("");
-}
 
 function buildOverlayPageHtml(args: {
   context: OverlayDocumentContext;
@@ -676,9 +700,6 @@ function buildOverlayPageHtml(args: {
   totalPages: number;
 }): string {
   const { context, compact } = args;
-  const logo = context.wathiqLogoDataUrl
-    ? `<img class="wc-logo" src="${context.wathiqLogoDataUrl}" alt="WathiqCare" />`
-    : `<strong>WathiqCare</strong>`;
 
   return buildOverlayShell({
     body: `
@@ -705,9 +726,6 @@ function buildOverlayPageHtml(args: {
 }
 
 function buildAppendixHtml(context: OverlayDocumentContext): string {
-  const logo = context.wathiqLogoDataUrl
-    ? `<img class="wc-logo" src="${context.wathiqLogoDataUrl}" alt="WathiqCare" />`
-    : `<strong>WathiqCare</strong>`;
 
   return buildOverlayShell({
     transparent: false,
@@ -720,7 +738,7 @@ function buildAppendixHtml(context: OverlayDocumentContext): string {
             <div class="wc-appendix-subtitle">تم التوقيع إلكترونياً · Electronically Signed</div>
             <div class="wc-appendix-badge">Patient Information Label / ملصق بيانات المريض</div>
           </div>
-          <div>${logo}</div>
+          <div>${context.wathiqLogoDataUrl ? `<img class="wc-logo" src="${context.wathiqLogoDataUrl}" alt="WathiqCare" />` : `<strong>WathiqCare</strong>`}</div>
         </header>
 
         <div class="wc-appendix-layout">
@@ -763,7 +781,7 @@ function buildAppendixHtml(context: OverlayDocumentContext): string {
   });
 }
 
-async function renderOverlayPng(args: { browser: Browser; html: string }): Promise<Buffer> {
+export async function renderOverlayPng(args: { browser: Browser; html: string }): Promise<Buffer> {
   const page = await args.browser.newPage();
 
   try {
@@ -774,17 +792,99 @@ async function renderOverlayPng(args: { browser: Browser; html: string }): Promi
     });
     await page.setContent(args.html, { waitUntil: "load" });
     await page.emulateMediaType("screen");
-    return Buffer.from(await page.screenshot({ type: "png", omitBackground: true }));
+
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
+
+    return Buffer.from(
+      await page.screenshot({
+        type: "png",
+        omitBackground: true,
+      }),
+    );
   } finally {
     await page.close();
   }
 }
 
-function buildOverlayContext(args: {
-  doc: Awaited<ReturnType<ReturnType<typeof getPrisma>["consentDocument"]["findFirst"]>> extends infer _T ? never : never;
-}) {
-  void args;
+function resolvePdfjsDistPaths(): { main: string; worker: string } {
+  const candidates = [
+    path.join(process.cwd(), "node_modules", "pdfjs-dist"),
+    path.join(process.cwd(), "..", "..", "node_modules", "pdfjs-dist"),
+  ];
+  for (const base of candidates) {
+    const main = path.join(base, "build", "pdf.mjs");
+    const worker = path.join(base, "build", "pdf.worker.mjs");
+    if (existsSync(main) && existsSync(worker)) {
+      return { main, worker };
+    }
+  }
+  throw new ApiError(500, "pdfjs-dist build files not found; cannot rasterize PDF page");
 }
+
+/**
+ * Rasterize a single PDF page to a PNG buffer using the locally installed
+ * pdfjs-dist + Playwright Chromium renderer. This produces a genuine composed
+ * raster of the final PDF page, not a transparency-only overlay.
+ */
+export async function renderPdfPageToPng(args: {
+  pdfBytes: Uint8Array;
+  pageIndex: number;
+  scale: number;
+}): Promise<Buffer> {
+  const { main: pdfJsPath, worker: workerPath } = resolvePdfjsDistPaths();
+  const workerCode = readFileSync(workerPath, "utf8");
+  const pdfBase64 = Buffer.from(args.pdfBytes).toString("base64");
+
+  const { chromium } = await import("playwright");
+
+  const browser = await chromium.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH?.trim() || undefined,
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.setViewportSize({
+      width: Math.ceil(612 * args.scale) + 40,
+      height: Math.ceil(792 * args.scale) + 40,
+    });
+
+    await page.addScriptTag({ path: pdfJsPath, type: "module" });
+    await page.waitForFunction(() => typeof window.pdfjsLib !== "undefined", { timeout: 5000 });
+
+    const dataUrl = await page.evaluate(
+      async ({ b64, workerCode, pageIndex, scale }) => {
+        const pdfjsLib = window.pdfjsLib as PdfjsLibApi;
+        const blob = new Blob([workerCode], { type: "text/javascript" });
+        pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
+        const pdf = await pdfjsLib.getDocument({
+          data: Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)),
+        }).promise;
+        const pdfPage = await pdf.getPage(pageIndex + 1);
+        const viewport = pdfPage.getViewport({ scale });
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        document.body.appendChild(canvas);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          throw new Error("Unable to obtain 2D canvas context");
+        }
+        await pdfPage.render({ canvasContext: ctx, viewport }).promise;
+        return canvas.toDataURL("image/png");
+      },
+      { b64: pdfBase64, workerCode, pageIndex: args.pageIndex, scale: args.scale },
+    );
+
+    return Buffer.from(dataUrl.split(",")[1], "base64");
+  } finally {
+    await browser.close();
+  }
+}
+
 
 function slugify(value: string): string {
   return String(value || "")
@@ -1000,6 +1100,1337 @@ async function drawMappedText(args: {
   }
 }
 
+
+function toFiniteOverlayNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
+
+function normalizeProductionUnicodeText(
+  value: unknown,
+): string {
+  if (
+    value === null
+    || value === undefined
+  ) {
+    return "";
+  }
+
+  return String(value)
+    .replace(/\r\n?/g, "\n")
+    .normalize("NFC");
+}
+
+function assertProductionUnicodeIntegrity(args: {
+  fieldKey: string;
+  value: string;
+}) {
+  const compact =
+    args.value.trim();
+
+  if (!compact) {
+    return;
+  }
+
+  const questionMarks =
+    compact.match(/\?{4,}/g);
+
+  const hasLettersOrNumbers =
+    /[\p{L}\p{N}]/u.test(
+      compact.replace(/\?/g, ""),
+    );
+
+  /*
+   * Prevent silent generation of a legally defective consent when
+   * upstream text has already been replaced with question marks.
+   * Legitimate single punctuation marks remain allowed.
+   */
+  if (
+    questionMarks
+    && !hasLettersOrNumbers
+  ) {
+    throw new ApiError(
+      422,
+      `PDF generation blocked: Unicode text was corrupted before rendering for field "${args.fieldKey}".`,
+    );
+  }
+}
+
+function normalizeProductionOverlayValues(
+  values: Record<string, unknown>,
+): Record<string, string> {
+  const normalized: Record<string, string> = {};
+
+  for (const [key, value] of Object.entries(values)) {
+    if (value === null || value === undefined) {
+      continue;
+    }
+
+    if (typeof value === "string") {
+      const text = value.trim();
+
+      if (text) {
+        normalized[key] = text;
+      }
+
+      continue;
+    }
+
+    if (typeof value === "boolean") {
+      normalized[key] = value ? "Yes" : "No";
+      continue;
+    }
+
+    if (typeof value === "number") {
+      normalized[key] = normalizeProductionUnicodeText(value);
+      continue;
+    }
+
+    if (Array.isArray(value)) {
+      const text = value
+        .map((item) => String(item ?? "").trim())
+        .filter(Boolean)
+        .join(", ");
+
+      if (text) {
+        normalized[key] = text;
+      }
+
+      continue;
+    }
+
+    const text = normalizeProductionUnicodeText(value).trim();
+
+    if (text && text !== "[object Object]") {
+      normalized[key] = text;
+    }
+  }
+
+  return normalized;
+}
+
+function resolveProductionMappingAutoValues(
+  mapping: ConsentFieldMapping | null,
+  metadata: Record<string, unknown> | null,
+): Record<string, string> {
+  const autoValues: Record<string, string> = {};
+  if (!mapping || !metadata) return autoValues;
+
+  const physicianSignatureMeta = asRecord(metadata.physicianSignature);
+
+  for (const field of mapping.fields) {
+    if (!field.sourcePath) continue;
+
+    let resolved: unknown = undefined;
+    const path = field.sourcePath.split(".");
+    let current: unknown = metadata;
+    for (const segment of path) {
+      const record = asRecord(current);
+      current = record?.[segment];
+    }
+    resolved = current;
+
+    if (resolved === undefined || resolved === null) continue;
+
+    if (field.sourcePath === "metadata.physicianSignature.signedAtDate" && physicianSignatureMeta?.signedAt) {
+      const signedAt = new Date(String(physicianSignatureMeta.signedAt));
+      if (!Number.isNaN(signedAt.getTime())) {
+        autoValues[field.key] = signedAt.toISOString().slice(0, 10);
+      }
+      continue;
+    }
+
+    if (field.sourcePath === "metadata.physicianSignature.signedAtTime" && physicianSignatureMeta?.signedAt) {
+      const signedAt = new Date(String(physicianSignatureMeta.signedAt));
+      if (!Number.isNaN(signedAt.getTime())) {
+        autoValues[field.key] = signedAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
+      }
+      continue;
+    }
+
+    if (typeof resolved === "string" && resolved.trim()) {
+      autoValues[field.key] = resolved.trim();
+    } else if (typeof resolved === "boolean") {
+      autoValues[field.key] = resolved ? "Yes" : "No";
+    }
+  }
+
+  return autoValues;
+}
+
+function collectProductionMappingFields(
+  value: unknown,
+): Array<Record<string, unknown>> {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) =>
+      collectProductionMappingFields(item),
+    );
+  }
+
+  const record = asRecord(value);
+
+  if (Object.keys(record).length === 0) {
+    return [];
+  }
+
+  const nested = Object.values(record).flatMap((item) =>
+    collectProductionMappingFields(item),
+  );
+
+  const key = asString(record.key);
+  const placement =
+    getProductionMappingPlacement(record);
+
+  return key && placement
+    ? [record, ...nested]
+    : nested;
+}
+
+function getProductionMappingPlacement(
+  field: Record<string, unknown>,
+  languageVariant: "DEFAULT" | "ARABIC" = "DEFAULT",
+): Record<string, unknown> | null {
+  const languageCandidates =
+    languageVariant === "ARABIC"
+      ? [
+          asRecord(field.arabicCoordinates),
+          asRecord(field.coordinates),
+        ]
+      : [
+          asRecord(field.coordinates),
+        ];
+
+  const candidates = [
+    ...languageCandidates,
+    asRecord(field.placement),
+    asRecord(field.position),
+  ];
+
+  for (const candidate of candidates) {
+    if (Object.keys(candidate).length > 0) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+function resolveProductionPageIndex(
+  rawPage: unknown,
+  totalPages: number,
+): number {
+  const page = toFiniteOverlayNumber(rawPage) ?? 1;
+  const index = page > 0 ? page - 1 : page;
+
+  return Math.max(0, Math.min(totalPages - 1, index));
+}
+
+function buildProductionMappedTextOverlayHtml(args: {
+  mapping: unknown;
+  values: Record<string, string>;
+  pageIndex: number;
+  excludedKeys?: Set<string>;
+}): {
+  html: string;
+  drawn: number;
+} | null {
+  const excludedKeys =
+    args.excludedKeys || new Set<string>();
+
+  const mappingRecord =
+    asRecord(args.mapping);
+
+  const nestedMapping =
+    asRecord(mappingRecord.mapping);
+
+  const effectiveMapping =
+    Object.keys(nestedMapping).length > 0
+      ? nestedMapping
+      : mappingRecord;
+
+  const coordinateMode =
+    asString(
+      effectiveMapping.coordinateMode,
+    ).toUpperCase();
+
+  const fields =
+    collectProductionMappingFields(
+      effectiveMapping,
+    );
+
+  const fieldMarkup: string[] = [];
+
+  function renderFieldPlacement(
+    field: Record<string, unknown>,
+    rawValue: string,
+    languageVariant: "DEFAULT" | "ARABIC",
+  ): string | null {
+    const placement = getProductionMappingPlacement(field, languageVariant);
+    if (!placement) return null;
+
+    const mappedPageIndex = resolveProductionPageIndex(
+      placement.page ?? placement.pageNumber,
+      Math.max(args.pageIndex + 1, 1),
+    );
+
+    if (mappedPageIndex !== args.pageIndex) return null;
+
+    const xRaw = toFiniteOverlayNumber(placement.x);
+    const yRaw = toFiniteOverlayNumber(placement.y);
+
+    if (xRaw === null || yRaw === null) return null;
+
+    const placementCoordinateMode = asString(placement.coordinateMode).toUpperCase();
+    const normalized =
+      coordinateMode === "NORMALIZED" ||
+      placementCoordinateMode === "NORMALIZED" ||
+      (xRaw >= 0 && xRaw <= 1 && yRaw >= 0 && yRaw <= 1);
+
+    const widthRaw =
+      toFiniteOverlayNumber(placement.width) ??
+      toFiniteOverlayNumber(placement.maxWidth) ??
+      0.35;
+
+    const heightRaw =
+      toFiniteOverlayNumber(placement.height) ??
+      toFiniteOverlayNumber(placement.maxHeight) ??
+      0.06;
+
+    const leftPercent = normalized
+      ? xRaw * 100
+      : (xRaw / A4_PAGE.width) * 100;
+
+    const topPercent = normalized
+      ? yRaw * 100
+      : (1 - yRaw / A4_PAGE.height) * 100;
+
+    const widthPercent =
+      normalized && widthRaw > 0 && widthRaw <= 1
+        ? widthRaw * 100
+        : (widthRaw / A4_PAGE.width) * 100;
+
+    const heightPercent =
+      normalized && heightRaw > 0 && heightRaw <= 1
+        ? heightRaw * 100
+        : (heightRaw / A4_PAGE.height) * 100;
+
+    const fontSize =
+      toFiniteOverlayNumber(placement.fontSize) ??
+      toFiniteOverlayNumber(placement.size) ??
+      8;
+
+    const fontSizePx = Math.max(
+      10,
+      fontSize * (OVERLAY_VIEWPORT.width / A4_PAGE.width),
+    );
+
+    const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(rawValue);
+    const targetIsArabic = languageVariant === "ARABIC";
+
+    return `<div
+      class="production-mapped-text"
+      dir="${isArabic || targetIsArabic ? "rtl" : "ltr"}"
+      data-field-key="${escapeHtml(asString(field.key) || "")}"
+      data-language-variant="${languageVariant}"
+      style="
+        left:${leftPercent.toFixed(4)}%;
+        top:${topPercent.toFixed(4)}%;
+        width:${widthPercent.toFixed(4)}%;
+        height:${heightPercent.toFixed(4)}%;
+        font-size:${fontSizePx.toFixed(2)}px;
+        text-align:${isArabic || targetIsArabic ? "right" : "left"};
+      "
+    >${escapeHtml(rawValue)}</div>`;
+  }
+
+  for (const field of fields) {
+    const key = asString(field.key);
+
+    if (
+      !key ||
+      excludedKeys.has(key) ||
+      asString(field.type).toUpperCase() === "SIGNATURE"
+    ) {
+      continue;
+    }
+
+    const rawValue = normalizeProductionUnicodeText(
+      String(args.values[key] || "").trim(),
+    );
+
+    assertProductionUnicodeIntegrity({
+      fieldKey: key,
+      value: rawValue,
+    });
+
+    if (!rawValue) {
+      continue;
+    }
+
+    // Render on both the English and Arabic mapped targets when both exist.
+    // This mirrors bilingual forms: the same canonical clinical value is
+    // stamped in both language boxes rather than leaving the Arabic side blank.
+    const hasDefaultCoordinates = Boolean(asRecord(field.coordinates) || asRecord(field.placement) || asRecord(field.position));
+    const hasArabicCoordinates = Boolean(asRecord(field.arabicCoordinates));
+
+    if (hasDefaultCoordinates) {
+      const html = renderFieldPlacement(field, rawValue, "DEFAULT");
+      if (html) fieldMarkup.push(html);
+    }
+
+    if (hasArabicCoordinates) {
+      const html = renderFieldPlacement(field, rawValue, "ARABIC");
+      if (html) fieldMarkup.push(html);
+    }
+
+    if (!hasDefaultCoordinates && !hasArabicCoordinates) {
+      const html = renderFieldPlacement(field, rawValue, "DEFAULT");
+      if (html) fieldMarkup.push(html);
+    }
+  }
+
+  if (fieldMarkup.length === 0) {
+    return null;
+  }
+
+  return {
+    drawn:
+      fieldMarkup.length,
+
+    html:
+      buildOverlayShell({
+        transparent: true,
+        body: `
+          <style>
+            html,
+            body {
+              width: ${OVERLAY_VIEWPORT.width}px !important;
+              height: ${OVERLAY_VIEWPORT.height}px !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              overflow: hidden !important;
+              background: transparent !important;
+            }
+
+            .page.production-mapped-text-page {
+              position: relative !important;
+              width: ${OVERLAY_VIEWPORT.width}px !important;
+              height: ${OVERLAY_VIEWPORT.height}px !important;
+              min-height: 0 !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              overflow: hidden !important;
+              background: transparent !important;
+              box-sizing: border-box !important;
+            }
+
+            .production-mapped-text {
+              position: absolute;
+              box-sizing: border-box;
+              overflow: hidden;
+              padding: 0 2px;
+              color: #0057B8;
+              font-family:
+                "WathiqOverlayArabic",
+                "WathiqOverlaySans",
+                Tahoma,
+                Arial,
+                sans-serif;
+              font-weight: 400;
+              line-height: 1.22;
+              white-space: pre-wrap;
+              overflow-wrap: anywhere;
+              word-break: normal;
+              unicode-bidi: plaintext;
+              background: transparent;
+            }
+          </style>
+
+          <div
+            class="page production-mapped-text-page"
+          >
+            ${fieldMarkup.join("")}
+          </div>
+        `,
+      }),
+  };
+}
+
+async function drawProductionMappedText(args: {
+  browser: Browser;
+  pdfDoc: PDFDocument;
+  mapping: unknown;
+  values: Record<string, string>;
+  excludedKeys?: Set<string>;
+}) {
+  const pages =
+    args.pdfDoc.getPages();
+
+  let drawn = 0;
+
+  for (
+    let pageIndex = 0;
+    pageIndex < pages.length;
+    pageIndex += 1
+  ) {
+    const overlay =
+      buildProductionMappedTextOverlayHtml({
+        mapping:
+          args.mapping,
+        values:
+          args.values,
+        pageIndex,
+        excludedKeys:
+          args.excludedKeys,
+      });
+
+    if (!overlay) {
+      continue;
+    }
+
+    const overlayBytes =
+      await renderOverlayPng({
+        browser:
+          args.browser,
+        html:
+          overlay.html,
+      });
+
+    const overlayImage =
+      await args.pdfDoc.embedPng(
+        overlayBytes,
+      );
+
+    const page =
+      pages[pageIndex];
+
+    page.drawImage(
+      overlayImage,
+      {
+        x: 0,
+        y: 0,
+        width:
+          page.getWidth(),
+        height:
+          page.getHeight(),
+      },
+    );
+
+    drawn +=
+      overlay.drawn;
+  }
+
+  return drawn;
+}
+
+function decodeSignatureImageDataUrl(
+  value: string | null | undefined,
+): {
+  mimeType: "image/png" | "image/jpeg";
+  bytes: Buffer;
+} | null {
+  if (!value) {
+    return null;
+  }
+
+  const match = value.match(
+    /^data:image\/(png|jpeg|jpg);base64,([A-Za-z0-9+/=\s]+)$/i,
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  const subtype = match[1].toLowerCase();
+  const encoded = match[2].replace(/\s+/g, "");
+
+  if (!encoded) {
+    return null;
+  }
+
+  return {
+    mimeType:
+      subtype === "png"
+        ? "image/png"
+        : "image/jpeg",
+    bytes: Buffer.from(encoded, "base64"),
+  };
+}
+
+async function drawSignatureInPlacement(args: {
+  pdfDoc: PDFDocument;
+  field: Record<string, unknown>;
+  signatureImageDataUrl: string;
+  languageVariant: "DEFAULT" | "ARABIC";
+  coordinateMode: string;
+}): Promise<boolean> {
+  const placement = getProductionMappingPlacement(args.field, args.languageVariant);
+  if (!placement) return false;
+
+  const xRaw = toFiniteOverlayNumber(placement.x);
+  const yRaw = toFiniteOverlayNumber(placement.y);
+
+  if (xRaw === null || yRaw === null) return false;
+
+  const pages = args.pdfDoc.getPages();
+  const pageIndex = resolveProductionPageIndex(
+    placement.page ?? placement.pageNumber,
+    pages.length,
+  );
+
+  const page = pages[pageIndex];
+  if (!page) return false;
+
+  const pageWidth = page.getWidth();
+  const pageHeight = page.getHeight();
+
+  const placementCoordinateMode = asString(placement.coordinateMode).toUpperCase();
+  const normalized =
+    args.coordinateMode === "NORMALIZED" ||
+    placementCoordinateMode === "NORMALIZED" ||
+    (xRaw >= 0 && xRaw <= 1 && yRaw >= 0 && yRaw <= 1);
+
+  const widthRaw =
+    toFiniteOverlayNumber(placement.width) ??
+    toFiniteOverlayNumber(placement.maxWidth) ??
+    0.28;
+
+  const heightRaw =
+    toFiniteOverlayNumber(placement.height) ??
+    toFiniteOverlayNumber(placement.maxHeight) ??
+    0.075;
+
+  const boxWidth =
+    normalized && widthRaw > 0 && widthRaw <= 1
+      ? widthRaw * pageWidth
+      : widthRaw;
+
+  const boxHeight =
+    normalized && heightRaw > 0 && heightRaw <= 1
+      ? heightRaw * pageHeight
+      : heightRaw;
+
+  // Enforce a minimum visible rectangle (≈ 50 pt wide × 20 pt high).
+  const minWidth = Math.min(50, pageWidth * 0.08);
+  const minHeight = Math.min(20, pageHeight * 0.025);
+  const effectiveBoxWidth = Math.max(boxWidth, minWidth);
+  const effectiveBoxHeight = Math.max(boxHeight, minHeight);
+
+  const x = normalized ? xRaw * pageWidth : xRaw;
+  const y = normalized
+    ? pageHeight * (1 - yRaw) - effectiveBoxHeight
+    : yRaw;
+
+  const decoded = decodeSignatureImageDataUrl(args.signatureImageDataUrl);
+  if (!decoded) return false;
+
+  const img =
+    decoded.mimeType === "image/png"
+      ? await args.pdfDoc.embedPng(decoded.bytes)
+      : await args.pdfDoc.embedJpg(decoded.bytes);
+
+  const scaled = img.scale(1);
+
+  const scale = Math.min(
+    effectiveBoxWidth / scaled.width,
+    effectiveBoxHeight / scaled.height,
+  );
+
+  if (!Number.isFinite(scale) || scale <= 0) return false;
+
+  const width = scaled.width * scale;
+  const height = scaled.height * scale;
+
+  page.drawImage(img, {
+    x,
+    y: y + Math.max(0, (effectiveBoxHeight - height) / 2),
+    width,
+    height,
+  });
+
+  return true;
+}
+
+async function drawProductionMappedSignature(args: {
+  pdfDoc: PDFDocument;
+  mapping: unknown;
+  fieldKey: string;
+  signatureImageDataUrl: string | null | undefined;
+}) {
+  if (!args.signatureImageDataUrl?.trim()) {
+    return false;
+  }
+
+  const mappingRecord = asRecord(args.mapping);
+  const nestedMapping = asRecord(mappingRecord.mapping);
+
+  const effectiveMapping =
+    nestedMapping && Object.keys(nestedMapping).length > 0
+      ? nestedMapping
+      : mappingRecord;
+
+  const coordinateMode = asString(effectiveMapping.coordinateMode).toUpperCase();
+
+  const field = collectProductionMappingFields(effectiveMapping).find(
+    (candidate) => asString(candidate.key) === args.fieldKey,
+  );
+
+  if (!field) {
+    return false;
+  }
+
+  const hasDefaultCoordinates = Boolean(
+    asRecord(field.coordinates) || asRecord(field.placement) || asRecord(field.position),
+  );
+  const hasArabicCoordinates = Boolean(asRecord(field.arabicCoordinates));
+
+  const results: boolean[] = [];
+
+  if (hasDefaultCoordinates) {
+    const drawn = await drawSignatureInPlacement({
+      pdfDoc: args.pdfDoc,
+      field,
+      signatureImageDataUrl: args.signatureImageDataUrl,
+      languageVariant: "DEFAULT",
+      coordinateMode,
+    });
+    results.push(drawn);
+  }
+
+  if (hasArabicCoordinates) {
+    const drawn = await drawSignatureInPlacement({
+      pdfDoc: args.pdfDoc,
+      field,
+      signatureImageDataUrl: args.signatureImageDataUrl,
+      languageVariant: "ARABIC",
+      coordinateMode,
+    });
+    results.push(drawn);
+  }
+
+  if (!hasDefaultCoordinates && !hasArabicCoordinates) {
+    const drawn = await drawSignatureInPlacement({
+      pdfDoc: args.pdfDoc,
+      field,
+      signatureImageDataUrl: args.signatureImageDataUrl,
+      languageVariant: "DEFAULT",
+      coordinateMode,
+    });
+    results.push(drawn);
+  }
+
+  return results.some(Boolean);
+}
+
+
+async function drawNotApplicableMarker(args: {
+  pdfDoc: PDFDocument;
+  mapping: ConsentFieldMapping;
+  fieldKey: string;
+  labelEn: string;
+  labelAr: string;
+}): Promise<void> {
+  const field = args.mapping.fields.find((f: ConsentFieldDefinition) => f.key === args.fieldKey);
+  if (!field) return;
+
+  const font = await args.pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  for (const languageVariant of ["DEFAULT", "ARABIC"] as const) {
+    const placement = getProductionMappingPlacement(field as unknown as Record<string, unknown>, languageVariant);
+    if (!placement) continue;
+
+    const xRaw = toFiniteOverlayNumber(placement.x);
+    const yRaw = toFiniteOverlayNumber(placement.y);
+    if (xRaw === null || yRaw === null) continue;
+
+    const pages = args.pdfDoc.getPages();
+    const pageIndex = resolveProductionPageIndex(placement.page ?? placement.pageNumber, pages.length);
+    const page = pages[pageIndex];
+    if (!page) continue;
+
+    const pageWidth = page.getWidth();
+    const pageHeight = page.getHeight();
+    const coordinateMode = "NORMALIZED";
+    const placementCoordinateMode = asString(placement.coordinateMode).toUpperCase();
+    const normalized =
+      coordinateMode === "NORMALIZED" ||
+      placementCoordinateMode === "NORMALIZED" ||
+      (xRaw >= 0 && xRaw <= 1 && yRaw >= 0 && yRaw <= 1);
+
+    const widthRaw = toFiniteOverlayNumber(placement.width) ?? 0.28;
+    const heightRaw = toFiniteOverlayNumber(placement.height) ?? 0.075;
+
+    const boxWidth = normalized && widthRaw > 0 && widthRaw <= 1 ? widthRaw * pageWidth : widthRaw;
+    const boxHeight = normalized && heightRaw > 0 && heightRaw <= 1 ? heightRaw * pageHeight : heightRaw;
+
+    const x = normalized ? xRaw * pageWidth : xRaw;
+    const y = normalized ? pageHeight * (1 - yRaw) - boxHeight : yRaw;
+
+    const label = languageVariant === "ARABIC" ? args.labelAr : args.labelEn;
+
+    page.drawRectangle({
+      x,
+      y,
+      width: boxWidth,
+      height: boxHeight,
+      color: rgb(0.97, 0.97, 0.97),
+      borderColor: rgb(0.7, 0.7, 0.7),
+      borderWidth: 0.5,
+    });
+
+    page.drawText(label, {
+      x: x + 4,
+      y: y + boxHeight / 2 - 4,
+      size: 7,
+      font,
+      color: rgb(0.4, 0.4, 0.4),
+    });
+  }
+}
+
+async function drawPaginationOverlay(pdfDoc: PDFDocument): Promise<void> {
+  const pages = pdfDoc.getPages();
+  const totalPages = pages.length;
+  if (totalPages === 0) return;
+
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  // Footer mask coordinates for IMC MR 1168 page-number area.
+  // The source PDF bakes in "Page X of 1"; we mask only that strip and
+  // redraw current/total. Coordinates are in PDF points (A4 595.28 × 841.89).
+  const footerY = 18;
+  const footerHeight = 22;
+  const footerLeft = 360;
+  const footerWidth = 220;
+
+  for (let index = 0; index < pages.length; index += 1) {
+    const page = pages[index];
+    const pageNumber = index + 1;
+
+    page.drawRectangle({
+      x: footerLeft,
+      y: footerY,
+      width: footerWidth,
+      height: footerHeight,
+      color: rgb(1, 1, 1),
+    });
+
+    const text = `Page ${pageNumber} of ${totalPages}`;
+    page.drawText(text, {
+      x: footerLeft + 4,
+      y: footerY + 6,
+      size: 8,
+      font,
+      color: rgb(0.2, 0.2, 0.2),
+    });
+  }
+}
+
+
+
+
+// ---------------------------------------------------------------------------
+// Bilingual signature-authentication labels (IMC MR 1168, page 2 overlay)
+// ---------------------------------------------------------------------------
+
+type WitnessAuthSignatureRecord = {
+  id: string;
+  role: string;
+  signerName: string;
+  signedAt: Date;
+  signatureHash: string | null;
+  metadata: unknown;
+};
+
+function throwWitnessAuthEvidenceIncomplete(detail: string): never {
+  throw new ApiError(
+    409,
+    `Final PDF generation blocked: signature authentication label evidence is incomplete (${detail}).`,
+    { code: "WITNESS_AUTH_LABEL_EVIDENCE_INCOMPLETE" },
+  );
+}
+
+/**
+ * Resolve the genuine masked mobile evidence captured during OTP delivery.
+ * Evidence tables may not exist in every runtime schema, so query failures
+ * degrade to "not found" and the caller fails closed instead of fabricating.
+ */
+async function resolveMaskedMobileEvidence(
+  prisma: ReturnType<typeof getPrisma>,
+  tenantId: string,
+  documentId: string,
+): Promise<string | null> {
+  try {
+    const event = await prisma.evidenceEvent.findFirst({
+      where: {
+        tenantId,
+        consentDocumentId: documentId,
+        maskedMobileNumber: { not: null },
+      },
+      orderBy: { eventTimestamp: "desc" },
+      select: { maskedMobileNumber: true },
+    });
+
+    const fromEvent = event?.maskedMobileNumber?.trim() || "";
+    if (fromEvent && fromEvent.includes("*")) {
+      return fromEvent;
+    }
+
+    const pkg = await prisma.evidencePackage.findFirst({
+      where: {
+        tenantId,
+        consentDocumentId: documentId,
+        maskedMobileNumber: { not: null },
+      },
+      orderBy: { createdAt: "desc" },
+      select: { maskedMobileNumber: true },
+    });
+
+    const fromPackage = pkg?.maskedMobileNumber?.trim() || "";
+    if (fromPackage && fromPackage.includes("*")) {
+      return fromPackage;
+    }
+  } catch {
+    // fail closed below
+  }
+
+  return null;
+}
+
+/**
+ * Build the authentication labels for the approved Adeno-Tonsillectomy
+ * consent. Human-witness decisions render one label per genuine witness
+ * signature record; routine no-witness decisions render exactly one
+ * electronic authentication label built from the patient/guardian
+ * signature's genuine OTP evidence. Missing genuine evidence fails closed.
+ */
+async function buildWitnessAuthOverlayLabels(args: {
+  prisma: ReturnType<typeof getPrisma>;
+  doc: {
+    id: string;
+    tenantId: string;
+    metadata: unknown;
+    signatures: WitnessAuthSignatureRecord[];
+  };
+  patientOrGuardianSignature: WitnessAuthSignatureRecord | null;
+}): Promise<AuthenticationLabel[]> {
+  const decision = extractStoredPolicyDecision(args.doc.metadata);
+  const requiredWitnessCount = decision?.requiredWitnessCount ?? 0;
+
+  if (requiredWitnessCount > 0) {
+    const witnessSignatures = await args.prisma.consentWitnessSignature.findMany({
+      where: {
+        tenantId: args.doc.tenantId,
+        consentDocumentId: args.doc.id,
+      },
+      orderBy: { signedAt: "asc" },
+    });
+
+    // Only genuinely captured witness signatures become labels; the
+    // finalization gate blocks PDF generation when any are still missing.
+    return witnessSignatures.map((record) => {
+      const signatureRecord = args.doc.signatures.find(
+        (signature) => signature.id === record.signatureId,
+      );
+
+      return buildHumanWitnessLabel({
+        witnessRole: record.witnessRole,
+        witnessDisplayName:
+          compactWhitespace(signatureRecord?.signerName) || record.witnessRole,
+        employeeId: record.employeeId,
+        department: record.department,
+        signatureId: record.signatureId,
+        signedAtKsa: record.signedAtKsa,
+        authenticationReference: record.authenticationReference,
+        documentHash: record.documentHash,
+      });
+    });
+  }
+
+  const signature = args.patientOrGuardianSignature;
+  if (!signature) {
+    throwWitnessAuthEvidenceIncomplete("patient or guardian signature record is missing");
+  }
+
+  const signatureMetadata = asRecord(signature.metadata);
+
+  const verificationReference = compactWhitespace(
+    asString(signatureMetadata.challengeId),
+  );
+  if (!verificationReference) {
+    throwWitnessAuthEvidenceIncomplete("OTP verification reference (challengeId) is missing");
+  }
+
+  const authenticationReference =
+    compactWhitespace(signature.signatureHash)
+    || compactWhitespace(asString(signatureMetadata.signatureHash));
+  if (!authenticationReference) {
+    throwWitnessAuthEvidenceIncomplete("signature hash is missing");
+  }
+
+  const maskedMobile = await resolveMaskedMobileEvidence(
+    args.prisma,
+    args.doc.tenantId,
+    args.doc.id,
+  );
+  if (!maskedMobile) {
+    throwWitnessAuthEvidenceIncomplete("masked mobile OTP delivery evidence is missing");
+  }
+
+  return [
+    buildElectronicAuthenticationLabel({
+      verificationReference,
+      maskedMobile,
+      signatureId: signature.id,
+      signedAtKsa: formatSaudiArabiaTimestamp(signature.signedAt),
+      authenticationReference,
+      // The verification QR is omitted: the calibrated label region does not
+      // safely fit an additional QR image alongside the mandatory fields.
+      verificationUrl: null,
+    }),
+  ];
+}
+
+function normalizeWitnessAuthLabelLines(
+  lines: LabelTextLine[],
+  lang: "ar" | "en",
+): LabelTextLine[] {
+  return lines.map((line) => {
+    const text = normalizeProductionUnicodeText(line.text);
+
+    assertProductionUnicodeIntegrity({
+      fieldKey: `witness-auth-label-${lang}`,
+      value: text,
+    });
+
+    return { ...line, text };
+  });
+}
+
+/**
+ * Content-safety gate applied to every label before rendering.
+ * `assertLabelContentSafe` enforces the رمز التحقق terminology rule, which
+ * only holds for the routine electronic-authentication label (the
+ * human-witness label carries no verification-code reference — see the
+ * module's own test suite, which intentionally skips the terminology
+ * assertion for witness labels). Every other safety rule — no Latin "OTP"
+ * in Arabic text and no bare verification-code leak — must hold for both
+ * label kinds and is still enforced here.
+ */
+function assertWitnessAuthLabelContentSafe(label: AuthenticationLabel): void {
+  try {
+    assertLabelContentSafe(label);
+  } catch (error) {
+    const code = (error as { code?: string } | null)?.code;
+
+    if (
+      code !== "LABEL_ARABIC_TERMINOLOGY_MISSING"
+      || label.titleEn !== ENGLISH_HUMAN_WITNESS_TITLE
+    ) {
+      throw error;
+    }
+
+    /*
+     * The terminology rule fires before the secret-leak scan inside
+     * assertLabelContentSafe, so re-run that universal guard here: no
+     * human-witness field may ever leak a bare verification code.
+     */
+    for (const field of label.fields) {
+      if (/^\d{6}$/.test(field.value.trim())) {
+        throw new ApiError(
+          409,
+          `Label field ${field.labelEn} leaks a verification code`,
+          { code: "LABEL_SECRET_VALUE_REJECTED" },
+        );
+      }
+    }
+  }
+}
+
+export function buildWitnessAuthLabelsOverlayHtml(args: {
+  labels: AuthenticationLabel[];
+}): string | null {
+  const labelMarkup: string[] = [];
+
+  args.labels.forEach((label, slot) => {
+    assertWitnessAuthLabelContentSafe(label);
+
+    const rects = buildWitnessAuthLabelRects(IMC_MR_1168_PAGE2_CALIBRATION, slot);
+
+    assertLabelRectsValid(rects, IMC_MR_1168_PAGE2_CALIBRATION);
+
+    for (const lang of ["en", "ar"] as const) {
+      const rect = lang === "en" ? rects.english : rects.arabic;
+      const isArabic = lang === "ar";
+
+      const lines = normalizeWitnessAuthLabelLines(
+        labelToTextLines(label, lang),
+        lang,
+      );
+
+      const fit = autoFitLabelText(lines, rect, OVERLAY_VIEWPORT, {
+        minFontSizePt: IMC_MR_1168_PAGE2_CALIBRATION.minFontSizePt,
+        maxFontSizePt: IMC_MR_1168_PAGE2_CALIBRATION.maxFontSizePt,
+      });
+
+      assertLabelFits(fit);
+
+      const linesMarkup = lines
+        .map(
+          (line) =>
+            `<div class="wc-auth-line wc-auth-${line.weight === "title"
+              ? "title"
+              : line.weight === "body"
+                ? "body"
+                : "field"}">${escapeHtml(line.text)}</div>`,
+        )
+        .join("");
+
+      labelMarkup.push(
+        `<div
+          class="wc-auth-label"
+          dir="${isArabic ? "rtl" : "ltr"}"
+          data-label-slot="${slot}"
+          data-label-lang="${lang}"
+          style="
+            left:${(rect.x * 100).toFixed(4)}%;
+            top:${(rect.y * 100).toFixed(4)}%;
+            width:${(rect.width * 100).toFixed(4)}%;
+            height:${(rect.height * 100).toFixed(4)}%;
+            font-size:${fit.fontSizePt.toFixed(2)}px;
+            text-align:${isArabic ? "right" : "left"};
+            font-family:${isArabic
+              ? '"WathiqOverlayArabic","WathiqOverlaySans",Tahoma,Arial,sans-serif'
+              : '"WathiqOverlaySans","WathiqOverlayArabic",Arial,sans-serif'};
+          "
+        >${linesMarkup}</div>`,
+      );
+    }
+  });
+
+  if (labelMarkup.length === 0) {
+    return null;
+  }
+
+  return buildOverlayShell({
+    transparent: true,
+    body: `
+      <style>
+        html,
+        body {
+          width: ${OVERLAY_VIEWPORT.width}px !important;
+          height: ${OVERLAY_VIEWPORT.height}px !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: hidden !important;
+          background: transparent !important;
+        }
+
+        .page.wc-auth-labels-page {
+          position: relative !important;
+          width: ${OVERLAY_VIEWPORT.width}px !important;
+          height: ${OVERLAY_VIEWPORT.height}px !important;
+          min-height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: hidden !important;
+          background: transparent !important;
+          box-sizing: border-box !important;
+        }
+
+        .wc-auth-label {
+          position: absolute;
+          box-sizing: border-box;
+          overflow: hidden;
+          padding: 4px 6px;
+          color: #10253f;
+          font-weight: 400;
+          line-height: 1.25;
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
+          word-break: normal;
+          unicode-bidi: plaintext;
+          background: transparent;
+        }
+
+        .wc-auth-line {
+          margin: 0;
+        }
+
+        .wc-auth-title {
+          font-weight: 700;
+          color: #0d2c57;
+        }
+      </style>
+
+      <div class="page wc-auth-labels-page">
+        ${labelMarkup.join("")}
+      </div>
+    `,
+  });
+}
+
+export async function drawWitnessAuthLabelsOverlay(args: {
+  browser: Browser;
+  pdfDoc: PDFDocument;
+  labels: AuthenticationLabel[];
+}) {
+  if (args.labels.length === 0) {
+    return 0;
+  }
+
+  const pages = args.pdfDoc.getPages();
+  const page = pages[IMC_MR_1168_PAGE2_CALIBRATION.page - 1];
+
+  if (!page) {
+    throw new ApiError(
+      409,
+      "Final PDF generation blocked: the approved form does not contain the calibrated authentication label page.",
+      { code: "PDF_CALIBRATION_VIOLATION" },
+    );
+  }
+
+  const html = buildWitnessAuthLabelsOverlayHtml({ labels: args.labels });
+
+  if (!html) {
+    return 0;
+  }
+
+  const overlayBytes = await renderOverlayPng({
+    browser: args.browser,
+    html,
+  });
+
+  const overlayImage = await args.pdfDoc.embedPng(overlayBytes);
+
+  const pageWidth = page.getWidth();
+  const pageHeight = page.getHeight();
+  const scaleX = pageWidth / OVERLAY_VIEWPORT.width;
+  const scaleY = pageHeight / OVERLAY_VIEWPORT.height;
+  const scale = Math.min(scaleX, scaleY);
+  const drawWidth = OVERLAY_VIEWPORT.width * scale;
+  const drawHeight = OVERLAY_VIEWPORT.height * scale;
+
+  page.drawImage(overlayImage, {
+    x: (pageWidth - drawWidth) / 2,
+    y: (pageHeight - drawHeight) / 2,
+    width: drawWidth,
+    height: drawHeight,
+  });
+
+  return args.labels.length;
+}
+
+
+export async function renderImcApprovedDoctorDraftPdf(args: {
+  pdfBytes: Uint8Array;
+  formId: string;
+  doctorCompletionValues: Record<string, unknown>;
+  physicianSignatureDataUrl?: string | null;
+}) {
+  const mapping =
+    getConsentFieldMappingByFormId(
+      args.formId,
+    );
+
+  if (!mapping) {
+    throw new ApiError(
+      404,
+      "Consent field mapping not found for draft overlay",
+    );
+  }
+
+  const pdfDoc =
+    await PDFDocument.load(
+      args.pdfBytes,
+      {
+        updateMetadata: false,
+      },
+    );
+
+  const normalizedValues =
+    normalizeProductionOverlayValues(
+      args.doctorCompletionValues,
+    );
+
+  const browser =
+    await launchOverlayBrowser();
+
+  try {
+    await drawProductionMappedText({
+      browser,
+      pdfDoc,
+      mapping,
+      values:
+        normalizedValues,
+      excludedKeys:
+        new Set([
+          "patient_signature",
+          "guardian_signature",
+          "treating_physician_signature",
+        ]),
+    });
+  }
+  finally {
+    await browser.close();
+  }
+
+  let physicianSignatureDrawn =
+    false;
+
+  if (
+    args.physicianSignatureDataUrl
+      ?.trim()
+  ) {
+    physicianSignatureDrawn =
+      await drawProductionMappedSignature({
+        pdfDoc,
+        mapping,
+        fieldKey:
+          "treating_physician_signature",
+        signatureImageDataUrl:
+          args.physicianSignatureDataUrl,
+      });
+
+    if (!physicianSignatureDrawn) {
+      throw new ApiError(
+        409,
+        "Treating physician signature coordinates are missing from the approved form mapping.",
+      );
+    }
+  }
+
+  await drawNotApplicableMarker({
+    pdfDoc,
+    mapping,
+    fieldKey: "guardian_signature",
+    labelEn: "N/A",
+    labelAr: "N/A",
+  });
+
+  await drawPaginationOverlay(pdfDoc);
+
+  const bytes = await pdfDoc.save();
+
+  return {
+    bytes: Buffer.from(bytes),
+    physicianSignatureDrawn,
+    renderingEngine: "approved-imc-overlay",
+  };
+}
+
 export async function renderImcApprovedConsentPdf(args: {
   documentId: string;
   tenantId: string;
@@ -1066,7 +2497,25 @@ export async function renderImcApprovedConsentPdf(args: {
     linkedTemplate.publicPath || manifestItem.publicPath,
     args.origin,
   );
-  const pdfDoc = await PDFDocument.load(pdfBytes);
+  const pdfDoc =
+    await PDFDocument.load(
+      pdfBytes,
+      {
+        updateMetadata: false,
+      },
+    );
+
+  /*
+   * pdf-lib must not insert a new modification timestamp on every render.
+   * The consent creation time is stable before and after finalization.
+   */
+  pdfDoc.setCreationDate(
+    doc.createdAt,
+  );
+
+  pdfDoc.setModificationDate(
+    doc.createdAt,
+  );
 
   const metadata = asRecord(doc.metadata);
   const patientIdentity = asRecord(metadata.patientIdentity);
@@ -1075,11 +2524,63 @@ export async function renderImcApprovedConsentPdf(args: {
   const procedureMetadata = asRecord(metadata.procedure);
   const locationMetadata = asRecord(metadata.location);
   const refusalSignature = asRecord(metadata.refusalSignature);
-  const selectedSignature = doc.signatures.find((item) => item.role === "PATIENT")
+  const patientOrGuardianSignature =
+    doc.signatures.find((item) => item.role === "PATIENT")
     || doc.signatures.find((item) => item.role === "GUARDIAN")
+    || null;
+
+  const physicianSignature =
+    doc.signatures
+      .filter(
+        (item) =>
+          item.role === "PHYSICIAN",
+      )
+      .at(-1)
+    || null;
+
+  const selectedSignature =
+    patientOrGuardianSignature
     || doc.signatures.at(-1)
     || null;
-  const selectedSignatureMetadata = asRecord(selectedSignature?.metadata);
+
+  const selectedSignatureMetadata =
+    asRecord(selectedSignature?.metadata);
+
+  const doctorCompletionValues =
+    asRecord(metadata.doctorCompletionValues);
+
+  const physicianSignaturePresentation =
+    physicianSignature
+      ? resolveConsentSignaturePresentation({
+          metadata:
+            physicianSignature.metadata,
+
+          signatureMethod:
+            physicianSignature.signatureMethod,
+
+          signedAt:
+            physicianSignature.signedAt,
+
+          signerName:
+            physicianSignature.signerName
+            || doc.physicianName
+            || "Physician",
+        })
+      : null;
+
+  const signaturePresentation = patientOrGuardianSignature
+    ? resolveConsentSignaturePresentation({
+        metadata: patientOrGuardianSignature.metadata,
+        signatureMethod:
+          patientOrGuardianSignature.signatureMethod,
+        signedAt: patientOrGuardianSignature.signedAt,
+        signerName:
+          patientOrGuardianSignature.signerName
+          || doc.patientName
+          || "Patient",
+      })
+    : null;
+
   const verificationUrl = `${args.origin}/verify/consent/${doc.id}`;
   const qrDataUrl = await QRCode.toDataURL(verificationUrl, {
     errorCorrectionLevel: "M",
@@ -1116,7 +2617,24 @@ export async function renderImcApprovedConsentPdf(args: {
     facilityName: compactWhitespace(doc.tenant?.name) || "International Medical Center",
     gender: compactWhitespace(doc.gender) || compactWhitespace(pickFirstString({ demographics }, [["demographics", "gender"]])),
     location: pickFirstString({ locationMetadata, encounter }, [["locationMetadata", "location"], ["encounter", "location"]]),
-    patientAge: formatAge(compactWhitespace(doc.dob) || compactWhitespace(pickFirstString({ demographics }, [["demographics", "dateOfBirth"]]))),
+    patientAge: formatAge(
+      compactWhitespace(doc.dob)
+        || compactWhitespace(
+          pickFirstString(
+            {
+              demographics,
+            },
+            [
+              [
+                "demographics",
+                "dateOfBirth",
+              ],
+            ],
+          ),
+        ),
+      signedAt
+        || doc.createdAt,
+    ),
     patientDob: compactWhitespace(doc.dob) || compactWhitespace(pickFirstString({ demographics }, [["demographics", "dateOfBirth"]])),
     patientMrn: compactWhitespace(doc.mrn) || compactWhitespace(pickFirstString({ patientIdentity }, [["patientIdentity", "mrn"]])),
     patientName: compactWhitespace(doc.patientName) || "Patient",
@@ -1124,8 +2642,16 @@ export async function renderImcApprovedConsentPdf(args: {
     physicianName: compactWhitespace(doc.physicianName),
     procedure: compactWhitespace(doc.plannedProcedure || doc.procedureDetails || pickFirstString({ procedureMetadata }, [["procedureMetadata", "nameEn"]])) || manifestItem.titleEn,
     qrDataUrl,
-    signedAtAr: formatDateTime(signedAt || doc.finalizedAt || doc.updatedAt, "ar"),
-    signedAtEn: formatDateTime(signedAt || doc.finalizedAt || doc.updatedAt, "en"),
+    signedAtAr: formatDateTime(
+      signedAt
+        || doc.createdAt,
+      "ar",
+    ),
+    signedAtEn: formatDateTime(
+      signedAt
+        || doc.createdAt,
+      "en",
+    ),
     signatureId: compactWhitespace(asString(selectedSignatureMetadata.signatureId))
       || compactWhitespace(selectedSignature?.id)
       || compactWhitespace(asString(refusalSignature.signatureId)),
@@ -1135,6 +2661,40 @@ export async function renderImcApprovedConsentPdf(args: {
     visitId,
     wardBed,
     wathiqLogoDataUrl,
+  };
+
+  const isFieldAddressedAmputation =
+    overlayContext.approvedConsentFormId === "imc-approved-amputation";
+
+  const productionMapping =
+    overlayContext.approvedConsentFormId ===
+    "imc-approved-adenotonsillectomy"
+      ? getConsentFieldMappingByFormId(
+          overlayContext.approvedConsentFormId,
+        )
+      : null;
+
+  /*
+   * Bilingual signature-authentication labels (IMC MR 1168, page 2).
+   * Genuine witness/OTP evidence is resolved here so evidence problems
+   * fail closed before any overlay bytes are produced. The approved
+   * source PDF itself is never altered — labels are overlay-only.
+   */
+  const witnessAuthLabels = productionMapping
+    ? await buildWitnessAuthOverlayLabels({
+        prisma,
+        doc,
+        patientOrGuardianSignature,
+      })
+    : [];
+
+  const autoMappedValues = productionMapping
+    ? resolveProductionMappingAutoValues(productionMapping, metadata)
+    : {};
+
+  const normalizedDoctorCompletionValues = {
+    ...normalizeProductionOverlayValues(doctorCompletionValues),
+    ...autoMappedValues,
   };
 
   const values: Record<string, string> = {
@@ -1150,7 +2710,13 @@ export async function renderImcApprovedConsentPdf(args: {
     department: doc.department || "",
     consentReference: doc.consentReference || "",
     caseNumber: doc.case?.caseNumber || "",
-    generatedAt: new Date().toLocaleString("en-GB"),
+    generatedAt:
+      formatDateTime(
+        signedAt
+          || doc.createdAt,
+        "en",
+      )
+      || "",
   };
 
   await drawMappedText({
@@ -1204,6 +2770,52 @@ export async function renderImcApprovedConsentPdf(args: {
       }
     });
 
+    if (isFieldAddressedAmputation) {
+      const amputationValues = buildAmputationFieldAddressedValues({
+        doctorCompletionValues,
+        physicianSignatureDataUrl: physicianSignaturePresentation?.signatureImageDataUrl,
+        patientSignatureDataUrl: signaturePresentation?.signatureImageDataUrl,
+        physicianName: doc.physicianName,
+        physicianSpecialty: doc.physicianSpecialty || doc.template.specialty,
+        patientName: doc.patientName,
+        mrn: doc.mrn,
+        dob: doc.dob,
+        signedAt,
+      });
+
+      await renderFieldAddressedOverlays({
+        pdfDoc,
+        manifest: amputationManifest as AcroFormTemplateManifest,
+        values: amputationValues,
+        browser,
+      });
+    }
+
+    if (productionMapping) {
+      await drawProductionMappedText({
+        browser,
+        pdfDoc,
+        mapping:
+          productionMapping,
+        values:
+          normalizedDoctorCompletionValues,
+        excludedKeys:
+          new Set([
+            "patient_signature",
+            "guardian_signature",
+            "treating_physician_signature",
+          ]),
+      });
+    }
+
+    if (witnessAuthLabels.length > 0) {
+      await drawWitnessAuthLabelsOverlay({
+        browser,
+        pdfDoc,
+        labels: witnessAuthLabels,
+      });
+    }
+
     if (fieldMap.appendEvidencePage !== false) {
       const appendixPage = pdfDoc.addPage([A4_PAGE.width, A4_PAGE.height]);
       appendixPage.drawImage(appendixOverlayImage, {
@@ -1216,6 +2828,78 @@ export async function renderImcApprovedConsentPdf(args: {
   } finally {
     await browser.close();
   }
+
+  if (productionMapping) {
+    const patientSignatureFieldKey =
+      patientOrGuardianSignature?.role === "GUARDIAN"
+        ? "guardian_signature"
+        : "patient_signature";
+
+    if (physicianSignature && isSignatureHashStale(physicianSignature, doc)) {
+      throw new ApiError(
+        409,
+        "Final PDF generation blocked: the treating physician signature is bound to an outdated document version.",
+        { code: "PHYSICIAN_SIGNATURE_STALE" },
+      );
+    }
+
+    if (
+      !physicianSignaturePresentation
+        ?.signatureImageDataUrl
+    ) {
+      throw new ApiError(
+        409,
+        "Final PDF generation blocked: the treating physician signature image is missing.",
+      );
+    }
+
+    const physicianSignatureDrawn =
+      await drawProductionMappedSignature({
+        pdfDoc,
+        mapping:
+          productionMapping,
+
+        fieldKey:
+          "treating_physician_signature",
+
+        signatureImageDataUrl:
+          physicianSignaturePresentation
+            .signatureImageDataUrl,
+      });
+
+    if (!physicianSignatureDrawn) {
+      throw new ApiError(
+        409,
+        "Final PDF generation blocked: treating physician signature coordinates are missing from the approved form mapping.",
+      );
+    }
+
+    if (!signaturePresentation?.signatureImageDataUrl) {
+      throw new ApiError(
+        409,
+        "Final PDF generation blocked: the patient or guardian signature image is missing.",
+      );
+    }
+
+    const patientSignatureDrawn =
+      await drawProductionMappedSignature({
+        pdfDoc,
+        mapping: productionMapping,
+        fieldKey: patientSignatureFieldKey,
+        signatureImageDataUrl:
+          signaturePresentation.signatureImageDataUrl,
+      });
+
+    if (!patientSignatureDrawn) {
+      throw new ApiError(
+        409,
+        "Final PDF generation blocked: patient signature coordinates are missing from the approved form mapping.",
+      );
+    }
+
+  }
+
+  await drawPaginationOverlay(pdfDoc);
 
   const finalBytes = await pdfDoc.save();
 

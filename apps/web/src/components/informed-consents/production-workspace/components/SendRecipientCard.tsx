@@ -1,6 +1,6 @@
 "use client";
 
-import { Phone, Mail, AlertTriangle, ShieldCheck, BadgeCheck, Send, Smartphone } from "lucide-react";
+import { Phone, Mail, AlertTriangle, ShieldCheck, BadgeCheck, Send, Smartphone, Check } from "lucide-react";
 import { Input } from "@/components/design-system";
 import { WorkspaceBadge, WorkspaceCard, WorkspaceCardHeader } from "./WorkspaceAtoms";
 
@@ -9,9 +9,12 @@ interface SendRecipientCardProps {
   email: string;
   allowlisted?: boolean;
   pilotEnabled?: boolean;
+  pilotRealSend?: boolean;
+  recipientConfirmed?: boolean;
   reason?: string;
   onMobileChange: (value: string) => void;
   onEmailChange: (value: string) => void;
+  onRecipientConfirmedChange?: (value: boolean) => void;
   disabled?: boolean;
 }
 
@@ -25,19 +28,28 @@ function normalizeMobilePreview(value: string): string {
   return compact;
 }
 
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(value.trim());
+}
+
 export function SendRecipientCard({
   mobile,
   email,
   allowlisted,
   pilotEnabled,
+  pilotRealSend,
+  recipientConfirmed,
   reason,
   onMobileChange,
   onEmailChange,
+  onRecipientConfirmedChange,
   disabled,
 }: SendRecipientCardProps) {
   const normalized = normalizeMobilePreview(mobile);
-  const hasContact = Boolean(normalized || email.trim());
-  const showAllowlistWarning = hasContact && allowlisted === false;
+  const hasMobile = Boolean(normalized);
+  const emailValid = isValidEmail(email);
+  const hasContact = hasMobile || emailValid;
+  const showAllowlistWarning = hasContact && allowlisted === false && !pilotRealSend;
 
   return (
     <WorkspaceCard id="section-recipient">
@@ -65,7 +77,7 @@ export function SendRecipientCard({
               {normalized ? <p className="mt-1 text-[10px] text-slate-500">Normalized: {normalized}</p> : null}
             </div>
             <div className="ml-auto">
-              {allowlisted ? (
+              {hasMobile ? (
                 <WorkspaceBadge tone="green">
                   <BadgeCheck className="size-3" /> Verified
                 </WorkspaceBadge>
@@ -92,7 +104,7 @@ export function SendRecipientCard({
               />
             </div>
             <div className="ml-auto">
-              {email.trim() ? <WorkspaceBadge tone="green">Available</WorkspaceBadge> : <WorkspaceBadge tone="slate">Optional</WorkspaceBadge>}
+              {emailValid ? <WorkspaceBadge tone="green">Available</WorkspaceBadge> : <WorkspaceBadge tone="slate">Optional</WorkspaceBadge>}
             </div>
           </div>
         </div>
@@ -101,6 +113,13 @@ export function SendRecipientCard({
           <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>Enter a mobile number or email to enable sending.</span>
+          </div>
+        ) : null}
+
+        {pilotRealSend && hasContact ? (
+          <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>Real SMS/email will be sent in Pilot Mode. Verify the recipient details carefully.</span>
           </div>
         ) : null}
 
@@ -121,6 +140,24 @@ export function SendRecipientCard({
               {!pilotEnabled ? " Pilot sending is not enabled for this tenant." : ""}
             </span>
           </div>
+        ) : null}
+
+        {pilotRealSend && hasContact ? (
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 text-sm transition hover:border-blue-200">
+            <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border border-slate-300 bg-white text-white transition">
+              <input
+                type="checkbox"
+                className="peer sr-only"
+                checked={recipientConfirmed}
+                disabled={disabled}
+                onChange={(e) => onRecipientConfirmedChange?.(e.target.checked)}
+              />
+              <Check className="size-3.5 text-blue-600 opacity-0 peer-checked:opacity-100" />
+            </span>
+            <span className="text-slate-700">
+              I confirm this mobile/email belongs to the intended patient or authorized recipient.
+            </span>
+          </label>
         ) : null}
       </div>
     </WorkspaceCard>

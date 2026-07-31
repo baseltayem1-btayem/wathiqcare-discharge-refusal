@@ -7,6 +7,7 @@
  */
 
 import crypto from "node:crypto";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { getPrisma } from "@/lib/server/prisma";
 import {
   type SigningSessionInput,
@@ -319,7 +320,6 @@ export async function validateSigningToken(
   signerRole: string;
   tenantId: string;
 }> {
-  await ensureSigningSchema();
   const normalizedToken = token.trim();
   if (!normalizedToken) {
     throw new ApiError(400, "Invalid or expired signing token");
@@ -350,21 +350,44 @@ export async function validateSigningToken(
   );
 
   const row = rows[0];
-  if (!row || !row.session_id || !row.document_id || !row.module_type || !row.tenant_id || !row.signer_role) {
-    throw new ApiError(404, "Invalid or expired signing token");
+  if (row && row.session_id && row.document_id && row.module_type && row.tenant_id && row.signer_role) {
+    if (row.used_at) throw new ApiError(404, "Invalid or expired signing token");
+    if (row.revoked_at) throw new ApiError(404, "Invalid or expired signing token");
+    if (new Date(row.expires_at) < new Date()) {
+      throw new ApiError(404, "Invalid or expired signing token");
+    }
+    return {
+      sessionId: row.session_id,
+      documentId: row.document_id,
+      moduleType: row.module_type,
+      signerRole: row.signer_role,
+      tenantId: row.tenant_id,
+    };
   }
-  if (row.used_at) throw new ApiError(404, "Invalid or expired signing token");
-  if (row.revoked_at) throw new ApiError(404, "Invalid or expired signing token");
-  if (new Date(row.expires_at) < new Date()) {
+
+  // Fallback to Prisma-managed signing secure tokens (Package 1 outbox model).
+  const prismaToken = await prisma().signingSecureToken.findFirst({
+    where: { tokenHash },
+    include: { session: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (
+    !prismaToken
+    || !prismaToken.session
+    || prismaToken.usedAt
+    || prismaToken.revokedAt
+    || new Date(prismaToken.expiresAt) < new Date()
+  ) {
     throw new ApiError(404, "Invalid or expired signing token");
   }
 
   return {
-    sessionId: row.session_id,
-    documentId: row.document_id,
-    moduleType: row.module_type,
-    signerRole: row.signer_role,
-    tenantId: row.tenant_id,
+    sessionId: prismaToken.session.id,
+    documentId: prismaToken.session.documentId,
+    moduleType: prismaToken.session.moduleType,
+    signerRole: prismaToken.signerRole,
+    tenantId: prismaToken.session.tenantId,
   };
 }
 
@@ -372,14 +395,28 @@ export async function validateSigningToken(
 // Mark Token Used
 // ---------------------------------------------------------------------------
 
-export async function markTokenUsed(token: string, ipAddress?: string): Promise<void> {
-  await ensureSigningSchema();
+export async function markTokenUsed(
+  token: string,
+  ipAddress?: string,
+  client?: PrismaClient | Prisma.TransactionClient,
+): Promise<void> {
+  const db = client ?? prisma();
   const tokenHash = computeSigningTokenHash(token.trim());
-  await prisma().$executeRawUnsafe(
-    `UPDATE signing_secure_tokens SET used_at = NOW(), ip_on_use = $1 WHERE token_hash = $2`,
-    ipAddress ?? null,
-    tokenHash
-  );
+  const now = new Date();
+
+  const result = await db.signingSecureToken.updateMany({
+    where: {
+      tokenHash,
+      usedAt: null,
+      revokedAt: null,
+      expiresAt: { gt: now },
+    },
+    data: { usedAt: now, ipOnUse: ipAddress ?? null },
+  });
+
+  if (result.count !== 1) {
+    throw new ApiError(409, "Token already used, revoked, or expired");
+  }
 }
 
 // ---------------------------------------------------------------------------

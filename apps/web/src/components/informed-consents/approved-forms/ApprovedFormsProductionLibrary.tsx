@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import {
@@ -32,6 +32,7 @@ type ApprovedConsentTemplate = {
   riskLevel: "standard" | "medium" | "high";
   tags: string[];
   pdfUrl: string;
+  patientCopyPdfUrl?: string;
   summary: string;
   searchScore?: number;
 };
@@ -328,8 +329,19 @@ export default function ApprovedFormsProductionLibrary() {
                     className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#0b5f95] px-5 text-sm font-bold text-white shadow-[0_12px_24px_rgba(11,95,149,0.22)] transition hover:bg-[#084a77]"
                   >
                     <FileText className="h-4 w-4" />
-                    Open PDF
+                    Open signing PDF
                   </a>
+                  {selected.patientCopyPdfUrl ? (
+                    <a
+                      href={selected.patientCopyPdfUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 text-sm font-bold text-emerald-800 transition hover:bg-emerald-100"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Open patient copy
+                    </a>
+                  ) : null}
                 </div>
 
                 <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -397,3 +409,4 @@ export default function ApprovedFormsProductionLibrary() {
     </div>
   );
 }
+

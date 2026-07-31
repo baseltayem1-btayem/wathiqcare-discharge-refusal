@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import {
-  envList,
-  isAllowlistedRecipient,
+  evaluateAllowlistedRecipient,
   isPilotPatientSendEnabled,
-  normalizePhoneNumber,
-  normalizeRecipientEmail,
 } from "@/lib/server/workspace-consent-helpers";
 
 export const dynamic = "force-dynamic";
@@ -18,23 +15,14 @@ export async function POST(request: NextRequest) {
   const recipientEmail = String(body.recipientEmail || "").trim().toLowerCase();
 
   const pilotEnabled = isPilotPatientSendEnabled();
-  const allowedMobiles = envList("PILOT_PATIENT_SEND_ALLOWLIST_MOBILE").map(normalizePhoneNumber);
-  const allowedEmails = envList("PILOT_PATIENT_SEND_ALLOWLIST_EMAIL").map(normalizeRecipientEmail);
-
-  const mobileAllowed = Boolean(mobileNumber && allowedMobiles.includes(normalizePhoneNumber(mobileNumber)));
-  const emailAllowed = Boolean(recipientEmail && allowedEmails.includes(normalizeRecipientEmail(recipientEmail)));
-  const allowlisted = isAllowlistedRecipient(mobileNumber, recipientEmail);
+  const evaluation = evaluateAllowlistedRecipient(mobileNumber, recipientEmail);
 
   return NextResponse.json({
     ok: true,
     pilotEnabled,
-    allowlisted,
-    mobileAllowed: Boolean(mobileAllowed),
-    emailAllowed: Boolean(emailAllowed),
-    reason: pilotEnabled
-      ? allowlisted
-        ? "Recipient is approved for pilot send."
-        : "Recipient is not in the pilot allowlist."
-      : "Patient-facing pilot send is disabled.",
+    allowlisted: evaluation.allowlisted,
+    mobileAllowed: evaluation.mobileAllowed,
+    emailAllowed: evaluation.emailAllowed,
+    reason: evaluation.reason,
   });
 }

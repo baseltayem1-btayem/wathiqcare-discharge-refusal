@@ -115,6 +115,14 @@ export async function assembleKnowledgePackage(
   }
 
   const approvedPdf = verifyPublicAssetSource(consentForm.pdfTemplateUrl);
+  const secureApprovedPdfUrl = approvedPdf.sourceVerified
+    ? `/api/modules/informed-consents/forms/${encodeURIComponent(consentForm.id)}/approved-pdf`
+    : approvedPdf.url;
+  const approvedPdfForClient = {
+    ...approvedPdf,
+    url: secureApprovedPdfUrl,
+    sourceUrl: approvedPdf.url,
+  };
   const pdfBlockingReasons = approvedPdf.sourceVerified
     ? []
     : ["Approved consent PDF source is missing or inaccessible."];
@@ -132,8 +140,8 @@ export async function assembleKnowledgePackage(
     sourceVerified: approvedPdf.sourceVerified,
     sourceStatusCode: approvedPdf.statusCode,
     sourceVerificationReason: approvedPdf.reason,
-    approvedPdfUrl: approvedPdf.url,
-    sourcePdfUrl: approvedPdf.url,
+    approvedPdfUrl: secureApprovedPdfUrl,
+    sourcePdfUrl: secureApprovedPdfUrl,
     governanceSnapshot: {
       ...((consentForm.governanceSnapshot && typeof consentForm.governanceSnapshot === "object")
         ? consentForm.governanceSnapshot
@@ -174,7 +182,7 @@ export async function assembleKnowledgePackage(
     blockers: ruleEvaluation.blockers,
     requiredParticipants: ruleEvaluation.requiredParticipants,
     packageSnapshot: pkg.packageSnapshot,
-    approvedPdf,
+    approvedPdf: approvedPdfForClient,
     dispatchEligibility,
     assembledAt: new Date().toISOString(),
   };

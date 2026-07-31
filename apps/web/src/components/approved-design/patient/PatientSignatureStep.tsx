@@ -3,6 +3,10 @@
 import { Lock, PenTool, ShieldCheck } from "lucide-react";
 import { Alert, Card, cls, PatientIdentityCard, type Lang } from "../shared";
 import { SignaturePad, type SignaturePadHandle } from "./SignaturePad";
+import {
+  allDeclarationsAccepted,
+  PatientDeclarationsPanel,
+} from "./PatientDeclarationsPanel";
 
 export function PatientSignatureStep({
   lang,
@@ -18,6 +22,8 @@ export function PatientSignatureStep({
   error,
   mode = "consent",
   onBack,
+  declarationsAccepted = [],
+  setDeclarationsAccepted,
 }: {
   lang: Lang;
   patientName: string;
@@ -32,9 +38,14 @@ export function PatientSignatureStep({
   error: string | null;
   mode?: "consent" | "refusal";
   onBack?: () => void;
+  declarationsAccepted?: string[];
+  setDeclarationsAccepted?: (v: string[]) => void;
 }) {
   const isAr = lang === "ar";
   const isRefusal = mode === "refusal";
+  const declarationsComplete = allDeclarationsAccepted(declarationsAccepted);
+  const canSubmit =
+    hasInk && Boolean(signerName.trim()) && (isRefusal || declarationsComplete);
 
   return (
     <div className="flex flex-col gap-5">
@@ -133,6 +144,28 @@ export function PatientSignatureStep({
         </button>
       ) : null}
 
+      {!isRefusal && setDeclarationsAccepted ? (
+        <PatientDeclarationsPanel
+          lang={lang}
+          accepted={declarationsAccepted}
+          onChange={setDeclarationsAccepted}
+          disabled={submitting}
+        />
+      ) : null}
+
+      {!isRefusal && !declarationsComplete ? (
+        <p
+          className={cls(
+            "text-xs text-slate-500",
+            isAr ? "text-right" : "text-left",
+          )}
+        >
+          {isAr
+            ? "يرجى الموافقة على جميع الإقرارات أعلاه لتفعيل زر التأكيد."
+            : "Please accept all declarations above to enable the confirm button."}
+        </p>
+      ) : null}
+
       <div
         className={cls(
           "flex items-start gap-2 rounded-[18px] border border-[#dbe7f4] bg-[#f8fbff] p-3 text-xs text-slate-600",
@@ -163,10 +196,10 @@ export function PatientSignatureStep({
         <button
           type="button"
           onClick={onSubmit}
-          disabled={submitting || !hasInk || !signerName.trim()}
+          disabled={submitting || !canSubmit}
           className={cls(
             "w-full rounded-[18px] py-4 text-sm font-semibold transition-colors",
-            submitting || !hasInk || !signerName.trim()
+            submitting || !canSubmit
               ? "bg-muted text-muted-foreground cursor-not-allowed"
               : isRefusal
                 ? "bg-red-600 text-white hover:bg-red-700"
