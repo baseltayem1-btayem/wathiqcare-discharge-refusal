@@ -56,6 +56,7 @@ export type ProductionWorkspaceState = {
   previewReviewed: boolean;
   recipientMobile: string;
   recipientEmail: string;
+  recipientConfirmed: boolean;
   sendEligibility?: { pilotEnabled: boolean; allowlisted: boolean; reason: string };
   fieldMappingReadiness?: ConsentFieldMappingReadiness;
   doctorCompletionValues: Record<string, string>;
@@ -132,6 +133,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     previewReviewed: false,
     recipientMobile: "",
     recipientEmail: "",
+    recipientConfirmed: false,
     doctorCompletionValues: {},
     physicianSignatureDataUrl: "",
     filledDraftStatus: "idle",
@@ -293,6 +295,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         signingResult: undefined,
         recipientMobile: mobile,
         recipientEmail: email,
+        recipientConfirmed: false,
         timeline: [],
         acknowledgedBlockers: new Set(),
         acknowledgedAlerts: new Set(),
@@ -346,11 +349,15 @@ export function useProductionWorkspace(physician: PhysicianContext) {
   }, [procedures]);
 
   const setRecipientMobile = useCallback((recipientMobile: string) => {
-    setState((s) => ({ ...s, recipientMobile }));
+    setState((s) => ({ ...s, recipientMobile, recipientConfirmed: false }));
   }, []);
 
   const setRecipientEmail = useCallback((recipientEmail: string) => {
-    setState((s) => ({ ...s, recipientEmail }));
+    setState((s) => ({ ...s, recipientEmail, recipientConfirmed: false }));
+  }, []);
+
+  const setRecipientConfirmed = useCallback((recipientConfirmed: boolean) => {
+    setState((s) => ({ ...s, recipientConfirmed }));
   }, []);
 
   useEffect(() => {
@@ -669,6 +676,8 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       filledDraftReviewed: state.filledDraftReviewed,
       recipientMobile: state.recipientMobile,
       recipientEmail: state.recipientEmail,
+      recipientConfirmed: state.recipientConfirmed,
+      pilotRealSendEnabled: state.sendEligibility?.pilotEnabled,
       sendEligibility: state.sendEligibility,
       draftApproved: state.draftApproved,
       acknowledgedBlockers: state.acknowledgedBlockers,
@@ -773,7 +782,8 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         caseId: state.patient.caseId || state.encounter.id,
         patientName: state.patient.name,
         mobileNumber: normalizeMobile(state.recipientMobile) || "",
-        recipientEmail: state.recipientEmail.trim().toLowerCase() || "no-patient-email@unavailable.wathiqcare.local",
+        recipientEmail: state.recipientEmail.trim().toLowerCase() || "",
+        recipientConfirmed: state.recipientConfirmed,
         physicianName: physician.name,
         locale: state.patient.languagePreference === "en" ? "en" : "ar",
       });
@@ -926,6 +936,8 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       filledDraftReviewed: state.filledDraftReviewed,
       recipientMobile: state.recipientMobile,
       recipientEmail: state.recipientEmail,
+      recipientConfirmed: state.recipientConfirmed,
+      pilotRealSendEnabled: state.sendEligibility?.pilotEnabled,
       sendEligibility: state.sendEligibility,
       draftApproved: state.draftApproved,
       acknowledgedBlockers: state.acknowledgedBlockers,
@@ -1037,6 +1049,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     selectProcedure,
     setRecipientMobile,
     setRecipientEmail,
+    setRecipientConfirmed,
     resolveAssembly,
     setAnesthesia,
     setEducationIncluded,

@@ -8,7 +8,12 @@ import {
 import { getPrisma } from "@/lib/server/prisma";
 import { writeConsentAudit } from "@/lib/server/consent-library-service";
 import { ApiError } from "@/lib/server/http";
-import { isAllowlistedRecipient } from "@/lib/server/workspace-consent-helpers";
+import {
+  isAllowlistedRecipient,
+  isPilotRealSendAllowed,
+  normalizePhoneNumber,
+  normalizeRecipientEmail,
+} from "@/lib/server/workspace-consent-helpers";
 import { hashRecipient } from "@/lib/server/idempotency-core";
 import { resolveCanonicalCaseContact } from "@/lib/server/recipient-resolution-service";
 import { enforceWitnessPolicyAtSend } from "@/lib/server/witness-requirement-service";
@@ -16,6 +21,18 @@ import { verifyPublicAssetSource } from "@/lib/server/clinical-knowledge/service
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+function maskMobile(value: string): string {
+  return value.replace(/\d(?=\d{4})/g, "*");
+}
+
+function maskEmail(value: string): string {
+  return value.replace(/(.{2}).*?(@.*)/, "$1***$2");
+}
+
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(value);
+}
 
 function resolveApprovedPdfSourceUrl(value: unknown): string {
   if (typeof value === "string") return value.trim();
@@ -158,23 +175,61 @@ export async function POST(
     );
   }
 
+  // Resolve effective recipient.
+  // Pilot real send mode allows authorized users to supply a patient mobile/email
+  // in the UI, overriding missing/stale case metadata for that send only.
+  const userMobileRaw = typeof body.mobileNumber === "string" ? body.mobileNumber.trim() : "";
+  const userEmailRaw = typeof body.recipientEmail === "string" ? body.recipientEmail.trim() : "";
+  const recipientConfirmed = body.recipientConfirmed === true;
+
+  const userMobile = normalizePhoneNumber(userMobileRaw);
+  const userEmail = userEmailRaw ? normalizeRecipientEmail(userEmailRaw) : "";
+  const userEmailValid = userEmail ? isValidEmail(userEmail) : false;
+
   const canonicalContacts = await resolveCanonicalCaseContact({
     tenantId,
     caseId,
   });
-  if (!canonicalContacts?.mobile && !canonicalContacts?.email) {
-    return NextResponse.json(
-      { ok: false, error: "Patient contact details missing" },
-      { status: 422 },
-    );
-  }
-  const mobileNumber = canonicalContacts.mobile ?? "";
-  const recipientEmail = canonicalContacts.email ?? "";
 
-  if (!isAllowlistedRecipient(mobileNumber, recipientEmail)) {
+  let mobileNumber: string;
+  let recipientEmail: string;
+  let recipientSource: "pilot_user_entered" | "case_metadata";
+
+  const pilotRealSendAllowed = isPilotRealSendAllowed(
+    userMobile,
+    userEmail,
+    recipientConfirmed,
+    auth,
+  );
+
+  if (pilotRealSendAllowed && (userMobile || userEmailValid)) {
+    mobileNumber = userMobile;
+    recipientEmail = userEmailValid ? userEmail : "";
+    recipientSource = "pilot_user_entered";
+  } else {
+    if (!canonicalContacts?.mobile && !canonicalContacts?.email) {
+      return NextResponse.json(
+        { ok: false, error: "Patient contact details missing" },
+        { status: 422 },
+      );
+    }
+    mobileNumber = canonicalContacts.mobile ?? "";
+    recipientEmail = canonicalContacts.email ?? "";
+    recipientSource = "case_metadata";
+  }
+
+  const allowlisted = isAllowlistedRecipient(mobileNumber, recipientEmail);
+  if (!allowlisted && !pilotRealSendAllowed) {
     return NextResponse.json(
       { ok: false, error: "Recipient is not approved for pilot send. Contact the platform administrator." },
       { status: 403 },
+    );
+  }
+
+  if (!mobileNumber && !recipientEmail) {
+    return NextResponse.json(
+      { ok: false, error: "A valid mobile number or email address is required" },
+      { status: 422 },
     );
   }
 
@@ -221,12 +276,20 @@ export async function POST(
       idempotencyKey: serverKey,
     });
 
-    // Persist only non-sensitive workflow identifiers on the document.
+    // Persist only non-sensitive workflow identifiers and recipient evidence.
     const existingDoc = await prisma.consentDocument.findFirst({
       where: { id: documentId, tenantId },
       select: { metadata: true },
     });
     const existingMetadata = (existingDoc?.metadata ?? {}) as Record<string, unknown>;
+    const recipientEvidence = {
+      recipientMobileMasked: mobileNumber ? maskMobile(mobileNumber) : null,
+      recipientEmailMasked: recipientEmail ? maskEmail(recipientEmail) : null,
+      recipientSource,
+      recipientConfirmedByUserId: recipientSource === "pilot_user_entered" ? auth.sub : null,
+      recipientConfirmedAt: recipientSource === "pilot_user_entered" ? new Date().toISOString() : null,
+      pilotRealSend: recipientSource === "pilot_user_entered",
+    };
     await prisma.consentDocument.update({
       where: { id: documentId },
       data: {
@@ -237,6 +300,7 @@ export async function POST(
             sessionId: workflow.sessionId,
             dispatchStatuses: workflow.dispatchStatuses,
             queuedAt: new Date().toISOString(),
+            ...recipientEvidence,
           },
         },
       },
@@ -256,6 +320,8 @@ export async function POST(
         emailHash: recipientEmail ? hashRecipient(recipientEmail, { tenantId }) : null,
         dispatchStatuses: workflow.dispatchStatuses,
         locale,
+        recipientSource,
+        recipientConfirmed: recipientSource === "pilot_user_entered",
       },
       request,
     });

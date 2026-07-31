@@ -3,7 +3,15 @@ import { createConsentDocument } from "@/lib/server/consent-library-service";
 import type { AuthContext } from "@/lib/server/auth";
 import { resolveApprovedProcedureConsentLink } from "@/lib/server/content-mapping-service";
 import { resolveApprovedConsentSource } from "@/lib/server/approved-consent-source";
-import { ENABLE_IMC_PILOT_PATIENTS } from "@/lib/config/feature-flags";
+import {
+  ENABLE_IMC_PILOT_PATIENTS,
+  ENABLE_IMC_PILOT_REAL_SEND,
+} from "@/lib/config/feature-flags";
+
+function isProductionDeployment(): boolean {
+  const env = process.env.VERCEL_ENV?.trim() || process.env.NODE_ENV?.trim() || "";
+  return env === "production";
+}
 
 export function envBool(key: string): boolean {
   const raw = process.env[key]?.trim().toLowerCase();
@@ -93,6 +101,83 @@ export function evaluateAllowlistedRecipient(
 
 export function isAllowlistedRecipient(mobileNumber: string, recipientEmail: string): boolean {
   return evaluateAllowlistedRecipient(mobileNumber, recipientEmail).allowlisted;
+}
+
+export type PilotRealSendEvaluation = {
+  allowed: boolean;
+  reason: string;
+};
+
+/**
+ * Evaluate whether a real patient send is permitted in the active IMC pilot.
+ *
+ * Allowed only when:
+ * - the FF_IMC_PILOT_REAL_SEND flag is true,
+ * - the deployment is not Production,
+ * - the caller is an authenticated module user (auth present),
+ * - the recipient has been explicitly confirmed by the caller.
+ */
+export function evaluatePilotRealSendEligibility(
+  mobileNumber: string,
+  recipientEmail: string,
+  recipientConfirmed: boolean,
+  auth?: AuthContext | null,
+): PilotRealSendEvaluation {
+  if (!ENABLE_IMC_PILOT_REAL_SEND) {
+    return {
+      allowed: false,
+      reason: "IMC pilot real send is not enabled.",
+    };
+  }
+
+  if (isProductionDeployment()) {
+    return {
+      allowed: false,
+      reason: "Real pilot send is not permitted in Production.",
+    };
+  }
+
+  if (!auth || !auth.sub) {
+    return {
+      allowed: false,
+      reason: "Authenticated user is required for pilot real send.",
+    };
+  }
+
+  const normalizedMobile = normalizePhoneNumber(mobileNumber);
+  const normalizedEmail = normalizeRecipientEmail(recipientEmail);
+  if (!normalizedMobile && !normalizedEmail) {
+    return {
+      allowed: false,
+      reason: "A valid mobile number or email address is required.",
+    };
+  }
+
+  if (!recipientConfirmed) {
+    return {
+      allowed: false,
+      reason: "Recipient must be explicitly confirmed before real send.",
+    };
+  }
+
+  return {
+    allowed: true,
+    reason: "IMC pilot real send authorized for confirmed recipient.",
+  };
+}
+
+export function isPilotRealSendAllowed(
+  mobileNumber: string,
+  recipientEmail: string,
+  recipientConfirmed: boolean,
+  auth?: AuthContext | null,
+): boolean {
+  return evaluatePilotRealSendEligibility(
+    mobileNumber,
+    recipientEmail,
+    recipientConfirmed,
+    auth,
+  ).allowed;
 }
 
 export function extractContactDetails(metadata: unknown): {

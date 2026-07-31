@@ -1,7 +1,7 @@
 "use client";
 
-import { AlertTriangle, BadgeCheck, FileCheck2, Mail, Phone, Send, ShieldCheck } from "lucide-react";
-import { Button, Input } from "@/components/design-system";
+import { AlertTriangle, BadgeCheck, FileCheck2, Send, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/design-system";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { SecureSigningResult } from "../../types";
 import { isFilledDraftReviewable, type FilledDraftStatus } from "../../utils/pdfViewerMode";
@@ -22,8 +22,6 @@ interface SendToPatientPanelProps {
   supportsFilledDraftPreview?: boolean;
   filledDraftStatus?: FilledDraftStatus;
   draftPdfUrl?: string;
-  onMobileChange: (value: string) => void;
-  onEmailChange: (value: string) => void;
   onApproveDraft: () => void;
   onMarkFilledDraftReviewed?: () => void;
   onSend: () => void;
@@ -44,8 +42,6 @@ export function SendToPatientPanel({
   supportsFilledDraftPreview,
   filledDraftStatus,
   draftPdfUrl,
-  onMobileChange,
-  onEmailChange,
   onApproveDraft,
   onMarkFilledDraftReviewed,
   onSend,
@@ -63,25 +59,6 @@ export function SendToPatientPanel({
       />
 
       <div className="space-y-4 px-5 py-5">
-        <div className="grid gap-3">
-          <Input
-            type="tel"
-            value={mobile}
-            onChange={(event) => onMobileChange(event.target.value)}
-            placeholder={lang === "ar" ? "رقم الجوال" : "Patient mobile number"}
-            startIcon={<Phone className="size-4" />}
-            disabled={sendLoading}
-          />
-          <Input
-            type="email"
-            value={email}
-            onChange={(event) => onEmailChange(event.target.value)}
-            placeholder={lang === "ar" ? "البريد الإلكتروني للمريض" : "Patient email address"}
-            startIcon={<Mail className="size-4" />}
-            disabled={sendLoading}
-          />
-        </div>
-
         <div className="grid gap-2">
           <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
             <span className="text-slate-700">{lang === "ar" ? "تمت مراجعة المعاينة" : "Preview reviewed"}</span>

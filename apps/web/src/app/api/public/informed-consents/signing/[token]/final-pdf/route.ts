@@ -88,6 +88,94 @@ function asRecord(
   >;
 }
 
+function readString(
+  value: unknown,
+): string | undefined {
+  return typeof value === "string" && value.trim().length > 0
+    ? value.trim()
+    : undefined;
+}
+
+function readSignatureDataUrlFromMetadata(
+  metadata: unknown,
+): string | undefined {
+  const root =
+    asRecord(
+      metadata,
+    );
+
+  const signatureCapture =
+    asRecord(
+      root.signatureCapture,
+    );
+
+  const patientSignature =
+    asRecord(
+      root.patientSignature,
+    );
+
+  const signature =
+    asRecord(
+      root.signature,
+    );
+
+  const capture =
+    asRecord(
+      root.capture,
+    );
+
+  const candidates: unknown[] = [
+    signatureCapture.signatureImageDataUrl,
+    signatureCapture.signatureDataUrl,
+    signatureCapture.imageDataUrl,
+
+    patientSignature.signatureImageDataUrl,
+    patientSignature.signatureDataUrl,
+    patientSignature.imageDataUrl,
+
+    signature.signatureImageDataUrl,
+    signature.signatureDataUrl,
+    signature.imageDataUrl,
+
+    capture.signatureImageDataUrl,
+    capture.signatureDataUrl,
+    capture.imageDataUrl,
+
+    root.signatureImageDataUrl,
+    root.signatureDataUrl,
+    root.imageDataUrl,
+  ];
+
+  for (
+    const candidate of candidates
+  ) {
+    const dataUrl =
+      readString(
+        candidate,
+      );
+
+    if (
+      dataUrl?.startsWith(
+        "data:image/",
+      )
+    ) {
+      return dataUrl;
+    }
+  }
+
+  return undefined;
+}
+
+function hasObjectValue(
+  value: unknown,
+): boolean {
+  return Boolean(
+    value
+      && typeof value === "object"
+      && !Array.isArray(value),
+  );
+}
+
 async function resolvePatientSignatureForAcroForm(args: {
   documentId: string;
   tenantId: string;
@@ -99,37 +187,70 @@ async function resolvePatientSignatureForAcroForm(args: {
     }
   | undefined
 > {
-  const signatures = await getPrisma().consentDocumentSignature.findMany({
-    where: {
-      consentDocumentId: args.documentId,
-      tenantId: args.tenantId,
-      role: { in: ["PATIENT", "GUARDIAN"] },
-    },
-    select: {
-      signedAt: true,
-      signerName: true,
-      metadata: true,
-    },
-    orderBy: { signedAt: "desc" },
-  });
+  const signatures =
+    await getPrisma()
+      .consentDocumentSignature
+      .findMany({
+        where: {
+          consentDocumentId:
+            args.documentId,
 
-  for (const signature of signatures) {
-    if (!signature.signedAt) continue;
+          tenantId:
+            args.tenantId,
 
-    const metadata = asRecord(signature.metadata);
-    const capture = asRecord(metadata.signatureCapture);
+          role: {
+            in: [
+              "PATIENT",
+              "GUARDIAN",
+            ],
+          },
+        },
+
+        select: {
+          signedAt:
+            true,
+
+          signerName:
+            true,
+
+          metadata:
+            true,
+        },
+
+        orderBy: {
+          signedAt:
+            "desc",
+        },
+      });
+
+  for (
+    const signature of signatures
+  ) {
+    if (
+      !signature.signedAt
+    ) {
+      continue;
+    }
+
     const dataUrl =
-      typeof capture.signatureImageDataUrl === "string"
-        ? capture.signatureImageDataUrl
-        : typeof capture.signatureDataUrl === "string"
-          ? capture.signatureDataUrl
-          : undefined;
+      readSignatureDataUrlFromMetadata(
+        signature.metadata,
+      );
 
-    if (dataUrl) {
+    if (
+      dataUrl
+    ) {
       return {
         dataUrl,
-        signerName: typeof signature.signerName === "string" ? signature.signerName : "Patient",
-        signedAt: signature.signedAt,
+
+        signerName:
+          typeof signature.signerName === "string"
+            && signature.signerName.trim().length > 0
+            ? signature.signerName.trim()
+            : "Patient",
+
+        signedAt:
+          signature.signedAt,
       };
     }
   }
@@ -172,9 +293,12 @@ function resolveApprovedConsentFormId(
 /**
  * Public final-PDF download for a patient-facing signing session.
  *
- * The adenotonsillectomy pilot uses one canonical signed clinical PDF for
- * patient, medical-record and legal-archive copies. Only filenames and
- * disposition differ; the bytes and SHA-256 evidence hash remain identical.
+ * AcroForm-backed governed patient copies must fail closed if:
+ * - the governed patient copy is not bound to the signing session; or
+ * - the patient / guardian signature image cannot be resolved.
+ *
+ * Legacy approved-overlay and non-AcroForm flows remain delegated to their
+ * existing renderers.
  */
 export async function GET(
   request: NextRequest,
@@ -238,19 +362,40 @@ export async function GET(
           },
         });
 
-    const session = await getPrisma().signingSession.findFirst({
-      where: {
-        id: context.sessionId,
-        tenantId: context.tenantId,
-        documentId: context.documentId,
-      },
-      select: {
-        metadata: true,
-      },
-    });
+    const session =
+      await getPrisma()
+        .signingSession
+        .findFirst({
+          where: {
+            id:
+              context.sessionId,
 
-    const sessionMetadata = asRecord(session?.metadata);
-    const governedPatientCopy = asRecord(sessionMetadata.governedPatientCopy);
+            tenantId:
+              context.tenantId,
+
+            documentId:
+              context.documentId,
+          },
+
+          select: {
+            metadata:
+              true,
+          },
+        });
+
+    const sessionMetadata =
+      asRecord(
+        session?.metadata,
+      );
+
+    const governedPatientCopyRaw =
+      sessionMetadata
+        .governedPatientCopy;
+
+    const hasGovernedPatientCopy =
+      hasObjectValue(
+        governedPatientCopyRaw,
+      );
 
     const approvedConsentFormId =
       resolveApprovedConsentFormId(
@@ -258,56 +403,112 @@ export async function GET(
           ?.metadata,
       );
 
-    const acroFormDocument: ConsentDocumentForPatientCopy | null = consentDocument
-      ? {
-          id: context.documentId,
-          patientName: "",
-          metadata: consentDocument.metadata,
-        }
-      : null;
+    const acroFormDocument:
+      | ConsentDocumentForPatientCopy
+      | null =
+      consentDocument
+        ? {
+            id:
+              context.documentId,
 
-    const isAcroFormBacked = Boolean(
-      acroFormDocument && isAcroFormBackedPatientCopy(acroFormDocument),
-    );
+            patientName:
+              "",
 
-    if (isAcroFormBacked && !governedPatientCopy) {
+            metadata:
+              consentDocument.metadata,
+          }
+        : null;
+
+    const isAcroFormBacked =
+      Boolean(
+        acroFormDocument
+          && isAcroFormBackedPatientCopy(
+            acroFormDocument,
+          ),
+      );
+
+    if (
+      isAcroFormBacked
+      && !hasGovernedPatientCopy
+    ) {
       throw new ApiError(
         422,
         "Governed patient copy is not bound to this signing session.",
       );
     }
 
-    if (governedPatientCopy && acroFormDocument) {
-      const patientSignature = await resolvePatientSignatureForAcroForm({
-        documentId: context.documentId,
-        tenantId: context.tenantId,
-      });
+    if (
+      isAcroFormBacked
+      && acroFormDocument
+    ) {
+      const patientSignature =
+        await resolvePatientSignatureForAcroForm({
+          documentId:
+            context.documentId,
 
-      const rendered = await generateGovernedPatientCopy({
-        document: acroFormDocument,
-        patientSignature,
-      });
+          tenantId:
+            context.tenantId,
+        });
 
-      return new Response(rendered.bytes as unknown as BodyInit, {
-        status: 200,
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `${disposition}; filename="CONSENT-${context.documentId}-${copyType}-${lang}.pdf"`,
-          "Cache-Control": "no-store",
-          "X-Wathiq-Pdf-Engine": "acroform-field-addressed",
-          "X-Wathiq-Pdf-Copy-Type": copyType,
-          "X-Wathiq-Audit-Checksum": rendered.pdfHash,
-          "X-Wathiq-Pdf-Checksum": rendered.pdfHash,
-          "X-Wathiq-Draft-Fingerprint": rendered.fingerprint,
+      if (
+        !patientSignature
+      ) {
+        throw new ApiError(
+          409,
+          "Patient signature has not been captured for this AcroForm-backed final PDF.",
+        );
+      }
+
+      const rendered =
+        await generateGovernedPatientCopy({
+          document:
+            acroFormDocument,
+
+          patientSignature,
+        });
+
+      return new Response(
+        rendered.bytes as unknown as BodyInit,
+        {
+          status:
+            200,
+
+          headers: {
+            "Content-Type":
+              "application/pdf",
+
+            "Content-Disposition":
+              `${disposition}; filename="CONSENT-${context.documentId}-${copyType}-${lang}.pdf"`,
+
+            "Cache-Control":
+              "no-store",
+
+            "X-Wathiq-Pdf-Engine":
+              "acroform-field-addressed",
+
+            "X-Wathiq-Pdf-Copy-Type":
+              copyType,
+
+            "X-Wathiq-Audit-Checksum":
+              rendered.pdfHash,
+
+            "X-Wathiq-Pdf-Checksum":
+              rendered.pdfHash,
+
+            "X-Wathiq-Draft-Fingerprint":
+              rendered.fingerprint,
+          },
         },
-      });
+      );
     }
 
     const usesApprovedImcOverlay =
       approvedConsentFormId ===
       "imc-approved-adenotonsillectomy";
 
-    if (usesApprovedImcOverlay) {
+    if (
+      usesApprovedImcOverlay
+    ) {
       const {
         renderImcApprovedConsentPdf,
       } = await import(

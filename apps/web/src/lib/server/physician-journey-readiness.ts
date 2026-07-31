@@ -123,6 +123,8 @@ export function computePhysicianJourneyReadiness(args: {
   filledDraftReviewed?: boolean;
   recipientMobile: string;
   recipientEmail: string;
+  recipientConfirmed: boolean;
+  pilotRealSendEnabled?: boolean;
   sendEligibility?: { allowlisted: boolean; reason?: string };
   draftApproved: boolean;
   acknowledgedBlockers: Set<string>;
@@ -142,6 +144,8 @@ export function computePhysicianJourneyReadiness(args: {
     filledDraftReviewed,
     recipientMobile,
     recipientEmail,
+    recipientConfirmed,
+    pilotRealSendEnabled,
     sendEligibility,
     draftApproved,
     acknowledgedBlockers,
@@ -564,6 +568,20 @@ export function computePhysicianJourneyReadiness(args: {
       sendEligibility?.allowlisted ? undefined : (sendEligibility?.reason || "Recipient is not approved for pilot send."),
     ),
   );
+
+  // Pilot real-send recipient confirmation
+  if (pilotRealSendEnabled) {
+    items.push(
+      item(
+        "recipient_confirmed",
+        "Recipient confirmed",
+        "تم تأكيد المستلم",
+        recipientConfirmed ? "COMPLETE" : "REQUIRED",
+        "contact",
+        "Confirm the entered mobile/email belongs to the intended patient or authorized recipient.",
+      ),
+    );
+  }
 
   // Assembly blockers
   const assemblyBlockers = assembly?.blockers ?? [];

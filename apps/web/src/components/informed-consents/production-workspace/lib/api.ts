@@ -608,6 +608,7 @@ export async function sendSecureSigningLinkForDocument(args: {
   patientName: string;
   mobileNumber: string;
   recipientEmail: string;
+  recipientConfirmed?: boolean;
   physicianName?: string;
   locale?: "ar" | "en";
 }): Promise<SecureSigningResult> {
