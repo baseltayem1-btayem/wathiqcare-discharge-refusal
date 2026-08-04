@@ -268,7 +268,7 @@ export async function POST(
       mobileNumber,
       recipientEmail,
       locale: locale as "ar" | "en",
-      baseUrl: request.nextUrl.origin,
+      baseUrl: undefined,
       approvedConsentFormKey,
       approvedTemplateVersionId: document.templateVersionId || undefined,
       immutablePdfHash: approvedPdfHash,
