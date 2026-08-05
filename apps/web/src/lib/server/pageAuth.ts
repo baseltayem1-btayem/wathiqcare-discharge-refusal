@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { verifyAndDecodeJwt } from "@/lib/server/jwt";
 import { getSessionCookieName } from "@/lib/server/sessionCookie";
 import { getPrisma } from "@/lib/server/prisma";
@@ -214,6 +215,10 @@ export async function requirePageAuthClaimsOrRedirect(nextPath?: string): Promis
     recordRuntimeMetric("session_validation_duration_ms", Date.now() - startedAt);
     return claims;
   } catch (error) {
+    if (isRedirectError(error)) {
+      throw error;
+    }
+
     logRuntimeIncident({
       module: "session",
       type: "AUTH_FAILURE",
