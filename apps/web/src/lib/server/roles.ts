@@ -79,6 +79,7 @@ const USER_ROLE_ALIASES: Record<string, CanonicalUserRole> = {
     legal_admin: "legal_admin",
     legal: "legal_admin",
     legal_officer: "legal_admin",
+    manager: "legal_admin",
     it_admin: "it_admin",
     medical_director: "medical_director",
     bed_manager: "bed_manager",
