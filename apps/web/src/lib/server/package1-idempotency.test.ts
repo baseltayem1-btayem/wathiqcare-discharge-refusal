@@ -2147,7 +2147,7 @@ test("migration creates real unique signing idempotency index", () => {
     "must create versioned unique idempotency index",
   );
   assert.ok(
-    content.includes("uq_signing_sessions_tenant_idempotency_key_v1\n  ON signing_sessions (tenant_id, idempotency_key)\n  WHERE idempotency_key IS NOT NULL"),
+    /uq_signing_sessions_tenant_idempotency_key_v1\r?\n  ON signing_sessions \(tenant_id, idempotency_key\)\r?\n  WHERE idempotency_key IS NOT NULL/.test(content),
     "unique idempotency index must be partial on non-null keys",
   );
 });

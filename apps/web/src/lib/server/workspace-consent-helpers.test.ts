@@ -137,9 +137,8 @@ test("evaluateAllowlistedRecipient reports missing configuration precisely", () 
   );
 });
 
-test("hardcoded preview pilot patients are not used as an allowlist bypass", () => {
-  // These values match the static imcPilotPatients list and preview pilot patients are enabled,
-  // but no env allowlist is configured, so the result must be configuration-missing.
+test("preview deployment does not enable patient send when the pilot flag defaults off", () => {
+  // Preview must remain fail-closed unless patient-facing sending is explicitly enabled.
   withEnv(
     {
       FF_PATIENT_FACING_PILOT_SEND: undefined,
@@ -149,10 +148,10 @@ test("hardcoded preview pilot patients are not used as an allowlist bypass", () 
     },
     () => {
       const result = evaluateAllowlistedRecipient("0542690673", "asma.alzahrani.pilot@wathiqcare.test");
-      assert.equal(result.pilotEnabled, true);
+      assert.equal(result.pilotEnabled, false);
       assert.equal(result.allowlisted, false);
-      assert.equal(result.configMissing, true);
-      assert.ok(result.reason.includes("Pilot allowlist configuration is missing for this environment."));
+      assert.equal(result.configMissing, false);
+      assert.equal(result.reason, "Patient-facing pilot send is disabled.");
     },
   );
 });
