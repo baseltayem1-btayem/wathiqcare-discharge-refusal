@@ -299,6 +299,8 @@ export interface ClinicalKnowledgeAssembly {
   blockers: ConsentBlocker[];
   requiredParticipants: ("witness" | "interpreter" | "guardian")[];
   packageSnapshot?: Record<string, unknown> | null;
+  approvedPdf?: Record<string, unknown> | null;
+  dispatchEligibility?: Record<string, unknown> | null;
   assembledAt: string;
 }
 

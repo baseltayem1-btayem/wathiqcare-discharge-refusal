@@ -2,23 +2,29 @@ import * as React from "react";
 import { cn } from "./utils";
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "default" | "outline" | "ghost" | "destructive" | "success";
+  variant?: "default" | "brand" | "outline" | "ghost" | "destructive" | "success";
   size?: "default" | "sm" | "lg" | "icon";
+  uppercase?: boolean;
+  fullWidth?: boolean;
 };
 
-export function Button({ 
+export function Button({
   className, 
-  variant = "default", 
-  size = "default", 
+  variant = "default",
+  size = "default",
+  uppercase = true,
+  fullWidth = false,
   ...props 
 }: ButtonProps) {
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center gap-1.5 border text-[12px] font-bold uppercase tracking-[0.03em] transition-colors duration-150",
+        "inline-flex items-center justify-center gap-1.5 border text-[12px] font-bold tracking-[0.03em] transition-colors duration-150",
+        uppercase && "uppercase",
+        fullWidth && "w-full",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/20",
         "disabled:pointer-events-none disabled:opacity-50",
-        variant === "default" && "border-[var(--primary)] bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] hover:border-[var(--primary-hover)]",
+        (variant === "default" || variant === "brand") && "border-[var(--primary)] bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] hover:border-[var(--primary-hover)]",
         variant === "outline" && "border-[var(--border-strong)] bg-white text-slate-800 hover:bg-[var(--surface-muted)]",
         variant === "ghost" && "border-transparent bg-transparent text-slate-700 hover:bg-[var(--surface-muted)] hover:text-slate-900",
         variant === "destructive" && "border-[var(--state-error)] bg-[var(--state-error)] text-white hover:brightness-95",

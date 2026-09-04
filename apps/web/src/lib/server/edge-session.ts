@@ -46,7 +46,7 @@ export async function verifyEdgeSession(token: string | undefined): Promise<Edge
     const valid = await crypto.subtle.verify(
       "HMAC",
       key,
-      decodeBase64Url(encodedSignature),
+      decodeBase64Url(encodedSignature).buffer as ArrayBuffer,
       new TextEncoder().encode(`${encodedHeader}.${encodedPayload}`),
     );
     if (!valid) return null;

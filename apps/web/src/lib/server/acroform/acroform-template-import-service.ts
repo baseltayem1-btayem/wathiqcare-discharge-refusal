@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
-import { PDFDict, PDFDocument, PDFName, PDFNumber, PDFString, PDFHexString } from "pdf-lib";
+import { PDFArray, PDFDict, PDFDocument, PDFName, PDFNumber, PDFString, PDFHexString, PDFRef } from "pdf-lib";
+import type { PDFContext } from "pdf-lib";
 import type {
   AcroFormFieldRecord,
   AcroFormImportResult,
@@ -76,16 +77,16 @@ function pdfNameKey(keyObj: PDFName): string {
   return str.startsWith("/") ? str.slice(1) : str;
 }
 
-function resolveDict(value: unknown, context?: { lookup(ref: { objectNumber: number; generationNumber: number }): unknown }): PDFDict | null {
+function resolveDict(value: unknown, context?: PDFContext): PDFDict | null {
   if (value instanceof PDFDict) return value;
   if (value && typeof value === "object" && "objectNumber" in value && context) {
-    const resolved = context.lookup(value as { objectNumber: number; generationNumber: number });
+    const resolved = context.lookup(value as PDFRef);
     return resolved instanceof PDFDict ? resolved : null;
   }
   return null;
 }
 
-function collectActionTypes(dict: PDFDict | unknown, found: Set<string>, context?: { lookup(ref: { objectNumber: number; generationNumber: number }): unknown }): void {
+function collectActionTypes(dict: PDFDict | unknown, found: Set<string>, context?: PDFContext): void {
   if (!(dict instanceof PDFDict)) return;
   for (const [keyObj, value] of dict.entries()) {
     const key = pdfNameKey(keyObj);
@@ -99,7 +100,7 @@ function collectActionTypes(dict: PDFDict | unknown, found: Set<string>, context
   }
 }
 
-function hasJavaScriptAction(dict: PDFDict | unknown, context?: { lookup(ref: { objectNumber: number; generationNumber: number }): unknown }): boolean {
+function hasJavaScriptAction(dict: PDFDict | unknown, context?: PDFContext): boolean {
   if (!(dict instanceof PDFDict)) return false;
   for (const [keyObj, value] of dict.entries()) {
     const key = pdfNameKey(keyObj);
@@ -123,7 +124,7 @@ function getFullFieldName(widgetOrField: PDFDict): string {
     const t = current.lookup(PDFName.of("T"));
     const decoded = decodePdfString(t);
     if (decoded) parts.unshift(decoded);
-    const parent = current.lookup(PDFName.of("Parent"));
+    const parent: unknown = current.lookup(PDFName.of("Parent"));
     current = parent instanceof PDFDict ? parent : null;
   }
   return parts.join(".");
@@ -134,7 +135,7 @@ function getFieldFlags(widgetOrField: PDFDict): number {
   while (current) {
     const ff = getNumber(current.lookup(PDFName.of("Ff")));
     if (ff !== null) return ff;
-    const parent = current.lookup(PDFName.of("Parent"));
+    const parent: unknown = current.lookup(PDFName.of("Parent"));
     current = parent instanceof PDFDict ? parent : null;
   }
   return 0;
@@ -150,7 +151,7 @@ function getFieldType(widgetOrField: PDFDict): string | null {
   while (current) {
     const ft = decodePdfNameRaw(current.lookup(PDFName.of("FT")));
     if (ft) return ft;
-    const parent = current.lookup(PDFName.of("Parent"));
+    const parent: unknown = current.lookup(PDFName.of("Parent"));
     current = parent instanceof PDFDict ? parent : null;
   }
   return null;
@@ -161,7 +162,7 @@ function getAlternateName(widgetOrField: PDFDict): string | null {
   while (current) {
     const tu = decodePdfString(current.lookup(PDFName.of("TU")));
     if (tu) return tu;
-    const parent = current.lookup(PDFName.of("Parent"));
+    const parent: unknown = current.lookup(PDFName.of("Parent"));
     current = parent instanceof PDFDict ? parent : null;
   }
   return null;
@@ -179,7 +180,7 @@ function getAppearanceStates(widgetOrField: PDFDict): string[] | null {
   return states.length > 0 ? states : null;
 }
 
-function getFieldValue(widgetOrField: PDFDict, context?: { lookup(ref: { objectNumber: number; generationNumber: number }): unknown }): string | null {
+function getFieldValue(widgetOrField: PDFDict, context?: PDFContext): string | null {
   let current: PDFDict | null = widgetOrField;
   while (current) {
     const v = current.lookup(PDFName.of("V"));
@@ -198,7 +199,7 @@ function hasNonEmptyValue(fieldType: string | null, value: string | null): boole
   return value.trim().length > 0;
 }
 
-function detectDocumentLevelJavaScript(catalog: PDFDict, context: { lookup(ref: { objectNumber: number; generationNumber: number }): unknown }): boolean {
+function detectDocumentLevelJavaScript(catalog: PDFDict, context: PDFContext): boolean {
   // Check /Names > JavaScript
   const names = catalog.lookup(PDFName.of("Names"));
   if (names instanceof PDFDict) {
@@ -237,7 +238,7 @@ function detectAttachments(catalog: PDFDict): boolean {
 function detectSignedValues(
   fields: AcroFormFieldRecord[],
   widgets: Array<{ pageIndex: number; widget: PDFDict }>,
-  context?: { lookup(ref: { objectNumber: number; generationNumber: number }): unknown },
+  context?: PDFContext,
 ): boolean {
   const signatureWidgets = widgets.filter((w) => getFieldType(w.widget) === "/Sig");
   for (const { widget } of signatureWidgets) {
@@ -279,10 +280,7 @@ function collectWidgetAnnotations(doc: PDFDocument): Array<{ pageIndex: number; 
     const annotsRef = page.node.lookup(PDFName.of("Annots"));
     if (!annotsRef) continue;
 
-    const annotsArray =
-      typeof (annotsRef as { asArray?: () => unknown[] }).asArray === "function"
-        ? (annotsRef as { asArray(): unknown[] }).asArray()
-        : null;
+    const annotsArray = annotsRef instanceof PDFArray ? annotsRef.asArray() : null;
 
     if (!Array.isArray(annotsArray)) continue;
 
@@ -290,8 +288,8 @@ function collectWidgetAnnotations(doc: PDFDocument): Array<{ pageIndex: number; 
       let annot: PDFDict | null = null;
       if (annotRef instanceof PDFDict) {
         annot = annotRef;
-      } else if (annotRef && typeof annotRef === "object" && "objectNumber" in annotRef) {
-        const resolved = page.doc.context.lookup(annotRef as { objectNumber: number; generationNumber: number });
+      } else if (annotRef instanceof PDFRef) {
+        const resolved = page.doc.context.lookup(annotRef);
         if (resolved instanceof PDFDict) annot = resolved;
       }
       if (!annot) continue;
@@ -536,7 +534,7 @@ export async function importAcroFormTemplate(args: {
 
     const appearanceStates = getAppearanceStates(representative);
     const checkboxOnState =
-      fieldType === "CHECKBOX" && appearanceStates
+      fieldType === "/Btn" && appearanceStates
         ? appearanceStates.find((s) => s !== "Off" && s !== "/Off") ?? "Yes"
         : null;
 

@@ -108,7 +108,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     where: {
       id: normalizedFormId,
       tenantId,
-      status: { in: ["APPROVED", "ACTIVE"] },
+      status: "PUBLISHED",
     },
     select: {
       id: true,

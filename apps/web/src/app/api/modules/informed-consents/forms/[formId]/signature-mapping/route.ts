@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeConsentAudit } from "@/lib/server/consent-library-service";
+import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -252,8 +253,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
       coordinateMode: "NORMALIZED",
       required: body.required === false ? false : true,
       isActive: true,
-      appearance: Object.keys(appearance).length ? appearance : undefined,
-      metadata: Object.keys(metadata).length ? metadata : undefined,
+      appearance: Object.keys(appearance).length ? appearance as Prisma.InputJsonValue : undefined,
+      metadata: Object.keys(metadata).length ? metadata as Prisma.InputJsonValue : undefined,
       createdByUserId: auth.sub || null,
     },
   });

@@ -855,6 +855,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         previewReviewed: false,
         recipientMobile: "",
         recipientEmail: "",
+        recipientConfirmed: false,
         doctorCompletionValues: {},
         physicianSignatureDataUrl: "",
         filledDraftPdfUrl: undefined,

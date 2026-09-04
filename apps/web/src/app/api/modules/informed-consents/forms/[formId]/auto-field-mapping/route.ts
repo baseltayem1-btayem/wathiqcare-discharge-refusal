@@ -121,7 +121,6 @@ async function extractPdfTextItems(pdfBytes: Uint8Array): Promise<DetectedTextIt
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const loadingTask = pdfjs.getDocument({
     data: pdfBytes,
-    isEvalSupported: false,
   });
 
   const pdf = await loadingTask.promise;
@@ -414,8 +413,7 @@ function buildRecommendedMapping(formId: string, detectedFields: DetectedField[]
 }
 
 async function handleAutoFieldMappingPost(request: NextRequest, context: RouteContext) {
-  const auth = await requireModuleOperationalAccess(request, "informed-consents");
-  if (!auth.ok) return auth.response;
+  await requireModuleOperationalAccess(request, "informed-consents");
 
   const params = await context.params;
   const formId = params.formId;

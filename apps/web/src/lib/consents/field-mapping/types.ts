@@ -31,9 +31,11 @@ export type ConsentFieldCoordinates = {
   page: number;
   x: number;
   y: number;
-  width: number;
-  height: number;
-  coordinateMode: "NORMALIZED";
+  width?: number;
+  height?: number;
+  size?: number;
+  maxWidth?: number;
+  coordinateMode?: "NORMALIZED";
 };
 
 export type ConsentFieldDefinition = {
@@ -66,5 +68,6 @@ export type ConsentFieldMapping = {
   requiresDoctorCompletion: boolean;
   supportsAnesthesiaWorkflow: boolean;
   blocksPatientDispatchUntilVerified: boolean;
+  coordinateMode?: "NORMALIZED";
   fields: ConsentFieldDefinition[];
 };

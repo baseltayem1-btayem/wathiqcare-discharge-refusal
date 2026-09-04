@@ -1,7 +1,10 @@
 import * as React from "react";
 import { cn } from "./utils";
 
-export function Card({ className, ...props }: React.ComponentProps<"div">) {
+type CardProps = React.ComponentProps<"div"> & { variant?: "default" };
+
+export function Card({ className, variant: _variant, ...props }: CardProps) {
+  void _variant;
   return (
     <div
       className={cn(

@@ -123,7 +123,7 @@ export function computePhysicianJourneyReadiness(args: {
   filledDraftReviewed?: boolean;
   recipientMobile: string;
   recipientEmail: string;
-  recipientConfirmed: boolean;
+  recipientConfirmed?: boolean;
   pilotRealSendEnabled?: boolean;
   sendEligibility?: { allowlisted: boolean; reason?: string };
   draftApproved: boolean;
@@ -144,7 +144,7 @@ export function computePhysicianJourneyReadiness(args: {
     filledDraftReviewed,
     recipientMobile,
     recipientEmail,
-    recipientConfirmed,
+    recipientConfirmed = false,
     pilotRealSendEnabled,
     sendEligibility,
     draftApproved,
