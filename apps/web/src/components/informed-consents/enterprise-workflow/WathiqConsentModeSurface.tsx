@@ -179,7 +179,7 @@ function Header({ mode, setMode }: { mode: Mode; setMode: (mode: Mode) => void }
           <p>
             {mode === "patient"
               ? "Please read each section carefully and complete your consent."
-              : "Create, review, and manage legally compliant informed consents"}
+              : "Create, review, and manage governed informed-consent records"}
           </p>
         </div>
       </div>
@@ -538,7 +538,7 @@ function BottomBadges() {
     ["Audit Trail Active", "All actions are being recorded", ShieldCheck],
     ["Patient Copy with QR", "Download or scan to view", QrCode],
     ["Arabic / English Copy", "Bilingual consent provided", Globe2],
-    ["Secure Access", "Encrypted & HIPAA Compliant", Lock],
+    ["Secure Access", "Encrypted workflow with controlled access", Lock],
   ];
 
   return (

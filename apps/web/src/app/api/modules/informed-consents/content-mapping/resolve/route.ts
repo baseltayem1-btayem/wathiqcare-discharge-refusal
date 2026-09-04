@@ -1,6 +1,9 @@
 ﻿import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { requireModuleOperationalAccess } from "@/lib/server/auth";
+import { handleApiError } from "@/lib/server/http";
+
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -8,20 +11,45 @@ function normalize(value: string | null): string {
   return (value || "").trim().toLowerCase();
 }
 
-async function readForms(request: NextRequest) {
+type ConsentFormSummary = {
+  id: string;
+  titleEn: string;
+  titleAr: string;
+  procedure: string;
+  specialty: string;
+  category: string;
+  riskLevel: string;
+  approvalStatus: string;
+  version: string;
+  pdfUrl?: string;
+  requiresWitness?: boolean;
+  requiresInterpreter?: boolean;
+  education?: unknown;
+  illustrations?: unknown[];
+  risks?: unknown[];
+  alternatives?: unknown[];
+};
+
+async function readForms(request: NextRequest): Promise<ConsentFormSummary[]> {
   const origin = new URL(request.url).origin;
   const response = await fetch(`${origin}/api/modules/informed-consents/forms`, {
-    headers: { Accept: "application/json" },
+    headers: { Accept: "application/json", Cookie: request.headers.get("cookie") || "" },
     cache: "no-store",
   });
 
   if (!response.ok) return [];
 
   const payload = await response.json();
-  return Array.isArray(payload?.templates) ? payload.templates : [];
+  return Array.isArray(payload?.templates) ? (payload.templates as ConsentFormSummary[]) : [];
 }
 
 export async function GET(request: NextRequest) {
+  try {
+    await requireModuleOperationalAccess(request, "informed-consents");
+  } catch (error) {
+    return handleApiError(error);
+  }
+
   const { searchParams } = new URL(request.url);
 
   const procedure =
@@ -46,10 +74,10 @@ export async function GET(request: NextRequest) {
     const specialtyKey = normalize(specialty);
 
     const selected =
-      forms.find((form: any) => templateKey && normalize(form.id) === templateKey) ||
-      forms.find((form: any) => procedureKey && normalize(form.procedure).includes(procedureKey)) ||
-      forms.find((form: any) => procedureKey && normalize(form.titleEn).includes(procedureKey)) ||
-      forms.find((form: any) => specialtyKey && normalize(form.specialty) === specialtyKey) ||
+      forms.find((form) => templateKey && normalize(form.id) === templateKey) ||
+      forms.find((form) => procedureKey && normalize(form.procedure).includes(procedureKey)) ||
+      forms.find((form) => procedureKey && normalize(form.titleEn).includes(procedureKey)) ||
+      forms.find((form) => specialtyKey && normalize(form.specialty) === specialtyKey) ||
       forms[0] ||
       null;
 
@@ -130,19 +158,13 @@ export async function GET(request: NextRequest) {
       { status: 200 },
     );
   } catch (error) {
-    console.error("[informed-consents/content-mapping/resolve] Safe fallback failed", error);
+    console.error("[informed-consents/content-mapping/resolve] Mapping failed", error);
     return NextResponse.json(
       {
-        ok: true,
-        source: "safe_empty_fallback",
-        mapping: null,
-        package: null,
-        items: [],
-        templates: [],
-        total: 0,
-        generatedAt: new Date().toISOString(),
+        success: false,
+        error: "Consent mapping is temporarily unavailable",
       },
-      { status: 200 },
+      { status: 503 },
     );
   }
 }

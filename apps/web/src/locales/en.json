@@ -1258,10 +1258,10 @@
     "errorMessage": "Unable to complete the request at this time.",
     "required": "Required",
     "features": {
-      "pdpl": "PDPL Compliant",
-      "cbahi": "CBAHI Ready",
-      "uptime": "99.9% Uptime",
-      "support": "24/7 Support"
+      "pdpl": "PDPL-aligned design",
+      "cbahi": "Designed for healthcare governance",
+      "uptime": "Controlled pilot environment",
+      "support": "Pilot support channel"
     }
   },
   "contactPage": {

@@ -1,5 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 
+import { verifyEdgeSession } from "@/lib/server/edge-session";
+
 const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME || "wathiqcare_access_token";
 const LANGUAGE_COOKIE_NAME = "wathiqcare_lang";
 const SUPPORTED_LOCALES = ["ar", "en"] as const;
@@ -97,30 +99,6 @@ function buildLocalizedPath(path: string, locale: Locale | null): string {
   return `/${locale}${path}`;
 }
 
-type DecodedSessionClaims = {
-  user_type?: string;
-};
-
-function decodeSessionClaims(token: string | undefined): DecodedSessionClaims | null {
-  if (!token) {
-    return null;
-  }
-
-  const segments = token.split(".");
-  if (segments.length < 2) {
-    return null;
-  }
-
-  try {
-    const base64 = segments[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-    const json = atob(padded);
-    return JSON.parse(json) as DecodedSessionClaims;
-  } catch {
-    return null;
-  }
-}
-
 function detectLocale(request: NextRequest): Locale {
   const cookie = request.cookies.get(LANGUAGE_COOKIE_NAME)?.value;
   if (cookie === "ar" || cookie === "en") {
@@ -135,7 +113,7 @@ function detectLocale(request: NextRequest): Locale {
   return DEFAULT_LOCALE;
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (BLOCKED_PUBLIC_PATHS.test(pathname)) {
@@ -170,7 +148,7 @@ export function proxy(request: NextRequest) {
   const isProtectedPath = EDGE_PROTECTED_PREFIXES.some(
     (prefix) => pathWithoutLocale === prefix || pathWithoutLocale.startsWith(`${prefix}/`),
   );
-  const sessionClaims = decodeSessionClaims(token);
+  const sessionClaims = await verifyEdgeSession(token);
   const userType = sessionClaims?.user_type;
   const isPlatformOnlyPath = PLATFORM_ONLY_PREFIXES.some(
     (prefix) => pathWithoutLocale === prefix || pathWithoutLocale.startsWith(`${prefix}/`),
@@ -180,7 +158,7 @@ export function proxy(request: NextRequest) {
   );
   const isLoginPath = pathWithoutLocale === "/login";
 
-  if (!token) {
+  if (!sessionClaims) {
     if (isProtectedPath) {
       const loginUrl = request.nextUrl.clone();
       const nextPath = `${pathname}${request.nextUrl.search}`;
@@ -190,7 +168,9 @@ export function proxy(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    return NextResponse.next();
+    const response = NextResponse.next();
+    if (token) response.cookies.delete(AUTH_COOKIE_NAME);
+    return response;
   }
 
   if (userType === "platform_admin") {

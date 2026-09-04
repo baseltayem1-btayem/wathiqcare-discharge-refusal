@@ -1,13 +1,16 @@
 ﻿import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+import { requireModuleOperationalAccess } from "@/lib/server/auth";
+import { handleApiError } from "@/lib/server/http";
+
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 async function readFormsLibrary(request: NextRequest) {
   const origin = new URL(request.url).origin;
   const response = await fetch(`${origin}/api/modules/informed-consents/forms`, {
-    headers: { Accept: "application/json" },
+    headers: { Accept: "application/json", Cookie: request.headers.get("cookie") || "" },
     cache: "no-store",
   });
 
@@ -38,21 +41,10 @@ async function readFormsLibrary(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    await requireModuleOperationalAccess(request, "informed-consents");
     const payload = await readFormsLibrary(request);
     return NextResponse.json(payload, { status: 200 });
   } catch (error) {
-    console.error("[informed-consents/imc-library] Fallback failed", error);
-    return NextResponse.json(
-      {
-        ok: true,
-        items: [],
-        templates: [],
-        total: 0,
-        featureFlagEnabled: true,
-        source: "safe_empty_fallback",
-        generatedAt: new Date().toISOString(),
-      },
-      { status: 200 },
-    );
+    return handleApiError(error);
   }
 }

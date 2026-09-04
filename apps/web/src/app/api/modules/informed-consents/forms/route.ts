@@ -1,6 +1,9 @@
 ﻿import { NextResponse } from "next/server";
 import { IMC_APPROVED_CONSENT_FORMS_MANIFEST } from "@/lib/server/imc-approved-consent-forms.manifest";
 
+import type { NextRequest } from "next/server";
+import { requireModuleOperationalAccess } from "@/lib/server/auth";
+
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -46,7 +49,8 @@ function scoreTemplate(
   return score;
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  await requireModuleOperationalAccess(request, "informed-consents");
   const { searchParams } = new URL(request.url);
 
   const q = searchParams.get("q") || "";

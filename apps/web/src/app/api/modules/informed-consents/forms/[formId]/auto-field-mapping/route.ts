@@ -121,7 +121,6 @@ async function extractPdfTextItems(pdfBytes: Uint8Array): Promise<DetectedTextIt
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const loadingTask = pdfjs.getDocument({
     data: pdfBytes,
-    disableWorker: true,
     isEvalSupported: false,
   });
 

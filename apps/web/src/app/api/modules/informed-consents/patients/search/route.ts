@@ -1,6 +1,7 @@
 ﻿import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
+import { handleApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { ENABLE_IMC_PILOT_PATIENTS } from "@/lib/config/feature-flags";
 import { imcPilotPatients } from "@/components/informed-consents/production-workspace/lib/pilot-patients";
@@ -63,8 +64,7 @@ export async function GET(request: NextRequest) {
     const auth = await requireModuleOperationalAccess(request, "informed-consents");
     tenantId = auth.tenant_id || "";
   } catch (error) {
-    console.error("[informed-consents/patients/search] Auth failed; using pilot fallback", error);
-    return NextResponse.json(pilotMatches, { status: 200 });
+    return handleApiError(error);
   }
 
   if (!tenantId) {
@@ -158,7 +158,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(filtered, { status: 200 });
   } catch (error) {
-    console.error("[informed-consents/patients/search] Prisma lookup failed; using pilot fallback", error);
-    return NextResponse.json(pilotMatches, { status: 200 });
+    console.error("[informed-consents/patients/search] Prisma lookup failed", error);
+    return NextResponse.json(
+      { success: false, error: "Patient search is temporarily unavailable" },
+      { status: 503 },
+    );
   }
 }

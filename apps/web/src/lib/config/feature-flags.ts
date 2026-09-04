@@ -42,7 +42,7 @@ export const ENABLE_BIOMETRIC_SIGNATURE = envBool("ENABLE_BIOMETRIC_SIGNATURE", 
 // ---------------------------------------------------------------------------
 
 /** Enable AI-assisted consent draft generation */
-export const ENABLE_AI_ASSIST = envBool("FF_ENABLE_AI_ASSIST", true);
+export const ENABLE_AI_ASSIST = envBool("FF_ENABLE_AI_ASSIST", false);
 
 /** Enable clinical AI physician drafting assistant for informed consents */
 export const ENABLE_CLINICAL_AI_ASSISTANT = envBool("ENABLE_CLINICAL_AI_ASSISTANT", false);
@@ -50,13 +50,13 @@ export const ENABLE_CLINICAL_AI_ASSISTANT = envBool("ENABLE_CLINICAL_AI_ASSISTAN
 /** Enable specialty-aware AI prompt engine */
 export const ENABLE_SPECIALTY_PROMPTS = envBool(
   "FF_ENABLE_SPECIALTY_PROMPTS",
-  true
+  false
 );
 
 /** Enable RAG/procedure knowledge base retrieval */
 export const ENABLE_PROCEDURE_KNOWLEDGE_BASE = envBool(
   "FF_ENABLE_PROCEDURE_KNOWLEDGE_BASE",
-  true
+  false
 );
 
 // ---------------------------------------------------------------------------
@@ -115,13 +115,13 @@ export const ENABLE_EMR_MAPPING = envBool("FF_ENABLE_EMR_MAPPING", false);
 export const ENABLE_TRAKCARE_LIVE = envBool("FF_ENABLE_TRAKCARE_LIVE", false);
 
 /** Enable static IMC pilot patient fallback in the Informed Consents workspace */
-export const ENABLE_IMC_PILOT_PATIENTS = envBool("ENABLE_IMC_PILOT_PATIENTS", true);
+export const ENABLE_IMC_PILOT_PATIENTS = envBool("ENABLE_IMC_PILOT_PATIENTS", false);
 
 /** Enable real patient send in the IMC pilot (Preview/Pilot only; never Production) */
 export const ENABLE_IMC_PILOT_REAL_SEND = envBool("FF_IMC_PILOT_REAL_SEND", false);
 
 /** Enable provider webhook processing (signature, delivery callbacks) */
-export const ENABLE_WEBHOOKS = envBool("FF_ENABLE_WEBHOOKS", true);
+export const ENABLE_WEBHOOKS = envBool("FF_ENABLE_WEBHOOKS", false);
 
 /** Enable tenant/module usage analytics ingestion and reporting */
 export const ENABLE_ANALYTICS = envBool("FF_ENABLE_ANALYTICS", true);
@@ -265,7 +265,7 @@ export const ENABLE_RETENTION_POLICY = envBool(
 /** Enable strict subscriber/module service isolation checks */
 export const ENABLE_MODULE_SERVICE_ISOLATION = envBool(
   "ENABLE_MODULE_SERVICE_ISOLATION",
-  false
+  true
 );
 
 // ---------------------------------------------------------------------------

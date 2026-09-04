@@ -43,10 +43,10 @@ const BRAND = {
 };
 
 const trustItems = [
-  "PDPL Compliant",
-  "CBAHI Ready",
-  "99.9% Uptime",
-  "24/7 Support",
+  "PDPL-aligned design",
+  "Healthcare governance focused",
+  "Controlled pilot environment",
+  "Pilot support channel",
 ];
 
 const formFields: Array<{
