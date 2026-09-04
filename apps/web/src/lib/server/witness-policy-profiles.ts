@@ -153,3 +153,33 @@ export function resolveTemplateWitnessPolicy(input: {
     profile,
   };
 }
+
+/**
+ * The approved form selected for a document is the governing source for its
+ * witness policy. Template metadata remains the fallback for documents that
+ * pre-date approved-form policy propagation.
+ */
+export function resolveDocumentWitnessPolicy(input: {
+  documentMetadata: unknown;
+  templateMetadata: unknown;
+  templateCode?: string | null;
+  templateVersionLabel?: string | null;
+}): ResolvedTemplateWitnessPolicy {
+  const documentMetadata =
+    input.documentMetadata && typeof input.documentMetadata === "object" && !Array.isArray(input.documentMetadata)
+      ? input.documentMetadata as Record<string, unknown>
+      : {};
+  const approvedFormPolicy = documentMetadata.approvedFormWitnessPolicy;
+  if (approvedFormPolicy !== undefined) {
+    const policy = parseTemplateWitnessPolicy({ witnessPolicy: approvedFormPolicy });
+    if (!policy) {
+      throw new Error("Approved form witness policy is missing after presence check");
+    }
+    return { policy, policySource: "APPROVED_FORM_GOVERNANCE", profile: null };
+  }
+  return resolveTemplateWitnessPolicy({
+    metadata: input.templateMetadata,
+    templateCode: input.templateCode,
+    templateVersionLabel: input.templateVersionLabel,
+  });
+}

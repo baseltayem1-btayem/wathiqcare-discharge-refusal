@@ -11,6 +11,7 @@ import {
   assertWitnessRoleAuthorized,
   formatSaudiArabiaTimestamp,
   hashRequestFingerprint,
+  resolveWitnessDocumentHash,
   resolveAuthorizedWitnessRoles,
 } from "@/lib/server/witness-requirement-service";
 import {
@@ -186,4 +187,26 @@ test("request fingerprints are hashed, never raw", () => {
   assert.match(hash!, /^[0-9a-f]{64}$/);
   assert.ok(!hash!.includes("203.0.113.7"));
   assert.equal(hashRequestFingerprint(null), null);
+});
+
+test("mutable signed documents use their current content hash, not a stale PDF hash", () => {
+  const base = {
+    id: "doc-1",
+    consentReference: "CONSENT-1",
+    status: "SIGNED",
+    diagnosis: "Initial diagnosis",
+    plannedProcedure: "Procedure",
+    templateVersionId: "template-v1",
+    updatedAt: new Date("2026-09-04T10:00:00.000Z"),
+    immutablePdfHash: "stale-preview-pdf-hash",
+    auditChecksum: "stale-audit-hash",
+  };
+  const originalHash = resolveWitnessDocumentHash(base);
+  const amendedHash = resolveWitnessDocumentHash({
+    ...base,
+    diagnosis: "Amended diagnosis",
+    updatedAt: new Date("2026-09-04T10:01:00.000Z"),
+  });
+  assert.notEqual(originalHash, "stale-preview-pdf-hash");
+  assert.notEqual(amendedHash, originalHash);
 });

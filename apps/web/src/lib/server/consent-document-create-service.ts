@@ -10,7 +10,7 @@ import {
   computePayloadFingerprint,
   validateIdempotencyKey,
 } from "@/lib/server/idempotency-core";
-import { evaluateWitnessPolicy } from "@/lib/server/witness-policy-service";
+import { evaluateWitnessPolicy, type TemplateWitnessPolicyConfig } from "@/lib/server/witness-policy-service";
 import { resolveTemplateWitnessPolicy } from "@/lib/server/witness-policy-profiles";
 
 const prisma = () => getPrisma();
@@ -399,6 +399,8 @@ export type CreateConsentDocumentPayload = {
   procedureDetails?: string;
   physicianNotesAr?: string;
   physicianNotesEn?: string;
+  /** Governed policy carried by the approved form selected for this document. */
+  approvedWitnessPolicy?: TemplateWitnessPolicyConfig;
   idempotencyKey?: string;
   idempotencyFingerprint?: string;
   metadata?: Record<string, unknown>;
@@ -545,7 +547,10 @@ export async function createConsentDocument(
     throw new ApiError(404, "Template version not found");
   }
 
-  // Resolve the effective witness policy: explicit template metadata policy
+  // Resolve the effective witness policy: the governed approved-form policy
+  // selected for this document takes precedence over compatibility-template
+  // metadata. This policy is persisted with the document and re-evaluated at
+  // each workflow enforcement point.
   // wins; otherwise a governed code-controlled registry profile may apply
   // (exact templateCode + version gate, fail closed on mismatch).
   const resolvedWitnessPolicy = resolveTemplateWitnessPolicy({
@@ -553,11 +558,14 @@ export async function createConsentDocument(
     templateCode: template.templateCode,
     templateVersionLabel: version.versionLabel,
   });
+  const approvedWitnessPolicy = payload.approvedWitnessPolicy;
   const witnessPolicyDecision = evaluateWitnessPolicy({
     templateRequiresWitness: template.requiresWitness,
     templateRiskLevel: template.riskLevel,
-    templatePolicy: resolvedWitnessPolicy.policy,
-    templatePolicySource: resolvedWitnessPolicy.policySource ?? undefined,
+    templatePolicy: approvedWitnessPolicy ?? resolvedWitnessPolicy.policy,
+    templatePolicySource: approvedWitnessPolicy
+      ? "APPROVED_FORM_GOVERNANCE"
+      : resolvedWitnessPolicy.policySource ?? undefined,
     triggers: payload.witnessTriggerFacts,
   });
 
@@ -677,6 +685,9 @@ export async function createConsentDocument(
             },
             source: "modules.informed-consents",
             immutablePdfHash,
+            ...(approvedWitnessPolicy
+              ? { approvedFormWitnessPolicy: approvedWitnessPolicy as unknown as Prisma.InputJsonValue }
+              : {}),
             witnessPolicyDecision: witnessPolicyDecision as unknown as Prisma.InputJsonValue,
             governance: {
               fieldPolicy: DYNAMIC_FIELD_GOVERNANCE,

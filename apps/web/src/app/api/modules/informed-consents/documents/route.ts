@@ -11,6 +11,7 @@ import { imcPilotPatients } from "@/components/informed-consents/production-work
 import { imcApprovedConsentLibraryGenerated } from "@/components/informed-consents/enterprise-workflow/imcApprovedConsentLibrary.generated";
 import { listRuntimeConsentTemplates } from "@/lib/server/informed-consents-template-catalog";
 import { validateIdempotencyKey } from "@/lib/server/idempotency-core";
+import { parseTemplateWitnessPolicy } from "@/lib/server/witness-policy-service";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -1016,6 +1017,8 @@ async function materializeApprovedLibraryConsentForm(
     String(item.titleAr || "").trim()
     || titleEn;
 
+  const witnessPolicy = parseTemplateWitnessPolicy({ witnessPolicy: record.witnessPolicy });
+
   const governanceSnapshot = {
     source:
       "imc-approved-library",
@@ -1071,6 +1074,8 @@ async function materializeApprovedLibraryConsentForm(
       )
       || null,
 
+    witnessPolicy,
+
     materializedFrom:
       "generated-imc-approved-library",
 
@@ -1114,10 +1119,7 @@ async function materializeApprovedLibraryConsentForm(
       pdfTemplateUrl,
 
       requiresWitness:
-        readApprovedLibraryBoolean(
-          record,
-          "requiresWitness",
-        ),
+        witnessPolicy?.witnessMode === "REQUIRED",
 
       requiresInterpreter:
         readApprovedLibraryBoolean(
@@ -1154,10 +1156,7 @@ async function materializeApprovedLibraryConsentForm(
       pdfTemplateUrl,
 
       requiresWitness:
-        readApprovedLibraryBoolean(
-          record,
-          "requiresWitness",
-        ),
+        witnessPolicy?.witnessMode === "REQUIRED",
 
       requiresInterpreter:
         readApprovedLibraryBoolean(
@@ -1304,6 +1303,9 @@ export async function POST(request: NextRequest) {
     }
 
     const governanceSnapshot = (approvedConsentForm.governanceSnapshot || {}) as Record<string, unknown>;
+    const approvedWitnessPolicy = governanceSnapshot.witnessPolicy === undefined
+      ? undefined
+      : parseTemplateWitnessPolicy({ witnessPolicy: governanceSnapshot.witnessPolicy }) ?? undefined;
 
     let approvedConsentPdfTemplateUrl =
       approvedConsentForm.pdfTemplateUrl;
@@ -1441,6 +1443,7 @@ export async function POST(request: NextRequest) {
           ? body.idempotencyFingerprint.trim()
           : undefined,
       initialStatus,
+      approvedWitnessPolicy,
       metadata: {
         ...requestMetadata,
 
@@ -1461,6 +1464,7 @@ export async function POST(request: NextRequest) {
         sourcePath:
           approvedConsentPdfTemplateUrl,
         governanceSnapshot,
+        ...(approvedWitnessPolicy ? { approvedFormWitnessPolicy: approvedWitnessPolicy } : {}),
         templateId: template.id,
         templateVersionId: templateVersion.id,
         templateCode: template.templateCode,

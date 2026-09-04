@@ -30,7 +30,8 @@ import {
   extractWitnessTriggerFacts,
   type CompletedWitness,
 } from "@/lib/server/witness-policy-service";
-import { resolveTemplateWitnessPolicy } from "@/lib/server/witness-policy-profiles";
+import { resolveDocumentWitnessPolicy, resolveTemplateWitnessPolicy } from "@/lib/server/witness-policy-profiles";
+import { resolveWitnessDocumentHash } from "@/lib/server/witness-requirement-service";
 import {
   validateClinicianAttestation,
   validatePatientDeclarations,
@@ -2099,8 +2100,9 @@ export async function finalizeConsentDocument(
   // refusal or dispute can fire after the creation-time snapshot); the
   // stored snapshot preserves creation-time policy provenance. Enforcement
   // always uses the stricter outcome (fail closed).
-  const reevaluatedPolicy = resolveTemplateWitnessPolicy({
-    metadata: doc.template.metadata,
+  const reevaluatedPolicy = resolveDocumentWitnessPolicy({
+    documentMetadata: metadata,
+    templateMetadata: doc.template.metadata,
     templateCode: doc.template.templateCode,
     templateVersionLabel: doc.templateVersion?.versionLabel,
   });
@@ -2133,7 +2135,9 @@ export async function finalizeConsentDocument(
       documentHash: record.documentHash,
     }));
     try {
-      assertWitnessSatisfied(witnessDecision, completedWitnesses);
+      assertWitnessSatisfied(witnessDecision, completedWitnesses, {
+        expectedDocumentHash: resolveWitnessDocumentHash(doc),
+      });
     } catch (error) {
       if (error instanceof ApiError) {
         blockers.push(error.message);

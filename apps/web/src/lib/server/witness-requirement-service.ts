@@ -17,10 +17,10 @@ import {
   evaluateWitnessPolicy,
   extractStoredPolicyDecision,
   extractWitnessTriggerFacts,
-  parseTemplateWitnessPolicy,
   type WitnessPolicyDecision,
   type WitnessRole,
 } from "@/lib/server/witness-policy-service";
+import { resolveDocumentWitnessPolicy } from "@/lib/server/witness-policy-profiles";
 
 const prisma = () => getPrisma();
 
@@ -150,7 +150,7 @@ export function assertWitnessAttestation(attestation: WitnessAttestationInput): 
   }
 }
 
-function resolveDocumentHash(document: {
+export function resolveWitnessDocumentHash(document: {
   id: string;
   consentReference: string;
   status: string;
@@ -161,12 +161,11 @@ function resolveDocumentHash(document: {
   auditChecksum?: string | null;
   immutablePdfHash?: string | null;
 }): string {
-  // Prefer finalized hashes when present; otherwise bind to the exact
-  // current document content hash — stale presentations are rejected.
-  return (
-    document.auditChecksum ||
-    document.immutablePdfHash ||
-    computeDocumentHash({
+  // Only finalized records may use their immutable PDF/audit checksum. Until
+  // then, bind witness evidence to current mutable document content so a
+  // substantive edit cannot silently reuse an earlier witness signature.
+  if (document.status === "FINALIZED") {
+    return document.auditChecksum || document.immutablePdfHash || computeDocumentHash({
       documentId: document.id,
       consentReference: document.consentReference,
       status: document.status,
@@ -174,8 +173,17 @@ function resolveDocumentHash(document: {
       plannedProcedure: document.plannedProcedure ?? null,
       templateVersionId: document.templateVersionId,
       updatedAt: document.updatedAt.toISOString(),
-    })
-  );
+    });
+  }
+  return computeDocumentHash({
+    documentId: document.id,
+    consentReference: document.consentReference,
+    status: document.status,
+    diagnosis: document.diagnosis ?? null,
+    plannedProcedure: document.plannedProcedure ?? null,
+    templateVersionId: document.templateVersionId,
+    updatedAt: document.updatedAt.toISOString(),
+  });
 }
 
 /**
@@ -307,12 +315,18 @@ export async function recordWitnessSignature(
     );
   }
 
+  const resolvedPolicy = resolveDocumentWitnessPolicy({
+    documentMetadata: document.metadata,
+    templateMetadata: document.template.metadata,
+    templateCode: document.template.templateCode,
+  });
   const decision =
     extractStoredPolicyDecision(document.metadata) ??
     evaluateWitnessPolicy({
       templateRequiresWitness: document.template.requiresWitness,
       templateRiskLevel: document.template.riskLevel,
-      templatePolicy: parseTemplateWitnessPolicy(document.template.metadata),
+      templatePolicy: resolvedPolicy.policy,
+      templatePolicySource: resolvedPolicy.policySource ?? undefined,
       triggers: extractWitnessTriggerFacts({
         metadata: document.metadata,
         hasGuardianSignature: document.signatures.some((item) => item.role === "GUARDIAN"),
@@ -321,7 +335,8 @@ export async function recordWitnessSignature(
   const reevaluated = evaluateWitnessPolicy({
     templateRequiresWitness: document.template.requiresWitness,
     templateRiskLevel: document.template.riskLevel,
-    templatePolicy: parseTemplateWitnessPolicy(document.template.metadata),
+    templatePolicy: resolvedPolicy.policy,
+    templatePolicySource: resolvedPolicy.policySource ?? undefined,
     triggers: extractWitnessTriggerFacts({
       metadata: document.metadata,
       hasGuardianSignature: document.signatures.some((item) => item.role === "GUARDIAN"),
@@ -394,7 +409,7 @@ export async function recordWitnessSignature(
   });
 
   // Bind the witness signature to the exact document version presented.
-  const currentHash = resolveDocumentHash(document);
+  const currentHash = resolveWitnessDocumentHash(document);
   if (payload.documentHash !== currentHash) {
     throw new ApiError(
       409,
@@ -594,12 +609,18 @@ export async function enforceWitnessPolicyAtSend(params: {
   if (!document) {
     throw new ApiError(404, "Consent document not found");
   }
+  const resolvedPolicy = resolveDocumentWitnessPolicy({
+    documentMetadata: document.metadata,
+    templateMetadata: document.template.metadata,
+    templateCode: document.template.templateCode,
+  });
   const decision =
     extractStoredPolicyDecision(document.metadata) ??
     evaluateWitnessPolicy({
       templateRequiresWitness: document.template.requiresWitness,
       templateRiskLevel: document.template.riskLevel,
-      templatePolicy: parseTemplateWitnessPolicy(document.template.metadata),
+      templatePolicy: resolvedPolicy.policy,
+      templatePolicySource: resolvedPolicy.policySource ?? undefined,
     });
   if (decision.requiredWitnessCount <= 0) {
     return decision;

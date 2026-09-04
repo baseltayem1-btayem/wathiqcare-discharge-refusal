@@ -18,6 +18,8 @@ import {
   type WitnessPolicyInput,
 } from "@/lib/server/witness-policy-service";
 import { deriveChildIdempotencyKey } from "@/lib/server/idempotency-core";
+import { IMC_APPROVED_CONSENT_FORMS_MANIFEST } from "@/lib/server/imc-approved-consent-forms.manifest";
+import { resolveDocumentWitnessPolicy } from "@/lib/server/witness-policy-profiles";
 
 const FIXED_EVALUATED_AT = "2026-07-14T07:00:00.000Z";
 
@@ -240,6 +242,47 @@ test("a witness signature bound to an outdated document hash is rejected", () =>
   );
   assert.equal(result.satisfied, false);
   assert.ok(result.blockers.includes("WITNESS_STALE_DOCUMENT_HASH"));
+});
+
+test("approved manifest policy propagates to document metadata with governed audit provenance", () => {
+  const highRiskForm = IMC_APPROVED_CONSENT_FORMS_MANIFEST.find(
+    (item) => item.riskLevel === "high",
+  );
+  assert.ok(highRiskForm);
+  assert.equal(highRiskForm.witnessPolicy.witnessMode, "REQUIRED");
+  assert.equal(highRiskForm.witnessPolicy.requiredWitnessCount, 1);
+
+  const resolved = resolveDocumentWitnessPolicy({
+    documentMetadata: { approvedFormWitnessPolicy: highRiskForm.witnessPolicy },
+    templateMetadata: { witnessPolicy: { witnessMode: "NONE", policyVersion: "template-override" } },
+    templateCode: "compatibility-template",
+  });
+  const decision = decide({
+    templatePolicy: resolved.policy,
+    templatePolicySource: resolved.policySource ?? undefined,
+  });
+  assert.equal(decision.policySource, "APPROVED_FORM_GOVERNANCE");
+  assert.equal(decision.policyVersion, highRiskForm.witnessPolicy.policyVersion);
+  assert.equal(decision.requiredWitnessCount, 1);
+});
+
+test("runtime triggers strengthen an approved conditional form policy", () => {
+  const routineForm = IMC_APPROVED_CONSENT_FORMS_MANIFEST.find(
+    (item) => item.riskLevel === "standard",
+  );
+  assert.ok(routineForm);
+  const resolved = resolveDocumentWitnessPolicy({
+    documentMetadata: { approvedFormWitnessPolicy: routineForm.witnessPolicy },
+    templateMetadata: {},
+  });
+  const decision = decide({
+    templatePolicy: resolved.policy,
+    templatePolicySource: resolved.policySource ?? undefined,
+    triggers: { communicationBarrier: true },
+  });
+  assert.equal(decision.witnessMode, "REQUIRED");
+  assert.equal(decision.policyVersion, routineForm.witnessPolicy.policyVersion);
+  assert.deepEqual(decision.triggerCodes, ["COMMUNICATION_BARRIER"]);
 });
 
 // --- Spec test 14: idempotent witness requirement keys ----------------------

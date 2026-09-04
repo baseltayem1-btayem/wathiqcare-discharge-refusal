@@ -103,6 +103,7 @@ export type WitnessPolicyInput = {
 };
 
 export type WitnessPolicySource =
+  | "APPROVED_FORM_GOVERNANCE"
   | "TEMPLATE_METADATA"
   | "GOVERNED_CODE_PROFILE"
   | "LEGACY_TEMPLATE_FLAG"
