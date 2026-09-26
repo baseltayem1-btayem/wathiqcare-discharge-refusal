@@ -1,0 +1,348 @@
+{
+  "generatedAt": "2026-06-26T12:09:00.380Z",
+  "endpoint": "GET /api/modules/informed-consents/content-mapping/resolve",
+  "scenarios": [
+    {
+      "name": "CKE path: consent + education",
+      "request": {
+        "procedure": "appendectomy",
+        "tenantId": "demo-imc",
+        "useCke": "true"
+      },
+      "response": {
+        "ok": true,
+        "found": true,
+        "featureFlagEnabled": true,
+        "ckeEnabled": true,
+        "mapping": {
+          "found": true,
+          "procedureCatalogId": "catalog-1",
+          "procedureId": "appendectomy",
+          "procedureNameEn": "Appendectomy",
+          "procedureNameAr": "استئصال الزائدة",
+          "specialty": "General Surgery",
+          "department": "Surgery",
+          "categoryCode": "APPENDECTOMY",
+          "consentType": "PROCEDURE_CONSENT",
+          "consentCategory": "Surgical Consent",
+          "language": "bilingual",
+          "version": "1.0.0",
+          "anesthesiaRequired": false,
+          "consentForm": {
+            "templateId": "APPENDECTOMY_CONSENT",
+            "templateVersionId": "APPENDECTOMY_CONSENT-v1",
+            "templateCode": "APPENDECTOMY_CONSENT",
+            "fileName": "appendectomy.pdf",
+            "publicPath": "/forms/appendectomy.pdf",
+            "titleEn": "Appendectomy Consent",
+            "titleAr": "موافقة استئصال الزائدة",
+            "kind": "CONSENT_FORM",
+            "status": "APPROVED"
+          },
+          "educationMaterial": {
+            "educationId": "APPENDECTOMY_EDU",
+            "assetId": "APPENDECTOMY_EDU_ASSET",
+            "fileName": "appendectomy-edu.pdf",
+            "publicPath": "/education/appendectomy.pdf",
+            "titleEn": "Appendectomy Education",
+            "titleAr": "تثقيف استئصال الزائدة",
+            "kind": "EDUCATION_MATERIAL",
+            "assetType": "PDF",
+            "durationMinutes": null
+          }
+        },
+        "package": {
+          "procedureConsent": {
+            "id": "APPENDECTOMY_CONSENT",
+            "titleEn": "Appendectomy Consent",
+            "titleAr": "موافقة استئصال الزائدة",
+            "fileName": "appendectomy.pdf",
+            "publicPath": "/forms/appendectomy.pdf",
+            "specialty": "General Surgery",
+            "templateType": "Surgical Consent",
+            "status": "ACTIVE",
+            "source": "cke-assembly",
+            "requiresAnesthesia": false,
+            "isPatientCopy": false,
+            "isEducation": false,
+            "isAnesthesia": false,
+            "lengthBytes": 0
+          },
+          "patientEducation": {
+            "id": "APPENDECTOMY_EDU",
+            "titleEn": "Appendectomy Education — Patient Education",
+            "titleAr": "تثقيف استئصال الزائدة — نسخة المريض",
+            "fileName": "appendectomy-edu.pdf",
+            "publicPath": "/education/appendectomy.pdf",
+            "specialty": "General Surgery",
+            "templateType": "Surgical Consent",
+            "status": "ACTIVE",
+            "source": "cke-assembly",
+            "requiresAnesthesia": false,
+            "isPatientCopy": true,
+            "isEducation": true,
+            "isAnesthesia": false,
+            "lengthBytes": 0
+          },
+          "matches": []
+        },
+        "clinicalKnowledgeAssembly": {
+          "assemblyId": "assembly-1",
+          "tenantId": "demo-imc",
+          "procedureId": "proc-1",
+          "procedureCode": "appendectomy",
+          "procedureNameEn": "Appendectomy",
+          "procedureNameAr": "استئصال الزائدة",
+          "packageId": "pkg-1",
+          "packageVersion": "1.0.0",
+          "status": "ready",
+          "consentForm": {
+            "id": "form-1",
+            "tenantId": "demo-imc",
+            "code": "APPENDECTOMY_CONSENT",
+            "titleEn": "Appendectomy Consent",
+            "titleAr": "موافقة استئصال الزائدة",
+            "formType": "PROCEDURE_CONSENT",
+            "riskLevel": "STANDARD",
+            "status": "PUBLISHED",
+            "version": "1.0.0",
+            "effectiveDate": "2026-06-01T00:00:00.000Z",
+            "pdfTemplateUrl": "/forms/appendectomy.pdf",
+            "requiresWitness": false,
+            "requiresInterpreter": false,
+            "createdByUserId": "system",
+            "createdAt": "2026-06-01T00:00:00.000Z",
+            "updatedAt": "2026-06-01T00:00:00.000Z"
+          },
+          "educationMaterials": [
+            {
+              "id": "edu-1",
+              "tenantId": "demo-imc",
+              "code": "APPENDECTOMY_EDU",
+              "titleEn": "Appendectomy Education",
+              "titleAr": "تثقيف استئصال الزائدة",
+              "assetType": "PDF",
+              "assetUrl": "/education/appendectomy.pdf",
+              "durationMinutes": null,
+              "status": "PUBLISHED",
+              "version": "1.0.0",
+              "effectiveDate": "2026-06-01T00:00:00.000Z",
+              "createdByUserId": "system",
+              "createdAt": "2026-06-01T00:00:00.000Z",
+              "updatedAt": "2026-06-01T00:00:00.000Z"
+            }
+          ],
+          "riskDisclosures": [],
+          "decisionRules": [],
+          "suggestions": [],
+          "blockers": [],
+          "requiredParticipants": [],
+          "assembledAt": "2026-06-26T00:00:00.000Z"
+        },
+        "educationNotAvailable": false
+      }
+    },
+    {
+      "name": "CKE path: consent only (education not available)",
+      "request": {
+        "procedure": "laparoscopic-cholecystectomy",
+        "tenantId": "demo-imc",
+        "useCke": "true"
+      },
+      "response": {
+        "ok": true,
+        "found": true,
+        "featureFlagEnabled": true,
+        "ckeEnabled": true,
+        "mapping": {
+          "found": true,
+          "procedureCatalogId": "catalog-2",
+          "procedureId": "laparoscopic-cholecystectomy",
+          "procedureNameEn": "Laparoscopic Cholecystectomy",
+          "procedureNameAr": "استئصال المرارة بالمنظار",
+          "specialty": "General Surgery",
+          "department": "Surgery",
+          "categoryCode": "CHOLECYSTECTOMY",
+          "consentType": "PROCEDURE_CONSENT",
+          "consentCategory": "Surgical Consent",
+          "language": "bilingual",
+          "version": "1.0.0",
+          "anesthesiaRequired": false,
+          "consentForm": {
+            "templateId": "APPENDECTOMY_CONSENT",
+            "templateVersionId": "APPENDECTOMY_CONSENT-v1",
+            "templateCode": "APPENDECTOMY_CONSENT",
+            "fileName": "appendectomy.pdf",
+            "publicPath": "/forms/appendectomy.pdf",
+            "titleEn": "Appendectomy Consent",
+            "titleAr": "موافقة استئصال الزائدة",
+            "kind": "CONSENT_FORM",
+            "status": "APPROVED"
+          },
+          "educationMaterial": null
+        },
+        "package": {
+          "procedureConsent": {
+            "id": "CHOLECYSTECTOMY_CONSENT",
+            "titleEn": "Laparoscopic Cholecystectomy Consent",
+            "titleAr": "",
+            "fileName": "cholecystectomy.pdf",
+            "publicPath": "/forms/cholecystectomy.pdf",
+            "specialty": "",
+            "templateType": "Surgical Consent",
+            "status": "ACTIVE",
+            "source": "cke-assembly",
+            "requiresAnesthesia": false,
+            "isPatientCopy": false,
+            "isEducation": false,
+            "isAnesthesia": false,
+            "lengthBytes": 0
+          },
+          "matches": []
+        },
+        "clinicalKnowledgeAssembly": {
+          "assemblyId": "assembly-2",
+          "tenantId": "demo-imc",
+          "procedureId": "proc-2",
+          "procedureCode": "laparoscopic-cholecystectomy",
+          "procedureNameEn": "Laparoscopic Cholecystectomy",
+          "procedureNameAr": "استئصال المرارة بالمنظار",
+          "packageId": "pkg-2",
+          "packageVersion": "1.0.0",
+          "status": "ready",
+          "consentForm": {
+            "id": "form-2",
+            "tenantId": "demo-imc",
+            "code": "CHOLECYSTECTOMY_CONSENT",
+            "titleEn": "Laparoscopic Cholecystectomy Consent",
+            "titleAr": "",
+            "formType": "PROCEDURE_CONSENT",
+            "riskLevel": "STANDARD",
+            "status": "PUBLISHED",
+            "version": "1.0.0",
+            "effectiveDate": "2026-06-01T00:00:00.000Z",
+            "pdfTemplateUrl": "/forms/cholecystectomy.pdf",
+            "requiresWitness": false,
+            "requiresInterpreter": false,
+            "createdByUserId": "system",
+            "createdAt": "2026-06-01T00:00:00.000Z",
+            "updatedAt": "2026-06-01T00:00:00.000Z"
+          },
+          "educationMaterials": [],
+          "riskDisclosures": [],
+          "decisionRules": [],
+          "suggestions": [],
+          "blockers": [],
+          "requiredParticipants": [],
+          "assembledAt": "2026-06-26T00:00:00.000Z"
+        },
+        "educationNotAvailable": true
+      }
+    },
+    {
+      "name": "CKE not found, fallback to static mapping not found",
+      "request": {
+        "procedure": "unknown-procedure",
+        "tenantId": "demo-imc",
+        "useCke": "true"
+      },
+      "response": {
+        "ok": true,
+        "found": false,
+        "featureFlagEnabled": true,
+        "ckeEnabled": false,
+        "procedureName": "unknown-procedure",
+        "availableProcedures": [
+          "Appendectomy",
+          "Laparoscopic Cholecystectomy"
+        ]
+      }
+    },
+    {
+      "name": "CKE master flag OFF: preserves static workflow",
+      "request": {
+        "procedure": "appendectomy",
+        "tenantId": "demo-imc",
+        "useCke": "true"
+      },
+      "response": {
+        "ok": true,
+        "found": true,
+        "featureFlagEnabled": true,
+        "ckeEnabled": false,
+        "mapping": {
+          "found": true,
+          "procedureCatalogId": "catalog-1",
+          "procedureId": "appendectomy",
+          "procedureNameEn": "Appendectomy",
+          "procedureNameAr": "استئصال الزائدة",
+          "specialty": "General Surgery",
+          "department": "Surgery",
+          "categoryCode": "APPENDECTOMY",
+          "consentType": "PROCEDURE_CONSENT",
+          "consentCategory": "Surgical Consent",
+          "language": "bilingual",
+          "version": "1.0.0",
+          "anesthesiaRequired": false,
+          "consentForm": {
+            "templateId": "APPENDECTOMY_CONSENT",
+            "templateVersionId": "APPENDECTOMY_CONSENT-v1",
+            "templateCode": "APPENDECTOMY_CONSENT",
+            "fileName": "appendectomy.pdf",
+            "publicPath": "/forms/appendectomy.pdf",
+            "titleEn": "Appendectomy Consent",
+            "titleAr": "موافقة استئصال الزائدة",
+            "kind": "CONSENT_FORM",
+            "status": "APPROVED"
+          },
+          "educationMaterial": {
+            "educationId": "APPENDECTOMY_EDU",
+            "assetId": "APPENDECTOMY_EDU_ASSET",
+            "fileName": "appendectomy-edu.pdf",
+            "publicPath": "/education/appendectomy.pdf",
+            "titleEn": "Appendectomy Education",
+            "titleAr": "تثقيف استئصال الزائدة",
+            "kind": "EDUCATION_MATERIAL",
+            "assetType": "PDF",
+            "durationMinutes": null
+          }
+        },
+        "package": {
+          "procedureConsent": {
+            "id": "APPENDECTOMY_CONSENT",
+            "titleEn": "Appendectomy Consent",
+            "titleAr": "موافقة استئصال الزائدة",
+            "fileName": "appendectomy.pdf",
+            "publicPath": "/forms/appendectomy.pdf",
+            "specialty": "General Surgery",
+            "templateType": "Surgical Consent",
+            "status": "ACTIVE",
+            "source": "imc-approved-library",
+            "requiresAnesthesia": false,
+            "isPatientCopy": false,
+            "isEducation": false,
+            "isAnesthesia": false,
+            "lengthBytes": 0
+          },
+          "matches": []
+        }
+      }
+    },
+    {
+      "name": "Tenant isolation: procedure not resolved for wrong tenant",
+      "request": {
+        "procedure": "appendectomy",
+        "tenantId": "other-tenant",
+        "useCke": "true"
+      },
+      "response": {
+        "ok": true,
+        "found": false,
+        "featureFlagEnabled": true,
+        "ckeEnabled": false,
+        "procedureName": "appendectomy",
+        "availableProcedures": []
+      }
+    }
+  ]
+}

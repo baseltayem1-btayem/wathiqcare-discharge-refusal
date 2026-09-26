@@ -5,6 +5,19 @@ const { PrismaClient } = require("@prisma/client");
 
 const baseUrl = process.env.VALIDATION_BASE_URL || "http://localhost:3111";
 
+function requireEnv(name) {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(
+      `FATAL: ${name} is required. Live validation scripts must not use hardcoded passwords. ` +
+        "Set the validation admin password in the environment and retry."
+    );
+  }
+  return value;
+}
+
+const VALIDATION_ADMIN_PASSWORD = requireEnv("VALIDATION_ADMIN_PASSWORD");
+
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return;
   for (const line of fs.readFileSync(filePath, "utf8").split(/\r?\n/)) {
@@ -67,7 +80,7 @@ async function loginProbe() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         email: "admin@wathiqcare.online",
-        password: "Admin@Wathiqcare2026!",
+        password: VALIDATION_ADMIN_PASSWORD,
       }),
       signal: controller.signal,
     });
@@ -92,7 +105,7 @@ async function main() {
     const singleStart = performance.now();
     const singleLogin = await apiJson("POST", `${baseUrl}/api/auth/password/login`, {
       email: "admin@wathiqcare.online",
-      password: "Admin@Wathiqcare2026!",
+      password: VALIDATION_ADMIN_PASSWORD,
     });
     const singleLoginMs = Math.round(performance.now() - singleStart);
 

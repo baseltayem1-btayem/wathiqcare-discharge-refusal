@@ -1,0 +1,25 @@
+card_id,row,column,visible_title,classification,rationale
+batch02_collage_card_01_r1c1,1,1,Laparoscopic Cholecystectomy,duplicate_candidate,Duplicates Batch 1 approved Laparoscopic Cholecystectomy; not listed in Batch 2 manifest.
+batch02_collage_card_02_r1c2,1,2,Knee Arthroscopy,wrong_batch_or_unrelated,Procedure not present in Batch 2 manifest (Batch 2 contains Arthrogram and Arthroplasty Consent, not Knee Arthroscopy).
+batch02_collage_card_03_r1c3,1,3,Central Venous Catheter Placement,wrong_batch_or_unrelated,Similar to Batch 1 Central Vascular Access Device Insertion; not listed in Batch 2 manifest.
+batch02_collage_card_04_r1c4,1,4,Dental Implant Procedure,wrong_batch_or_unrelated,Procedure not present in Batch 2 manifest.
+batch02_collage_card_05_r1c5,1,5,Dental Implant Procedure,duplicate_candidate,Duplicate of card_04; procedure not present in Batch 2 manifest.
+batch02_collage_card_06_r2c1,2,1,Laparoscopic Clerosropy,spelling_or_label_error,Visible title contains non-clinical / misspelled word "Clerosropy"; cannot be mapped to any Batch 2 procedure.
+batch02_collage_card_07_r2c2,2,2,Knee Arthroscopy,duplicate_candidate,Duplicate of card_02; procedure not present in Batch 2 manifest.
+batch02_collage_card_08_r2c3,2,3,Central Venous Catheter Placement,duplicate_candidate,Duplicate of card_03; not listed in Batch 2 manifest.
+batch02_collage_card_09_r2c4,2,4,Dental Implant Procedure,duplicate_candidate,Duplicate of card_04; procedure not present in Batch 2 manifest.
+batch02_collage_card_10_r2c5,2,5,Endoscopy,wrong_batch_or_unrelated,Generic "Endoscopy" is not a Batch 2 procedure (Batch 1 already has Upper GI Endoscopy and Colonoscopy).
+batch02_collage_card_11_r3c1,3,1,Laparoscopic Cholecystectomy,duplicate_candidate,Duplicate of card_01; Batch 1 procedure not in Batch 2 manifest.
+batch02_collage_card_12_r3c2,3,2,Knee Not Arthroscopy,spelling_or_label_error,Visible title "Knee Not Arthroscopy" is clinically meaningless / labeling error.
+batch02_collage_card_13_r3c3,3,3,Central Implant Procedure,manual_review_required,Title is ambiguous and potentially incorrect; may intend Central Venous Catheter but cannot be safely mapped without clinical review.
+batch02_collage_card_14_r3c4,3,4,Dental Eseiculant Procedure,spelling_or_label_error,Visible title contains apparent spelling error "Eseiculant"; not a recognized procedure.
+batch02_collage_card_15_r3c5,3,5,Embilasc/Tract Proceduse,spelling_or_label_error,Visible title contains multiple spelling errors ("Embilasc", "Proceduse"); not mappable.
+batch02_collage_card_16_r4c1,4,1,Laparoscopic Clectomy,spelling_or_label_error,Visible title is truncated/misspelled ("Clectomy"); not a clear procedure match.
+batch02_collage_card_17_r4c2,4,2,Knee Arthroscopy,duplicate_candidate,Duplicate of card_02; procedure not present in Batch 2 manifest.
+batch02_collage_card_18_r4c3,4,3,Dental Rinientoscopy,spelling_or_label_error,Visible title contains apparent spelling error "Rinientoscopy"; not a recognized procedure.
+batch02_collage_card_19_r4c4,4,4,Endoscopy,duplicate_candidate,Duplicate of card_10; not a Batch 2 procedure.
+batch02_collage_card_20_r4c5,4,5,Dialysis Access,wrong_batch_or_unrelated,Procedure not present in Batch 2 manifest.
+batch02_collage_card_21_r5c1,5,1,Knee Arthroscopy,duplicate_candidate,Duplicate of card_02; procedure not present in Batch 2 manifest.
+batch02_collage_card_22_r5c2,5,2,Cardiac Catheterization,wrong_batch_or_unrelated,Procedure not present in Batch 2 manifest.
+batch02_collage_card_23_r5c3,5,3,Cardiac Catheterization,duplicate_candidate,Duplicate of card_22; procedure not present in Batch 2 manifest.
+batch02_collage_card_24_r5c4,5,4,Dialysis Access,duplicate_candidate,Duplicate of card_20; procedure not present in Batch 2 manifest.

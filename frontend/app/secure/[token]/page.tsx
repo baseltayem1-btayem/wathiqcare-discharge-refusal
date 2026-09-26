@@ -48,6 +48,20 @@ type SubmitDecisionPayload = {
     typed_name: string;
     refusal_acknowledged: boolean;
     signature_data: string;
+    otp_code: string;
+};
+
+type OtpResponse = {
+    success: boolean;
+    delivery_status: "sent" | "failed" | "not_configured";
+    failure_reason?: string | null;
+    masked_email: string;
+};
+
+type OtpVerifyResponse = {
+    success: boolean;
+    verified: boolean;
+    attempts_remaining: number;
 };
 
 function formatDate(value?: string | null): string {
@@ -149,6 +163,14 @@ function SecureDecisionClient({ token }: { token: string }) {
     const [submitError, setSubmitError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState<SubmitDecisionResponse | null>(null);
+    const [otpCode, setOtpCode] = useState("");
+    const [otpMaskedEmail, setOtpMaskedEmail] = useState("");
+    const [isOtpRequested, setIsOtpRequested] = useState(false);
+    const [isOtpRequesting, setIsOtpRequesting] = useState(false);
+    const [isOtpVerifying, setIsOtpVerifying] = useState(false);
+    const [isOtpVerified, setIsOtpVerified] = useState(false);
+    const [otpError, setOtpError] = useState("");
+    const [otpAttemptsRemaining, setOtpAttemptsRemaining] = useState(3);
     const hasInitializedTypedName = useRef(false);
 
     function hasValidSignature(value: string): boolean {
@@ -220,6 +242,63 @@ function SecureDecisionClient({ token }: { token: string }) {
         };
     }, [token]);
 
+    async function handleRequestOtp() {
+        if (isOtpRequesting || isOtpVerified) {
+            return;
+        }
+        setIsOtpRequesting(true);
+        setOtpError("");
+        try {
+            const response = await apiFetch<OtpResponse>(
+                `/api/discharge/secure/${encodeURIComponent(token)}/otp`,
+                { method: "POST" },
+            );
+            setOtpMaskedEmail(response.masked_email);
+            setIsOtpRequested(true);
+            setOtpCode("");
+        } catch (error) {
+            const message = error instanceof Error ? error.message.replace(/^\d+:/, "").trim() : "تعذر طلب رمز التحقق.";
+            setOtpError(message);
+        } finally {
+            setIsOtpRequesting(false);
+        }
+    }
+
+    async function handleVerifyOtp() {
+        if (isOtpVerifying || isOtpVerified) {
+            return;
+        }
+        const code = otpCode.trim();
+        if (code.length < 6) {
+            setOtpError("يرجى إدخال رمز التحقق المؤلف من 6 أرقام.");
+            return;
+        }
+        setIsOtpVerifying(true);
+        setOtpError("");
+        try {
+            const response = await apiFetch<OtpVerifyResponse>(
+                `/api/discharge/secure/${encodeURIComponent(token)}/verify-otp`,
+                {
+                    method: "POST",
+                    body: JSON.stringify({ otp_code: code }),
+                },
+            );
+            if (response.verified) {
+                setIsOtpVerified(true);
+                setOtpAttemptsRemaining(response.attempts_remaining);
+            } else {
+                setOtpAttemptsRemaining(response.attempts_remaining);
+                setOtpError(`رمز التحقق غير صحيح. المحاولات المتبقية: ${response.attempts_remaining}`);
+                setOtpCode("");
+            }
+        } catch (error) {
+            const message = error instanceof Error ? error.message.replace(/^\d+:/, "").trim() : "تعذر التحقق من الرمز.";
+            setOtpError(message);
+        } finally {
+            setIsOtpVerifying(false);
+        }
+    }
+
     async function handleSubmit() {
         if (isSubmitting) {
             return;
@@ -244,12 +323,17 @@ function SecureDecisionClient({ token }: { token: string }) {
             setSubmitError("يجب تأكيد الإقرار القانوني قبل تسجيل الرفض.");
             return;
         }
+        if (!isOtpVerified) {
+            setSubmitError("يرجى التحقق من الهوية باستخدام رمز التحقق المرسل قبل تسجيل القرار.");
+            return;
+        }
 
         const submitPayload: SubmitDecisionPayload = {
             decision,
             typed_name: normalizedTypedName,
             refusal_acknowledged: refusalAcknowledged,
             signature_data: normalizedSignature,
+            otp_code: otpCode.trim(),
         };
 
         setIsSubmitting(true);
@@ -315,7 +399,8 @@ function SecureDecisionClient({ token }: { token: string }) {
         Boolean(decision) &&
         normalizedTypedName.length >= 3 &&
         hasValidSignature(signatureData) &&
-        (decision !== "refuse" || refusalAcknowledged);
+        (decision !== "refuse" || refusalAcknowledged) &&
+        isOtpVerified;
     const submitButtonDisabled = isSubmitting || !canSubmit;
 
     const homeCareSummary = getOptionalText(caseData, ["home_care_agreement_text"]);
@@ -438,6 +523,68 @@ function SecureDecisionClient({ token }: { token: string }) {
                                     data-testid="typed-name-input"
                                     className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100"
                                 />
+                            </div>
+
+                            <div className="mt-4 rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
+                                <h3 className="mb-2 text-sm font-bold text-cyan-950">التحقق من الهوية</h3>
+                                <p className="text-sm leading-7 text-cyan-900">
+                                    لحماية خصوصية المريض، يجب إدخال رمز التحقق المرسل إلى بريد {otpMaskedEmail || "المسجل"}.
+                                </p>
+
+                                {!isOtpRequested ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => void handleRequestOtp()}
+                                        disabled={isOtpRequesting}
+                                        className="mt-3 inline-flex items-center justify-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        {isOtpRequesting ? "جارٍ إرسال الرمز..." : "إرسال رمز التحقق"}
+                                    </button>
+                                ) : (
+                                    <div className="mt-3">
+                                        {!isOtpVerified ? (
+                                            <>
+                                                <label htmlFor="otp-code" className="mb-1 block text-sm font-medium text-cyan-950">رمز التحقق (6 أرقام)</label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        id="otp-code"
+                                                        type="text"
+                                                        inputMode="numeric"
+                                                        maxLength={6}
+                                                        value={otpCode}
+                                                        onChange={(event) => setOtpCode(event.target.value.replace(/\D/g, ""))}
+                                                        placeholder="123456"
+                                                        disabled={isOtpVerifying}
+                                                        data-testid="otp-code-input"
+                                                        className="w-full rounded-xl border border-cyan-200 bg-white px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => void handleVerifyOtp()}
+                                                        disabled={isOtpVerifying || otpCode.trim().length < 6}
+                                                        className="inline-flex shrink-0 items-center justify-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                                    >
+                                                        {isOtpVerifying ? "جارٍ التحقق..." : "تحقق"}
+                                                    </button>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => void handleRequestOtp()}
+                                                    disabled={isOtpRequesting}
+                                                    className="mt-2 text-xs font-medium text-cyan-800 underline transition hover:text-cyan-950 disabled:opacity-60"
+                                                >
+                                                    لم يصل الرمز؟ إعادة الإرسال
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <p className="flex items-center gap-2 text-sm font-semibold text-emerald-800">
+                                                <CheckCircle2 className="h-4 w-4" />
+                                                تم التحقق من الهوية بنجاح
+                                            </p>
+                                        )}
+                                        {otpError ? <p className="mt-2 text-xs text-rose-700">{otpError}</p> : null}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="mt-4">

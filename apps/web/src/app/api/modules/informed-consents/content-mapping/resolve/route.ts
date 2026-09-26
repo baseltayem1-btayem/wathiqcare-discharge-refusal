@@ -1,4 +1,4 @@
-﻿import type { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -46,10 +46,10 @@ export async function GET(request: NextRequest) {
     const specialtyKey = normalize(specialty);
 
     const selected =
-      forms.find((form: any) => templateKey && normalize(form.id) === templateKey) ||
-      forms.find((form: any) => procedureKey && normalize(form.procedure).includes(procedureKey)) ||
-      forms.find((form: any) => procedureKey && normalize(form.titleEn).includes(procedureKey)) ||
-      forms.find((form: any) => specialtyKey && normalize(form.specialty) === specialtyKey) ||
+      forms.find((form: { id?: string | null; procedure?: string | null; titleEn?: string | null; specialty?: string | null }) => templateKey && normalize(form.id ?? null) === templateKey) ||
+      forms.find((form: { id?: string | null; procedure?: string | null; titleEn?: string | null; specialty?: string | null }) => procedureKey && normalize(form.procedure ?? null).includes(procedureKey)) ||
+      forms.find((form: { id?: string | null; procedure?: string | null; titleEn?: string | null; specialty?: string | null }) => procedureKey && normalize(form.titleEn ?? null).includes(procedureKey)) ||
+      forms.find((form: { id?: string | null; procedure?: string | null; titleEn?: string | null; specialty?: string | null }) => specialtyKey && normalize(form.specialty ?? null) === specialtyKey) ||
       forms[0] ||
       null;
 

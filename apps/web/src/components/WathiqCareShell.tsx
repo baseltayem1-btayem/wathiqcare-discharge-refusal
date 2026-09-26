@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Database, Wifi } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { cn } from "@/components/design-system/utils";
@@ -49,7 +48,6 @@ const DEFAULT_FOOTER = (
   <>
     <span>WathiqCare™ Enterprise Healthcare Legal Automation Platform</span>
     <span>© 2026 International Medical Center (IMC). All rights reserved.</span>
-    <span>CR: 4030143596</span>
   </>
 );
 
@@ -152,7 +150,7 @@ function DefaultBrand() {
 export default function WathiqCareShell({
   title,
   subtitle,
-  pathname,
+  pathname: _pathname,
   headerEyebrow = "Clinical Discharge Refusal & Legal Evidence Module",
   brand,
   menuItems = [],
@@ -173,14 +171,6 @@ export default function WathiqCareShell({
       <header className="wc-topbar">
         <div className="wc-topbar__brand">{brand || <DefaultBrand />}</div>
         <div className="wc-topbar__status">
-          <span className="wc-system-indicator">
-            <Wifi className="h-3.5 w-3.5" />
-            <span>System Online</span>
-          </span>
-          <span className="wc-system-indicator">
-            <Database className="h-3.5 w-3.5" />
-            <span>Database Active</span>
-          </span>
           {statusItems}
           {utilityControls ? <div className="wc-topbar__utilities">{utilityControls}</div> : null}
         </div>
@@ -199,11 +189,8 @@ export default function WathiqCareShell({
           <div className="wc-module-header__eyebrow">{headerEyebrow}</div>
           <h1 className="wc-module-header__title">{title}</h1>
           {subtitle ? <p className="wc-module-header__subtitle">{subtitle}</p> : null}
-          {pathname ? <div className="wc-module-header__path">{pathname}</div> : null}
         </div>
         <div className="wc-module-header__meta">
-          <span className="wc-module-pill">CR: 4030143596</span>
-          <span className="wc-module-pill">Version: 7.2.4</span>
           {moduleMeta}
         </div>
       </section>

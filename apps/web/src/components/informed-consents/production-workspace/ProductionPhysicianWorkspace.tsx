@@ -1,19 +1,17 @@
 "use client";
 
-import { isAssemblyApprovedPdfSourceVerified } from "./utils/approvedPdfSource";
-import { useState } from "react";
-import { Button, Card, CardContent } from "@/components/design-system";
+import { isAssemblyApprovedPdfSourceVerified, resolveAssemblyApprovedPdfUrl } from "./utils/approvedPdfSource";
+import { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/design-system";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { PhysicianContext } from "./types";
 import { useProductionWorkspace } from "./hooks/useProductionWorkspace";
-import { computeSupportsFilledDraftPreview } from "./utils/filledDraftPreviewCapability";
-import { computeFilledPreviewBlocker } from "./utils/filledPreviewBlocker";
+import { createDoctorCompletedDraftPdfPreview } from "./lib/api";
 import { PatientEncounterSelector } from "./components/PatientEncounterSelector";
 import { ConsentPreviewModal } from "./components/ConsentPreviewModal";
 import { SendConfirmationModal } from "./components/SendConfirmationModal";
 import { WorkflowStepper } from "./components/WorkflowStepper";
-import { WorkspaceCard, WorkspaceCardHeader, WorkspaceSectionLabel } from "./components/WorkspaceAtoms";
-import { FileText, Loader2, RefreshCw } from "lucide-react";
+import { WorkspaceSectionLabel } from "./components/WorkspaceAtoms";
 import {
   PatientsPage,
   EncountersPage,
@@ -34,7 +32,6 @@ import { PatientContextRibbon } from "./components/enterprise/PatientContextRibb
 import { PhysicianWorkspaceHeader } from "./components/enterprise/PhysicianWorkspaceHeader";
 import { ProcedureSelectionPanel } from "./components/enterprise/ProcedureSelectionPanel";
 import { ReadinessChecklist } from "./components/enterprise/ReadinessChecklist";
-import { SendRecipientCard } from "./components/SendRecipientCard";
 import { SendToPatientPanel } from "./components/enterprise/SendToPatientPanel";
 
 import "./workspace.css";
@@ -45,7 +42,6 @@ interface ProductionPhysicianWorkspaceProps {
 
 export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianWorkspaceProps) {
   const { lang } = useI18n();
-
   const {
     state,
     patients,
@@ -70,14 +66,10 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     setReviewMode,
     setRecipientMobile,
     setRecipientEmail,
-    setRecipientConfirmed,
     setPreviewReviewed,
     setDoctorCompletionValue,
     setPhysicianSignatureDataUrl,
     approveDraft,
-    generateFilledDraftPreview,
-    setFilledDraftReviewed,
-    setPdfViewerMode,
     send,
     sendDryRun,
   } = useProductionWorkspace(physician);
@@ -85,80 +77,11 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
   const [activePage, setActivePage] = useState<WorkspacePageId>("workspace");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [sendModalOpen, setSendModalOpen] = useState(false);
-
-  const hasApprovedPdfSource = isAssemblyApprovedPdfSourceVerified(state.assembly);
-  const isAcroFormBacked = Boolean(state.fieldMappingReadiness?.acroForm);
-
-  const supportsFilledDraftPreview = computeSupportsFilledDraftPreview({
-    fieldMappingReadiness: state.fieldMappingReadiness,
-    hasApprovedPdfSource,
-    fieldMappingVerified: readiness.fieldMappingVerified,
-  });
-
-  const canGenerateFilledPreview =
-    supportsFilledDraftPreview &&
-    readiness.patientReady &&
-    readiness.encounterReady &&
-    readiness.assemblyReady &&
-    readiness.doctorCompletionReady &&
-    readiness.anesthesiaMappingReady &&
-    readiness.patientSignatureMapped &&
-    state.filledDraftStatus !== "loading";
-
-  const filledPreviewBlocker = computeFilledPreviewBlocker({
-    supportsFilledDraftPreview,
-    hasApprovedPdfSource,
-    fieldMappingVerified: readiness.fieldMappingVerified,
-    patientReady: readiness.patientReady,
-    patientDob: state.patient?.dateOfBirth,
-    encounterReady: readiness.encounterReady,
-    assemblyReady: readiness.assemblyReady,
-    doctorCompletionReady: readiness.doctorCompletionReady,
-    anesthesiaMappingReady: readiness.anesthesiaMappingReady,
-    patientSignatureMapped: readiness.patientSignatureMapped,
-    filledDraftStatus: state.filledDraftStatus,
-    fieldMappingReadiness: state.fieldMappingReadiness,
-  });
-
-  const effectivePreviewReviewed = supportsFilledDraftPreview ? state.filledDraftReviewed : state.previewReviewed;
-
-  const canMarkPreviewReviewed = supportsFilledDraftPreview
-    ? state.filledDraftStatus === "current" && Boolean(state.filledDraftPdfUrl)
-    : Boolean(state.assembly);
-
-  const showMarkPreviewReviewedButton = !effectivePreviewReviewed;
-  const showApproveDraftButton = effectivePreviewReviewed && !state.draftApproved;
-
-  const previewReviewButtonLabel =
-    lang === "ar"
-      ? supportsFilledDraftPreview
-        ? "تأكيد مراجعة المعاينة المعبأة"
-        : "تأكيد مراجعة المعاينة"
-      : supportsFilledDraftPreview
-        ? "Mark Filled Preview Reviewed"
-        : "Mark Preview Reviewed";
-
-  const previewReviewBlockedMessage =
-    lang === "ar"
-      ? supportsFilledDraftPreview
-        ? "أنشئ المعاينة المعبأة أولًا قبل تأكيد المراجعة."
-        : "افتح المعاينة أولًا قبل تأكيد المراجعة."
-      : supportsFilledDraftPreview
-        ? "Generate the filled draft preview first before marking it reviewed."
-        : "Open the preview first before marking it reviewed.";
-
-  function handleMarkPreviewReviewed() {
-    if (!canMarkPreviewReviewed) return;
-
-    if (supportsFilledDraftPreview) {
-      setFilledDraftReviewed(true);
-    }
-
-    setPreviewReviewed(true);
-  }
+  const [draftPdfUrl, setDraftPdfUrl] = useState<string>();
+  const [draftPdfLoading, setDraftPdfLoading] = useState(false);
+  const [draftPdfError, setDraftPdfError] = useState<string>();
 
   function handleApprove() {
-    if (!effectivePreviewReviewed) return;
     approveDraft();
   }
 
@@ -176,6 +99,80 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     setSendModalOpen(false);
   }
 
+  const hasApprovedPdfSource = isAssemblyApprovedPdfSourceVerified(state.assembly);
+
+
+  useEffect(() => {
+    const formId = state.fieldMappingReadiness?.formId || state.assembly?.consentForm?.id || "";
+    const approvedPdfUrl = resolveAssemblyApprovedPdfUrl(state.assembly);
+    const values = state.doctorCompletionValues || {};
+    const hasDoctorValues = Object.values(values).some((value) => String(value || "").trim().length > 0);
+    const hasPhysicianSignature =
+      Boolean(
+        state.physicianSignatureDataUrl
+          .trim(),
+      );
+
+    if (!formId || !approvedPdfUrl || (!hasDoctorValues && !hasPhysicianSignature)) {
+      // Pre-existing synchronous setState in effect; kept to preserve workspace
+      // reset behavior while we address the broader production release.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDraftPdfLoading(false);
+      setDraftPdfError(undefined);
+      setDraftPdfUrl((previous) => {
+        if (previous) URL.revokeObjectURL(previous);
+        return undefined;
+      });
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      setDraftPdfLoading(true);
+      setDraftPdfError(undefined);
+
+      createDoctorCompletedDraftPdfPreview(
+        {
+          formId,
+          approvedPdfUrl,
+          doctorCompletionValues: values,
+          physicianSignatureDataUrl:
+            state.physicianSignatureDataUrl,
+        },
+        controller.signal,
+      )
+        .then((url) => {
+          setDraftPdfUrl((previous) => {
+            if (previous) URL.revokeObjectURL(previous);
+            return url;
+          });
+        })
+        .catch((error) => {
+          if (controller.signal.aborted) return;
+          setDraftPdfError(
+            error instanceof Error
+              ? error.message
+              : "Doctor-completed draft PDF preview could not be generated.",
+          );
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) {
+            setDraftPdfLoading(false);
+          }
+        });
+    }, 650);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [
+    state.assembly,
+    state.fieldMappingReadiness?.formId,
+    state.doctorCompletionValues,
+    state.physicianSignatureDataUrl,
+  ]);
+
   const sendReason = (() => {
     if (sendLoading) return "Sending…";
     if (!readiness.patientReady) return "Select a patient first";
@@ -189,31 +186,13 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     if (!readiness.anesthesiaMappingReady) return "Complete anesthesia review when applicable";
     if (!readiness.fieldMappingVerified) return "Consent field mapping must be verified";
     if (!readiness.educationReady) return "Education material missing";
-
-    if (!effectivePreviewReviewed) {
-      return supportsFilledDraftPreview ? "Mark Filled Preview Reviewed first" : "Mark Preview Reviewed first";
-    }
-
+    if (!readiness.previewReviewed) return "Mark Preview Reviewed first";
     if (!readiness.contactAvailable) return "Enter patient contact";
     if (!readiness.allowlisted) return "Recipient is not allowlisted";
-    if (state.sendEligibility?.pilotEnabled && !state.recipientConfirmed) return "Confirm recipient contact";
-    if (!state.draftApproved) return "Approve the draft first";
+    if (!readiness.draftApproved) return "Approve the draft first";
     if (!readiness.blockersResolved) return "Resolve blockers first";
-
-    if (readiness.aggregate.blocked) {
-      const firstBlocked = readiness.aggregate.items.find((item) => item.status === "BLOCKED" || item.status === "REQUIRED");
-      if (firstBlocked) return firstBlocked.detail || firstBlocked.labelEn;
-    }
-
     return undefined;
   })();
-
-  const sendDisabled =
-    !readiness.sendReady ||
-    sendLoading ||
-    !hasApprovedPdfSource ||
-    !effectivePreviewReviewed ||
-    !state.draftApproved;
 
   const renderWorkspaceContent = () => (
     <div className="space-y-6" dir={lang === "ar" ? "rtl" : "ltr"}>
@@ -229,9 +208,9 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
         patientsLoading={patientsLoading}
         encountersLoading={encountersLoading}
         error={patientsError || encountersError}
-        onSearchQueryChange={(query) => {
+        onSearchQueryChange={(q) => {
           setProcedureQuery("");
-          void searchForPatients(query);
+          void searchForPatients(q);
         }}
       />
 
@@ -239,7 +218,6 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
 
       <div>
         <WorkspaceSectionLabel>{lang === "ar" ? "إعداد الموافقة" : "Consent setup"}</WorkspaceSectionLabel>
-
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(0,1fr)_340px]">
           <div className="space-y-6">
             <ProcedureSelectionPanel
@@ -260,7 +238,6 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
               onResolveAssembly={() => void resolveAssembly()}
               onReviewModeChange={setReviewMode}
             />
-
             <DoctorCompletionPanel
               mapping={state.fieldMappingReadiness}
               values={state.doctorCompletionValues}
@@ -268,158 +245,38 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
               onValueChange={setDoctorCompletionValue}
               onPhysicianSignatureChange={setPhysicianSignatureDataUrl}
               disabled={sendLoading}
-              filledPreviewBlocker={filledPreviewBlocker}
             />
-
-            {supportsFilledDraftPreview ? (
-              <WorkspaceCard className="overflow-hidden">
-                <WorkspaceCardHeader
-                  icon={<FileText className="size-5" />}
-                  title={lang === "ar" ? "المعاينة المعبأة" : "Filled draft preview"}
-                  description={
-                    lang === "ar"
-                      ? "أنشئ معاينة النموذج المعبأة من المصدر المعتمد والقيم المدخلة."
-                      : "Generate the filled draft preview from the approved source and entered values."
-                  }
-                />
-
-                <div className="space-y-4 px-5 py-5">
-                  {state.filledDraftError ? (
-                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800">
-                      {state.filledDraftError}
-                    </div>
-                  ) : null}
-
-                  {filledPreviewBlocker ? (
-                    <div
-                      id="filled-preview-blocker"
-                      className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800"
-                      role="status"
-                      aria-live="polite"
-                      data-filled-preview-blocker="true"
-                    >
-                      {filledPreviewBlocker}
-                    </div>
-                  ) : null}
-
-                  <Button
-                    className="h-11 w-full rounded-2xl"
-                    disabled={!canGenerateFilledPreview}
-                    onClick={() => void generateFilledDraftPreview()}
-                    aria-describedby={filledPreviewBlocker ? "filled-preview-blocker" : undefined}
-                  >
-                    {state.filledDraftStatus === "loading" ? (
-                      <Loader2 className="mr-1 size-4 animate-spin" />
-                    ) : (
-                      <RefreshCw className="mr-1 size-4" />
-                    )}
-
-                    {state.filledDraftStatus === "loading"
-                      ? lang === "ar"
-                        ? "جاري الإنشاء…"
-                        : "Generating…"
-                      : lang === "ar"
-                        ? "إنشاء المعاينة المعبأة"
-                        : "Generate Filled Preview"}
-                  </Button>
-                </div>
-              </WorkspaceCard>
-            ) : null}
-
             <ReadinessChecklist readiness={readiness} />
           </div>
 
           <ApprovedPdfViewer
-            key={state.assembly?.consentForm?.id ?? "no-assembly"}
             assembly={state.assembly}
             loading={assemblyLoading}
-            reviewed={effectivePreviewReviewed}
-            draftPdfUrl={state.filledDraftPdfUrl}
-            draftPdfLoading={state.filledDraftStatus === "loading"}
-            draftPdfError={state.filledDraftError}
-            isAcroFormBacked={isAcroFormBacked}
-            filledDraftStatus={state.filledDraftStatus}
-            filledDraftReviewed={state.filledDraftReviewed}
-            viewerMode={state.pdfViewerMode}
-            onViewerModeChange={setPdfViewerMode}
-            onGenerateFilledDraft={() => void generateFilledDraftPreview()}
-            onMarkFilledDraftReviewed={handleMarkPreviewReviewed}
+            reviewed={state.previewReviewed}
+                        draftPdfUrl={draftPdfUrl}
+            draftPdfLoading={draftPdfLoading}
+            draftPdfError={draftPdfError}
             onOpenPreview={() => setPreviewOpen(true)}
-            onMarkReviewed={handleMarkPreviewReviewed}
+            onMarkReviewed={() => setPreviewReviewed(true)}
           />
 
           <div className="space-y-6">
             <ComplianceReadinessPanel assembly={state.assembly} readiness={readiness} reviewMode={state.reviewMode} />
-
-            <SendRecipientCard
-              mobile={state.recipientMobile}
-              email={state.recipientEmail}
-              allowlisted={state.sendEligibility?.allowlisted}
-              pilotEnabled={state.sendEligibility?.pilotEnabled}
-              pilotRealSend={state.sendEligibility?.pilotEnabled}
-              recipientConfirmed={state.recipientConfirmed}
-              reason={state.sendEligibility?.reason}
-              onMobileChange={setRecipientMobile}
-              onEmailChange={setRecipientEmail}
-              onRecipientConfirmedChange={setRecipientConfirmed}
-              disabled={sendLoading}
-            />
-
-            <div className="space-y-3">
-              {showMarkPreviewReviewedButton ? (
-                <div className="space-y-2">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="h-11 w-full rounded-2xl"
-                    disabled={sendLoading || !canMarkPreviewReviewed}
-                    onClick={handleMarkPreviewReviewed}
-                  >
-                    {previewReviewButtonLabel}
-                  </Button>
-
-                  {!canMarkPreviewReviewed ? (
-                    <p className="text-center text-xs leading-5 text-slate-500">{previewReviewBlockedMessage}</p>
-                  ) : null}
-                </div>
-              ) : null}
-
-              {showApproveDraftButton ? (
-                <Button
-                  variant={state.draftApproved ? "outline" : "default"}
-                  size="sm"
-                  className="h-11 w-full rounded-2xl"
-                  disabled={state.draftApproved || !effectivePreviewReviewed}
-                  onClick={handleApprove}
-                >
-                  {state.draftApproved
-                    ? lang === "ar"
-                      ? "تم اعتماد المسودة"
-                      : "Draft Approved"
-                    : lang === "ar"
-                      ? "اعتماد المسودة"
-                      : "Approve Draft"}
-                </Button>
-              ) : null}
-            </div>
-
             <SendToPatientPanel
               mobile={state.recipientMobile}
               email={state.recipientEmail}
               allowlisted={state.sendEligibility?.allowlisted}
               pilotEnabled={state.sendEligibility?.pilotEnabled}
               reason={state.sendEligibility?.reason}
-              previewReviewed={effectivePreviewReviewed}
+              previewReviewed={state.previewReviewed}
               draftApproved={state.draftApproved}
-              sendDisabled={sendDisabled}
+              sendDisabled={!readiness.sendReady || sendLoading || !hasApprovedPdfSource}
               sendReason={sendReason}
               sendLoading={sendLoading}
               signingResult={state.signingResult}
-              supportsFilledDraftPreview={supportsFilledDraftPreview}
-              filledDraftStatus={state.filledDraftStatus}
-              draftPdfUrl={state.filledDraftPdfUrl}
+              onMobileChange={setRecipientMobile}
+              onEmailChange={setRecipientEmail}
               onApproveDraft={handleApprove}
-              onMarkFilledDraftReviewed={handleMarkPreviewReviewed}
               onSend={handleSend}
             />
           </div>
@@ -431,7 +288,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
         <AuditEvidenceTimeline timeline={state.timeline} signingResult={state.signingResult} />
       </div>
 
-      {state.dryRunSuccess ? (
+      {state.dryRunSuccess && (
         <Card className="border-emerald-200 bg-emerald-50">
           <CardContent className="p-4">
             <p className="text-sm font-semibold text-emerald-800">Dry-run successful</p>
@@ -440,7 +297,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
             </p>
           </CardContent>
         </Card>
-      ) : null}
+      )}
 
       <SendConfirmationModal
         open={sendModalOpen}
@@ -459,7 +316,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
         allowlisted={state.sendEligibility?.allowlisted}
         pilotEnabled={state.sendEligibility?.pilotEnabled}
         eligibilityReason={state.sendEligibility?.reason}
-        allowRealSend={readiness.sendReady && hasApprovedPdfSource && effectivePreviewReviewed && state.draftApproved}
+        allowRealSend={readiness.sendReady && hasApprovedPdfSource}
         onConfirm={handleConfirmSend}
         onDryRun={handleDryRunSend}
         onCancel={() => setSendModalOpen(false)}
@@ -469,8 +326,8 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
         open={previewOpen}
         assembly={state.assembly}
         reviewMode={state.reviewMode}
-        reviewed={effectivePreviewReviewed}
-        onMarkReviewed={handleMarkPreviewReviewed}
+        reviewed={state.previewReviewed}
+        onMarkReviewed={() => setPreviewReviewed(true)}
         onClose={() => setPreviewOpen(false)}
       />
     </div>
@@ -480,31 +337,22 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     switch (activePage) {
       case "workspace":
         return renderWorkspaceContent();
-
       case "patients":
         return <PatientsPage patients={patients} />;
-
       case "encounters":
         return <EncountersPage encounters={encounters} />;
-
       case "procedures":
         return <ProceduresPage />;
-
       case "knowledge":
         return <KnowledgePage />;
-
       case "templates":
         return <TemplatesPage />;
-
       case "analytics":
         return <AnalyticsPage />;
-
       case "audit":
         return <AuditPage timeline={state.timeline} />;
-
       case "settings":
         return <SettingsPage physician={physician} />;
-
       default:
         return renderWorkspaceContent();
     }
@@ -513,7 +361,6 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
   return (
     <div className="flex min-h-screen w-full bg-slate-50" dir={lang === "ar" ? "rtl" : "ltr"}>
       <EnterpriseSidebar activePage={activePage} onPageChange={setActivePage} physician={physician} />
-
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <PhysicianWorkspaceHeader
           patient={state.patient}
@@ -521,7 +368,6 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
           selectedProcedureTitle={state.selectedProcedureTitle}
           assembly={state.assembly}
         />
-
         <main className="flex-1 px-5 py-6 lg:px-8">{renderPage()}</main>
       </div>
     </div>

@@ -95,7 +95,7 @@ export default function FinancialNoticeSignaturePage() {
         session_id: string;
         verification_status: string;
         delivery_status?: string | null;
-        provider_result?: { otp_debug_code?: string };
+        provider_result?: Record<string, unknown>;
       }>(`/api/discharge/cases/${caseId}/acknowledgment/start`, {
         method: "POST",
         body: JSON.stringify({

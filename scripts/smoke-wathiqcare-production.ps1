@@ -1,6 +1,9 @@
-﻿$ErrorActionPreference = "Stop"
+param(
+  [string]$BaseUrl = "https://wathiqcare.online"
+)
 
-$BaseUrl = "https://wathiqcare.online"
+$ErrorActionPreference = "Stop"
+
 $Stamp = Get-Date -Format yyyyMMddHHmmss
 
 $checks = @(
@@ -8,11 +11,11 @@ $checks = @(
   @{ Name = "Doctor Workspace"; Url = "$BaseUrl/modules/informed-consents?v=$Stamp"; ExpectedType = "text/html" },
   @{ Name = "Approved Forms Page"; Url = "$BaseUrl/modules/informed-consents/forms?v=$Stamp"; ExpectedType = "text/html" },
   @{ Name = "Approved Forms API"; Url = "$BaseUrl/api/modules/informed-consents/forms?q=anesthesia&v=$Stamp"; ExpectedType = "application/json" },
-  @{ Name = "General Anesthesia PDF"; Url = "$BaseUrl/approved-consent-forms/general-anesthesia-consent.pdf?v=$Stamp"; ExpectedType = "application/pdf" },
-  @{ Name = "Cholecystectomy PDF"; Url = "$BaseUrl/approved-consent-forms/cholecystectomy-consent.pdf?v=$Stamp"; ExpectedType = "application/pdf" },
-  @{ Name = "Appendectomy PDF"; Url = "$BaseUrl/approved-consent-forms/appendectomy-consent.pdf?v=$Stamp"; ExpectedType = "application/pdf" },
-  @{ Name = "Regional Anesthesia PDF"; Url = "$BaseUrl/approved-consent-forms/regional-anesthesia-consent.pdf?v=$Stamp"; ExpectedType = "application/pdf" },
-  @{ Name = "Endoscopy PDF"; Url = "$BaseUrl/approved-consent-forms/endoscopy-consent.pdf?v=$Stamp"; ExpectedType = "application/pdf" }
+  @{ Name = "Anesthesia Patient Consent PDF"; Url = "$BaseUrl/approved-consent-forms/anesthesia-patient-consent.pdf?v=$Stamp"; ExpectedType = "application/pdf" },
+  @{ Name = "Laparoscopic Cholecystectomy PDF"; Url = "$BaseUrl/approved-consent-forms/cholecystectomy-laparoscopic.pdf?v=$Stamp"; ExpectedType = "application/pdf" },
+  @{ Name = "Appendectomy Consent PDF"; Url = "$BaseUrl/approved-consent-forms/appendectomy-consent.pdf?v=$Stamp"; ExpectedType = "application/pdf" },
+  @{ Name = "Upper GI Endoscopy PDF"; Url = "$BaseUrl/approved-consent-forms/upper-gastrointestinal-endoscopy.pdf?v=$Stamp"; ExpectedType = "application/pdf" },
+  @{ Name = "Adenotonsillectomy PDF"; Url = "$BaseUrl/approved-consent-forms/adenotonsillectomy.pdf?v=$Stamp"; ExpectedType = "application/pdf" }
 )
 
 $results = foreach ($check in $checks) {

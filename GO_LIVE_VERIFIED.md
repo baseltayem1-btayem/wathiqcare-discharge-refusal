@@ -54,7 +54,7 @@
 
 ### ✅ Test 2. Authentication
 - **Endpoint:** `POST /api/auth/login`
-- **Credentials:** Admin@wathiqCare.med.sa / WathiqCare@2026
+- **Credentials:** Admin@wathiqCare.med.sa / [REDACTED]
 - **Status:** Login successful
 - **Token:** Valid JWT issued (551 chars)
 - **Result:** User authentication working

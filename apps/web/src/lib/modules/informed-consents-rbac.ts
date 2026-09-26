@@ -21,6 +21,7 @@ export type InformedConsentPermission =
   | "consent:finalize"
   | "consent:view_evidence"
   | "consent:export"
+  | "clinical_knowledge:review_illustrations"
   | "governance:view"
   | "audit:view";
 
@@ -49,6 +50,7 @@ const ROLE_PERMISSIONS: Record<string, InformedConsentPermission[]> = {
     "consent:finalize",
     "consent:view_evidence",
     "consent:export",
+    "clinical_knowledge:review_illustrations",
     "governance:view",
   ],
   subscriber_admin: [
@@ -64,6 +66,7 @@ const ROLE_PERMISSIONS: Record<string, InformedConsentPermission[]> = {
     "consent:finalize",
     "consent:view_evidence",
     "consent:export",
+    "clinical_knowledge:review_illustrations",
     "governance:view",
   ],
   consent_admin: [
@@ -79,16 +82,19 @@ const ROLE_PERMISSIONS: Record<string, InformedConsentPermission[]> = {
     "consent:finalize",
     "consent:view_evidence",
     "consent:export",
+    "clinical_knowledge:review_illustrations",
     "governance:view",
   ],
   consent_physician: [
     ...BASE_PERMISSIONS,
     "consent:approve",
+    "clinical_knowledge:review_illustrations",
   ],
   consent_legal_reviewer: [
     "template:approve_legal",
     "wording:review",
     "wording:approve",
+    "clinical_knowledge:review_illustrations",
     "governance:view",
     "audit:view",
     "consent:view_evidence",
@@ -97,6 +103,7 @@ const ROLE_PERMISSIONS: Record<string, InformedConsentPermission[]> = {
     "template:approve_medical",
     "wording:review",
     "wording:approve",
+    "clinical_knowledge:review_illustrations",
     "governance:view",
     "audit:view",
     "consent:view_evidence",
@@ -105,6 +112,7 @@ const ROLE_PERMISSIONS: Record<string, InformedConsentPermission[]> = {
     "template:approve_compliance",
     "wording:review",
     "wording:approve",
+    "clinical_knowledge:review_illustrations",
     "governance:view",
     "audit:view",
     "consent:view_evidence",
@@ -137,6 +145,7 @@ const ROLE_PERMISSIONS: Record<string, InformedConsentPermission[]> = {
     "consent:finalize",
     "consent:view_evidence",
     "consent:export",
+    "clinical_knowledge:review_illustrations",
     "governance:view",
   ],
 };
@@ -192,7 +201,8 @@ export function listInformedConsentPermissions(auth: AuthContext): Set<InformedC
   }
 
   // Backward-compatible aliases from older tenant roles.
-  if (normalizeRole(auth.role) === "admin" || normalizeRole(auth.role) === "owner") {
+  const normalizedAuthRole = normalizeRole(auth.role);
+  if (normalizedAuthRole === "admin" || normalizedAuthRole === "owner") {
     for (const permission of ROLE_PERMISSIONS.tenant_admin) {
       set.add(permission);
     }

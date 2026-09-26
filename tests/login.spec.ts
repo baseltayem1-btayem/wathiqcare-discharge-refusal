@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-// بيانات وهمية لتجربة تسجيل الدخول
+// بيانات وهمية لتجربة تسجيل الدخول (test-only fake credentials, not a real secret)
 const email = 'testuser@example.com';
-const password = 'testpassword';
+const password = process.env.TEST_LOGIN_PASSWORD || 'testpassword';
 
 test('login page should show and handle login form', async ({ page }) => {
   await page.goto('http://localhost:3000/login');

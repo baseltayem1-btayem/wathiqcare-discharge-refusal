@@ -28,13 +28,36 @@ export function Form({ errors = {}, children, className, ...props }: FormProps) 
 
 type FormFieldProps = {
   name: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  label?: React.ReactNode;
+  htmlFor?: string;
+  error?: React.ReactNode;
+  className?: string;
+  labelClassName?: string;
 };
 
-export function FormField({ name, children }: FormFieldProps) {
+export function FormField({
+  name,
+  children,
+  label,
+  htmlFor,
+  error,
+  className,
+  labelClassName,
+}: FormFieldProps) {
   return (
-    <div className="space-y-2" data-field-name={name}>
+    <div className={cn("space-y-2", className)} data-field-name={name}>
+      {label ? (
+        <FormLabel htmlFor={htmlFor} className={labelClassName}>
+          {label}
+        </FormLabel>
+      ) : null}
       {children}
+      {error ? (
+        <p className="text-xs text-[var(--wc-danger)]" role="alert">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -1671,12 +1671,12 @@ export const imcApprovedConsentLibraryGenerated: ImcApprovedConsentLibraryItem[]
   },
   {
     "id": "imc-critical-care-consent",
-    "titleEn": "Critical Care Consent",
-    "titleAr": "",
-    "specialty": "General / Other",
-    "department": "General",
-    "categoryCode": "GENERAL_OTHER",
-    "consentType": "PROCEDURE_CONSENT",
+    "titleEn": "ICU and Critical Care Consent",
+    "titleAr": "موافقة العناية المركزة والإجراءات الحرجة",
+    "specialty": "ICU",
+    "department": "ICU",
+    "categoryCode": "ICU_CRITICAL_CARE",
+    "consentType": "HIGH_RISK_PROCEDURE_CONSENT",
     "templateType": "IMC_APPROVED_PDF",
     "version": "v1.0",
     "status": "ACTIVE",
@@ -1686,6 +1686,7 @@ export const imcApprovedConsentLibraryGenerated: ImcApprovedConsentLibraryItem[]
     "hospitalPdfFilename": "Critical Care Consent.pdf",
     "patientEducationPdfFilename": "",
     "keywords": [
+      "icu",
       "care",
       "consent",
       "critical"

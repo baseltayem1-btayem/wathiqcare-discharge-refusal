@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { sendSecureSigningLinkEmail } from "./pilot-email-override";
+import {
+  sendSecureSigningLinkEmail,
+  sendSigningOtpEmail,
+} from "./pilot-email-override";
 
 test("secure signing email uses the patient-entered recipient address", async () => {
   let sentTo = "";
@@ -139,4 +142,57 @@ test("pilot override can be disabled explicitly in uat", () => {
     assert.equal(config.enabled, false);
     assert.equal(config.environment, "uat");
   });
+});
+
+test("secure signing OTP email is bilingual Arabic/English", async () => {
+  type CapturedEmail = {
+    subject: string;
+    html: string;
+    text?: string;
+  };
+  let captured: CapturedEmail | null = null;
+
+  const result = await sendSigningOtpEmail(
+    {
+      tenantId: "tenant-1",
+      caseId: "case-1",
+      recipientEmail: "patient@example.com",
+      otpCode: "654321",
+      linkUrl: "https://wathiqcare.online/sign/token-otp",
+      expiresMinutes: 10,
+      documentId: "doc-otp",
+      sessionId: "session-otp",
+      challengeId: "challenge-otp",
+      mobileNumber: "+966501234567",
+      moduleType: "informed_consent",
+      locale: "ar",
+    },
+    {
+      sendEmail: async (args) => {
+        captured = {
+          subject: args.subject,
+          html: args.html,
+          text: args.text,
+        };
+        return {
+          provider: "smtp",
+          messageId: "msg-otp",
+          smtpAccepted: ["patient@example.com"],
+          smtpRejected: [],
+          smtpSendResponse: "250 Accepted",
+        };
+      },
+      recordAuditAttempt: async () => "audit-otp",
+    },
+  );
+
+  assert.equal(result.status, "sent");
+  assert.ok(captured, "email payload should be captured");
+  const email = captured as CapturedEmail;
+  assert.match(email.subject, /Secure Signing OTP/);
+  assert.match(email.subject, /رمز التحقق/);
+  assert.match(email.html, /654321/);
+  assert.match(email.html, /رمز التحقق/);
+  assert.match(email.text || "", /OTP Code/);
+  assert.match(email.text || "", /رمز التحقق/);
 });

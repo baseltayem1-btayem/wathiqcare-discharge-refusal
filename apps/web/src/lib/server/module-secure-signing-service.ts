@@ -4,7 +4,6 @@ import type { PrismaClient } from "@prisma/client";
 import type { Browser } from "puppeteer";
 import {
   createSigningSessionIdempotent,
-  revokeActiveSigningSessionsForDocument,
 } from "@/lib/server/signing-session-service";
 import { getPrisma } from "@/lib/server/prisma";
 import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
@@ -17,11 +16,6 @@ import {
   hashRecipient,
   validateIdempotencyKey,
 } from "@/lib/server/idempotency-core";
-import {
-  generateGovernedPatientCopy,
-  isAcroFormBackedPatientCopy,
-  type ConsentDocumentForPatientCopy,
-} from "@/lib/server/acroform/patient-copy-dispatch-service";
 import {
   processPendingDispatches,
   type SmsGateway,
@@ -397,13 +391,6 @@ function resolveRecord(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
-function readFilledDraftFingerprint(metadata: unknown): string | undefined {
-  const record = resolveRecord(metadata);
-  if (!record) return undefined;
-  const value = record.filledDraftFingerprint;
-  return typeof value === "string" && value.trim() ? value.trim() : undefined;
-}
-
 /**
  * Extract a trustworthy approved PDF hash from the consent document.
  * Prefers the first-party column; falls back only to known approved-source
@@ -492,39 +479,7 @@ export async function sendModuleSecureSigningLink(
     validateIdempotencyKey(resendRequestKey);
   }
 
-  const db = args.client ?? prisma();
-
-  let consentDocument: {
-    id: string;
-    patientName: string | null;
-    mrn: string | null;
-    dob: string | null;
-    physicianName: string | null;
-    physicianSpecialty: string | null;
-    metadata: unknown;
-  } | null = null;
-
-  if (args.moduleType === "informed_consent") {
-    consentDocument = await db.consentDocument.findFirst({
-      where: { id: args.documentId, tenantId: args.tenantId },
-      select: {
-        id: true,
-        patientName: true,
-        mrn: true,
-        dob: true,
-        physicianName: true,
-        physicianSpecialty: true,
-        metadata: true,
-      },
-    });
-  }
-
-  const filledDraftFingerprint = consentDocument
-    ? readFilledDraftFingerprint(consentDocument.metadata)
-    : undefined;
-  const fingerprintedArgs = { ...args, filledDraftFingerprint };
-
-  const payloadFingerprint = buildSendPayloadFingerprint(fingerprintedArgs);
+  const payloadFingerprint = buildSendPayloadFingerprint(args);
 
   // The canonical server-derived identity is always used as the root for
   // explicit resends so that the resend request key is combined with stable
@@ -536,7 +491,7 @@ export async function sendModuleSecureSigningLink(
     approvedConsentFormKey: args.approvedConsentFormKey,
     approvedTemplateVersionId: args.approvedTemplateVersionId,
     immutablePdfHash: args.immutablePdfHash,
-    filledDraftFingerprint,
+    filledDraftFingerprint: args.filledDraftFingerprint,
     mobileNumber: args.mobileNumber,
     recipientEmail: args.recipientEmail,
     locale: args.locale,
@@ -565,87 +520,17 @@ export async function sendModuleSecureSigningLink(
     );
   }
 
-  // A stale session (e.g. created before the governed patient-copy binding or
-  // with a different filled-document identity) must not remain active. Only an
-  // exact idempotency match keeps the existing session alive.
-  if (!args.explicitResend) {
-    const existingActive = await db.signingSession.findFirst({
-      where: {
-        tenantId: args.tenantId,
-        documentId: args.documentId,
-        status: { in: ["PENDING", "SENT", "PARTIALLY_SIGNED"] },
-      },
-      select: { id: true, idempotencyKey: true },
-      orderBy: { createdAt: "desc" },
-    });
-    if (
-      existingActive
-      && typeof existingActive.idempotencyKey === "string"
-      && existingActive.idempotencyKey !== sessionIdempotencyKey
-    ) {
-      await revokeActiveSigningSessionsForDocument(
-        args.tenantId,
-        args.documentId,
-        args.initiatedBy,
-        "Governed filled-document identity changed; replacing active signing session",
-        args.client,
-      );
-    }
-  }
-
-  let pdfBytes: Buffer;
-  let sessionMetadataOverride: Record<string, unknown> | undefined;
-
-  if (args.moduleType === "informed_consent") {
-    const acroFormDocument: ConsentDocumentForPatientCopy | null = consentDocument
-      ? {
-          id: consentDocument.id,
-          patientName: consentDocument.patientName ?? undefined,
-          mrn: consentDocument.mrn,
-          dob: consentDocument.dob,
-          physicianName: consentDocument.physicianName ?? undefined,
-          physicianSpecialty: consentDocument.physicianSpecialty ?? undefined,
-          metadata: consentDocument.metadata,
-        }
-      : null;
-
-    if (acroFormDocument && isAcroFormBackedPatientCopy(acroFormDocument)) {
-      const governed = await generateGovernedPatientCopy({
-        document: acroFormDocument,
-        browser: args.browser,
-      });
-      pdfBytes = Buffer.from(governed.bytes);
-      sessionMetadataOverride = {
-        acroFormBacked: true,
-        governedPatientCopy: {
-          pdfHash: governed.pdfHash,
-          pdfBytesBase64: pdfBytes.toString("base64"),
-          fingerprint: governed.fingerprint,
-          filledDraftFingerprint,
-          formId: governed.formId,
-          approvedPdfUrl: governed.approvedPdfUrl,
-          manifestHash: governed.manifestHash,
-          generatedAt: governed.generatedAt,
-        },
-      };
-    } else {
-      pdfBytes = buildPdfBuffer("WathiqCare Secure Signing", [
-        `Module: ${args.moduleKey}`,
-        `Case: ${args.caseId}`,
-        `Document: ${args.documentId}`,
-        `Patient: ${args.patientName}`,
-        `Generated At: ${new Date().toISOString()}`,
-      ]);
-    }
-  } else {
-    pdfBytes = buildPdfBuffer("WathiqCare Secure Signing", [
-      `Module: ${args.moduleKey}`,
-      `Case: ${args.caseId}`,
-      `Document: ${args.documentId}`,
-      `Patient: ${args.patientName}`,
-      `Generated At: ${new Date().toISOString()}`,
-    ]);
-  }
+  // The session PDF is a lightweight placeholder: the governed patient copy is
+  // rendered at download time from the approved source (see
+  // renderImcApprovedConsentPdf), so no document lookup or patient-copy
+  // generation happens at send time.
+  const pdfBytes = buildPdfBuffer("WathiqCare Secure Signing", [
+    `Module: ${args.moduleKey}`,
+    `Case: ${args.caseId}`,
+    `Document: ${args.documentId}`,
+    `Patient: ${args.patientName}`,
+    `Generated At: ${new Date().toISOString()}`,
+  ]);
 
   const session = await createSigningSessionIdempotent({
     input: {
@@ -674,7 +559,6 @@ export async function sendModuleSecureSigningLink(
     explicitResend: args.explicitResend,
     caseId: args.caseId,
     client: args.client,
-    metadata: sessionMetadataOverride,
   });
 
   // Deliver this session's queued patient messages inline. There is no
@@ -703,7 +587,7 @@ export async function sendModuleSecureSigningLink(
     ...(args.client ? { client: args.client } : {}),
   });
 
-  const refreshedDispatches = await db.patientMessageDispatch.findMany({
+  const refreshedDispatches = await (args.client ?? prisma()).patientMessageDispatch.findMany({
     where: { tenantId: args.tenantId, signingSessionId: session.sessionId },
   });
 

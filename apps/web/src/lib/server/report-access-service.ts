@@ -1,6 +1,7 @@
-﻿import { Prisma } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { getPrisma } from "@/lib/server/prisma";
+import { runAuditOperation } from "@/lib/server/audit-foundation";
 
 const prisma = () => getPrisma();
 
@@ -39,37 +40,50 @@ export function summarizeReportAccessActivity(logs: ReportAccessLike[]) {
   };
 }
 
-export async function logReportAccess(args: {
-  tenantId: string;
-  caseId?: string | null;
-  reportKey: string;
-  filterSummary?: string | null;
-  exportFormat?: string | null;
-  accessedByUserId?: string | null;
-  accessedByRole?: string | null;
-  request?: NextRequest;
-  metadataJson?: unknown;
-}) {
+export async function logReportAccess(
+  args: {
+    tenantId: string;
+    caseId?: string | null;
+    reportKey: string;
+    filterSummary?: string | null;
+    exportFormat?: string | null;
+    accessedByUserId?: string | null;
+    accessedByRole?: string | null;
+    request?: NextRequest;
+    metadataJson?: unknown;
+  },
+  tx?: PrismaClient | Prisma.TransactionClient,
+) {
   const sourceIp = args.request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+  const data = {
+    tenantId: args.tenantId,
+    caseId: args.caseId ?? null,
+    reportKey: args.reportKey,
+    filterSummary: args.filterSummary ?? null,
+    exportFormat: args.exportFormat ?? null,
+    accessedByUserId: args.accessedByUserId ?? null,
+    accessedByRole: args.accessedByRole ?? null,
+    sourceIp,
+    metadataJson:
+      args.metadataJson === undefined
+        ? undefined
+        : args.metadataJson === null
+          ? Prisma.JsonNull
+          : (args.metadataJson as JsonInputValue),
+  };
 
-  return prisma().reportAccessLog.create({
-    data: {
-      tenantId: args.tenantId,
-      caseId: args.caseId ?? null,
-      reportKey: args.reportKey,
-      filterSummary: args.filterSummary ?? null,
-      exportFormat: args.exportFormat ?? null,
-      accessedByUserId: args.accessedByUserId ?? null,
-      accessedByRole: args.accessedByRole ?? null,
-      sourceIp,
-      metadataJson:
-        args.metadataJson === undefined
-          ? undefined
-          : args.metadataJson === null
-            ? Prisma.JsonNull
-            : (args.metadataJson as JsonInputValue),
+  if (tx) {
+    return tx.reportAccessLog.create({ data });
+  }
+
+  return runAuditOperation(
+    () => prisma().reportAccessLog.create({ data }),
+    {
+      operationName: "logReportAccess",
+      entityType: "report_access_log",
+      entityId: args.reportKey,
     },
-  }).catch(() => null);
+  );
 }
 
 export async function getReportAccessDashboard(tenantId: string) {

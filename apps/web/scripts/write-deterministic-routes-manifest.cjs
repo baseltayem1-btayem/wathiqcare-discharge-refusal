@@ -105,6 +105,20 @@ function isInsideBase(resolvedPath, baseDir) {
 }
 
 /**
+ * Best-effort write used for optional mirror locations; never throws.
+ */
+function writeIfPossible(targetPath, content) {
+  try {
+    fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+    fs.writeFileSync(targetPath, content, "utf8");
+    console.log(`[routes-manifest] wrote ${targetPath}`);
+  } catch (error) {
+    const message = error && error.message ? error.message : String(error);
+    console.warn(`[routes-manifest] skip ${targetPath}: ${message}`);
+  }
+}
+
+/**
  * Write the deterministic routes manifest artifact.
  *
  * - Only reads from <appRoot>/.next/routes-manifest.json
@@ -151,7 +165,7 @@ function writeDeterministicRoutesManifest(appRoot) {
   fs.mkdirSync(nextDir, { recursive: true });
   fs.writeFileSync(outputPath, deterministicContent, "utf8");
 
-  return { sourcePath, outputPath, nextDir, root };
+  return { sourcePath, outputPath, nextDir, root, deterministicContent };
 }
 
 /**
@@ -161,6 +175,13 @@ function main() {
   try {
     const result = writeDeterministicRoutesManifest(process.cwd());
     console.log(`[routes-manifest] wrote ${result.outputPath} from ${result.sourcePath}`);
+
+    // Vercel may run the build from either /vercel/path0 or /vercel/path1
+    // depending on the monorepo layout. Mirror the manifest at the standard
+    // .next location for both possible roots without duplicating the rest of
+    // the app output.
+    writeIfPossible("/vercel/path0/.next/routes-manifest-deterministic.json", result.deterministicContent);
+    writeIfPossible("/vercel/path1/.next/routes-manifest-deterministic.json", result.deterministicContent);
   } catch (error) {
     const message = error && error.message ? error.message : String(error);
     console.error(`[routes-manifest] failed: ${message}`);
@@ -178,6 +199,7 @@ module.exports = {
   resolveAppRoot,
   resolveNextDir,
   isInsideBase,
+  writeIfPossible,
   writeDeterministicRoutesManifest,
   main,
 };

@@ -1,3 +1,18 @@
+import crypto from "node:crypto";
+import { logRuntimeEvent } from "@/lib/server/runtime-observability";
+
+function hashIdentifier(value: string): string {
+  return crypto.createHash("sha256").update(value).digest("hex").slice(0, 16);
+}
+
+function maskPhone(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length <= 4) {
+    return "[REDACTED_PHONE]";
+  }
+  return `${digits.slice(0, 3)}****${digits.slice(-2)}`;
+}
+
 type AcknowledgmentOtpTelemetry = {
   tenantId: string;
   caseId: string;
@@ -23,27 +38,38 @@ function normalizeString(value: string | null | undefined): string | null {
 function buildPayload(payload: AcknowledgmentOtpTelemetry) {
   return {
     timestamp: new Date().toISOString(),
-    tenantId: payload.tenantId,
-    caseId: payload.caseId,
-    sessionId: payload.sessionId,
+    tenantId: `t_${hashIdentifier(payload.tenantId)}`,
+    caseId: `c_${hashIdentifier(payload.caseId)}`,
+    sessionId: `s_${hashIdentifier(payload.sessionId)}`,
     documentType: payload.documentType,
     acknowledgmentMethod: payload.acknowledgmentMethod,
     challengeId: normalizeString(payload.challengeId),
     deliveryStatus: normalizeString(payload.deliveryStatus),
     provider: normalizeString(payload.provider),
     stubMode: payload.stubMode ?? null,
-    phoneNumberMasked: normalizeString(payload.phoneNumberMasked),
+    phoneNumberMasked: payload.phoneNumberMasked ? maskPhone(payload.phoneNumberMasked) : null,
   };
 }
 
 export function logAcknowledgmentOtpDispatch(payload: AcknowledgmentOtpTelemetry): void {
-  console.info("ACKNOWLEDGMENT_OTP_DISPATCH", buildPayload(payload));
+  logRuntimeEvent({
+    module: "acknowledgment",
+    event: "ACKNOWLEDGMENT_OTP_DISPATCH",
+    severity: "info",
+    tenantId: payload.tenantId,
+    details: buildPayload(payload),
+  });
 }
 
 export function logAcknowledgmentOtpVerify(payload: AcknowledgmentOtpVerifyTelemetry): void {
-  const log = payload.outcome === "verified" ? console.info : console.warn;
-  log("ACKNOWLEDGMENT_OTP_VERIFY", {
-    ...buildPayload(payload),
-    outcome: payload.outcome,
+  logRuntimeEvent({
+    module: "acknowledgment",
+    event: "ACKNOWLEDGMENT_OTP_VERIFY",
+    severity: payload.outcome === "verified" ? "info" : "warn",
+    tenantId: payload.tenantId,
+    details: {
+      ...buildPayload(payload),
+      outcome: payload.outcome,
+    },
   });
 }

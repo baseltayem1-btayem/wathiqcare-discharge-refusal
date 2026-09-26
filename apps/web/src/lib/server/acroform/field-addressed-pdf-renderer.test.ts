@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import crypto from "node:crypto";
 import { PDFDocument } from "pdf-lib";
 import type { Browser } from "puppeteer";
 import { renderFieldAddressedPdf } from "@/lib/server/acroform/field-addressed-pdf-renderer";
 import type { AcroFormTemplateManifest } from "@/lib/server/acroform/field-addressed-template-manifest";
+
+function sha256Hex(data: Uint8Array): string {
+  return crypto.createHash("sha256").update(Buffer.from(data)).digest("hex");
+}
 
 // 1x1 transparent PNG
 const TINY_PNG_BASE64 =
@@ -120,6 +125,7 @@ test("renderFieldAddressedPdf renders text, checkbox and signature, then flatten
   const browser = createMockBrowser();
   const canonicalBytes = await buildCanonicalPdf();
   const manifest = buildManifest();
+  manifest.canonicalApprovedPdf.sha256 = sha256Hex(canonicalBytes);
 
   const result = await renderFieldAddressedPdf({
     canonicalPdfBytes: canonicalBytes,
@@ -153,6 +159,7 @@ test("renderFieldAddressedPdf throws on page count mismatch", async () => {
   pdfDoc.addPage([612, 792]);
   const canonicalBytes = await pdfDoc.save();
   const manifest = buildManifest();
+  manifest.canonicalApprovedPdf.sha256 = sha256Hex(canonicalBytes);
 
   await assert.rejects(
     async () =>
@@ -171,6 +178,7 @@ test("renderFieldAddressedPdf preserves Arabic letters in rendered text summary"
   const browser = createMockBrowser();
   const canonicalBytes = await buildCanonicalPdf();
   const manifest = buildManifest();
+  manifest.canonicalApprovedPdf.sha256 = sha256Hex(canonicalBytes);
 
   const arabicValue = "اختبار CA2011E1 رقم 006";
   const result = await renderFieldAddressedPdf({

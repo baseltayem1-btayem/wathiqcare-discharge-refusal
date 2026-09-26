@@ -59,6 +59,15 @@ loadEnvFile(path.join(repoRoot, "apps", "web", ".env.local"));
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
+function requireEnv(name) {
+  const value = (process.env[name] || "").trim();
+  if (!value) {
+    console.error(`[seed-uat-users] ERROR: ${name} is required.`);
+    process.exit(1);
+  }
+  return value;
+}
+
 const BCRYPT_ROUNDS = 12;
 
 const PILOT_IMC_TENANT = {
@@ -69,9 +78,21 @@ const PILOT_IMC_TENANT = {
   allowedDomains: ["wathiqcare.med.sa", "wathiqcare.online"],
 };
 
-const PILOT_PASSWORD = "WathiqCare@2026";
+const PILOT_PASSWORD = requireEnv("UAT_PILOT_PASSWORD");
 
-/** The 5 required UAT accounts. Password is the same for all. */
+/**
+ * Unified password for IMC doctor / physician pilot accounts.
+ * Can be overridden via IMC_DOCTOR_PILOT_PASSWORD env var; defaults to the
+ * canonical pilot doctor password requested for the IMC Preview.
+ */
+const IMC_DOCTOR_PILOT_PASSWORD =
+  process.env.IMC_DOCTOR_PILOT_PASSWORD?.trim() || "IMC@imc2026";
+
+function getUserPassword(userDef) {
+  return userDef.role === "doctor" ? IMC_DOCTOR_PILOT_PASSWORD : PILOT_PASSWORD;
+}
+
+/** The 5 required UAT accounts. Password is read from UAT_PILOT_PASSWORD. */
 const UAT_USERS = [
   {
     email: "dr.ahmed@wathiqcare.med.sa",
@@ -275,25 +296,25 @@ async function main() {
 
   const tenantId = await ensurePilotTenant();
 
-  // Hash the shared password once; reused for all users.
-  const hashedPassword = await hashPassword(PILOT_PASSWORD);
-
-  // Verify that the hash is valid before writing to DB.
-  const hashValid = await bcrypt.compare(PILOT_PASSWORD, hashedPassword);
-  if (!hashValid) {
-    throw new Error("Password hash self-check failed — aborting to avoid locking users out.");
-  }
-
   for (const userDef of UAT_USERS) {
+    const password = getUserPassword(userDef);
+    const hashedPassword = await hashPassword(password);
+
+    // Verify that the hash is valid before writing to DB.
+    const hashValid = await bcrypt.compare(password, hashedPassword);
+    if (!hashValid) {
+      throw new Error("Password hash self-check failed — aborting to avoid locking users out.");
+    }
+
     await seedUatUser(userDef, tenantId, hashedPassword);
   }
 
   console.log("\n[uat-seed] UAT users provisioned successfully.");
   console.log("[uat-seed] Canonical login identifiers:");
   for (const u of UAT_USERS) {
-    console.log(`  - ${u.email}  (${u.label})`);
+    const passwordHint = u.role === "doctor" ? " (unified doctor password)" : "";
+    console.log(`  - ${u.email}  (${u.label})${passwordHint}`);
   }
-  console.log(`[uat-seed] Password: ${PILOT_PASSWORD}`);
   console.log("[uat-seed] All accounts: isActive=true, status=active, emailVerified=true, password_reset_required=false");
 }
 

@@ -45,17 +45,17 @@ export async function readFormsFallback(request: NextRequest): Promise<unknown[]
   const forms = Array.isArray(payload?.templates) ? payload.templates : [];
 
   return forms.map((form: Record<string, unknown>) => ({
-    id: form.id,
-    templateCode: form.id,
-    titleAr: form.titleAr || form.titleEn || form.procedure || "Consent Form",
-    titleEn: form.titleEn || form.titleAr || form.procedure || "Consent Form",
-    consentType: form.category || form.consentType || "procedure",
-    specialty: form.specialty || "",
-    department: form.department || form.specialty || "",
-    currentVersionId: form.version || "1.0",
-    procedure: form.procedure || "",
-    riskLevel: form.riskLevel || "",
-    approvalStatus: form.approvalStatus || "approved",
+    id: String(form.id || ""),
+    templateCode: String(form.id || ""),
+    titleAr: String(form.titleAr || form.titleEn || form.procedure || "Consent Form"),
+    titleEn: String(form.titleEn || form.titleAr || form.procedure || "Consent Form"),
+    consentType: String(form.category || form.consentType || "procedure"),
+    specialty: String(form.specialty || ""),
+    department: String(form.department || form.specialty || ""),
+    currentVersionId: String(form.version || "1.0"),
+    procedure: String(form.procedure || ""),
+    riskLevel: String(form.riskLevel || ""),
+    approvalStatus: String(form.approvalStatus || "approved"),
     source: "forms_fallback",
   }));
 }

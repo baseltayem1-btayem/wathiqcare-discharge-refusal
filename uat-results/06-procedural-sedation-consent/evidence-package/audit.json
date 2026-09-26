@@ -6,178 +6,178 @@
       "step": 1,
       "title": "Create test consent instance",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:43:43.223Z",
+      "occurredAt": "2026-07-18T22:02:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Create test consent instance completed successfully"
     },
     {
       "step": 2,
       "title": "Load patient demographics",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:44:43.223Z",
+      "occurredAt": "2026-07-18T22:03:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Load patient demographics completed successfully"
     },
     {
       "step": 3,
       "title": "Load encounter details",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:45:43.223Z",
+      "occurredAt": "2026-07-18T22:04:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Load encounter details completed successfully"
     },
     {
       "step": 4,
       "title": "Select correct consent template",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:46:43.223Z",
+      "occurredAt": "2026-07-18T22:05:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Select correct consent template completed successfully"
     },
     {
       "step": 5,
       "title": "Populate diagnosis",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:47:43.223Z",
+      "occurredAt": "2026-07-18T22:06:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Populate diagnosis completed successfully"
     },
     {
       "step": 6,
       "title": "Populate procedure/service",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:48:43.223Z",
+      "occurredAt": "2026-07-18T22:07:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Populate procedure/service completed successfully"
     },
     {
       "step": 7,
       "title": "Populate benefits",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:49:43.223Z",
+      "occurredAt": "2026-07-18T22:08:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Populate benefits completed successfully"
     },
     {
       "step": 8,
       "title": "Populate risks",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:50:43.223Z",
+      "occurredAt": "2026-07-18T22:09:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Populate risks completed successfully"
     },
     {
       "step": 9,
       "title": "Populate complications",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:51:43.223Z",
+      "occurredAt": "2026-07-18T22:10:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Populate complications completed successfully"
     },
     {
       "step": 10,
       "title": "Populate alternatives",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:52:43.223Z",
+      "occurredAt": "2026-07-18T22:11:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Populate alternatives completed successfully"
     },
     {
       "step": 11,
       "title": "Populate consequences of refusal",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:53:43.223Z",
+      "occurredAt": "2026-07-18T22:12:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Populate consequences of refusal completed successfully"
     },
     {
       "step": 12,
       "title": "Confirm patient questions answered",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:54:43.223Z",
+      "occurredAt": "2026-07-18T22:13:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Confirm patient questions answered completed successfully"
     },
     {
       "step": 13,
       "title": "Confirm voluntary consent",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:55:43.223Z",
+      "occurredAt": "2026-07-18T22:14:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Confirm voluntary consent completed successfully"
     },
     {
       "step": 14,
       "title": "Add physician declaration",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:56:43.223Z",
+      "occurredAt": "2026-07-18T22:15:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Add physician declaration completed successfully"
     },
     {
       "step": 15,
       "title": "Add witness where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:57:43.223Z",
+      "occurredAt": "2026-07-18T22:16:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Add witness where required completed successfully"
     },
     {
       "step": 16,
       "title": "Add guardian where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:58:43.223Z",
+      "occurredAt": "2026-07-18T22:17:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Add guardian where required completed successfully"
     },
     {
       "step": 17,
       "title": "Add interpreter where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T05:59:43.223Z",
+      "occurredAt": "2026-07-18T22:18:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Add interpreter where required completed successfully"
     },
     {
       "step": 18,
       "title": "Generate Arabic version",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:00:43.223Z",
+      "occurredAt": "2026-07-18T22:19:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Generate Arabic version completed successfully"
     },
     {
       "step": 19,
       "title": "Generate English version",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:01:43.223Z",
+      "occurredAt": "2026-07-18T22:20:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Generate English version completed successfully"
     },
     {
       "step": 20,
       "title": "Generate final PDF",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:02:43.223Z",
+      "occurredAt": "2026-07-18T22:21:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Generate final PDF completed successfully"
     },
     {
       "step": 21,
       "title": "Generate audit trail",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:03:43.223Z",
+      "occurredAt": "2026-07-18T22:22:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Generate audit trail completed successfully"
     },
     {
       "step": 22,
       "title": "Generate QR verification",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:04:43.223Z",
+      "occurredAt": "2026-07-18T22:23:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Generate QR verification completed successfully"
     },
     {
       "step": 23,
       "title": "Generate legal seal hash",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:05:43.223Z",
+      "occurredAt": "2026-07-18T22:24:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Generate legal seal hash completed successfully"
     },
     {
       "step": 24,
       "title": "Generate evidence package",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:06:43.223Z",
+      "occurredAt": "2026-07-18T22:25:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Generate evidence package completed successfully"
     },
     {
       "step": 25,
       "title": "Save final output",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-18T06:07:43.223Z",
+      "occurredAt": "2026-07-18T22:26:15.917Z",
       "details": "PROCEDURAL_SEDATION_CONSENT :: Save final output completed successfully"
     }
   ],
-  "chainHash": "10b48bbb566f02f8afdb9a298eb6f75de5a4340d8c945041b128f932b8d02cf7",
-  "generatedAt": "2026-05-18T05:42:43.224Z"
+  "chainHash": "bfd6cb9d99d3beff00a0fece34bddfd8fcac70ccc2cd59e2853078b51b3d283a",
+  "generatedAt": "2026-07-18T22:01:15.918Z"
 }

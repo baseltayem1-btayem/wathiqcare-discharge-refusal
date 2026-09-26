@@ -1,0 +1,361 @@
+sequence,specialty,procedureNameEn,procedureNameAr,canonicalProcedureKey,anatomyRegion,illustrationType,figureLabsPrompt,imageFileName,imagePublicPath,certificatePath,imageReviewStatus,patientFacing,notes
+1,Vascular Surgery,Abdominal Aortic Aneurysm,تمدد الأبهر البطني,abdominal-aortic-aneurysm,Abdominal aorta and surrounding arteries,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Abdominal Aortic Aneurysm
+Procedure (Arabic): تمدد الأبهر البطني
+Specialty: Vascular Surgery
+Anatomical region / focus: Abdominal aorta and surrounding arteries
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",abdominal-aortic-aneurysm_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/vascular-surgery/abdominal-aortic-aneurysm/abdominal-aortic-aneurysm_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/abdominal-aortic-aneurysm/abdominal-aortic-aneurysm_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+2,General Surgery / Other,Abdominoperineal Resection of Rectum,استئصال المستقيم البطني العجاني,abdominoperineal-resection-of-rectum,"Rectum, anus, perineum, and lower pelvis",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Abdominoperineal Resection of Rectum
+Procedure (Arabic): استئصال المستقيم البطني العجاني
+Specialty: General Surgery / Other
+Anatomical region / focus: Rectum, anus, perineum, and lower pelvis
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",abdominoperineal-resection-of-rectum_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/abdominoperineal-resection-of-rectum/abdominoperineal-resection-of-rectum_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/abdominoperineal-resection-of-rectum/abdominoperineal-resection-of-rectum_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+3,General Surgery / Other,Abdominoplasty,تجميل البطن,abdominoplasty,Abdominal wall and skin,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Abdominoplasty
+Procedure (Arabic): تجميل البطن
+Specialty: General Surgery / Other
+Anatomical region / focus: Abdominal wall and skin
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",abdominoplasty_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/abdominoplasty/abdominoplasty_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/abdominoplasty/abdominoplasty_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+4,"Ear, Nose and Throat",Adenotonsillectomy,استئصال اللوزتين والغدة الأدينية,adenotonsillectomy,"Oropharynx, tonsils, and adenoids",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Adenotonsillectomy
+Procedure (Arabic): استئصال اللوزتين والغدة الأدينية
+Specialty: Ear, Nose and Throat
+Anatomical region / focus: Oropharynx, tonsils, and adenoids
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",adenotonsillectomy_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/ent/adenotonsillectomy/adenotonsillectomy_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/adenotonsillectomy/adenotonsillectomy_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+5,Allergy & Immunology,Allergen Immunotherapy,علاج المناعة بالمستضدات,allergen-immunotherapy,Upper arm subcutaneous injection site,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Allergen Immunotherapy
+Procedure (Arabic): علاج المناعة بالمستضدات
+Specialty: Allergy & Immunology
+Anatomical region / focus: Upper arm subcutaneous injection site
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",allergen-immunotherapy_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/allergy-immunology/allergen-immunotherapy/allergen-immunotherapy_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/allergen-immunotherapy/allergen-immunotherapy_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+6,Allergy & Immunology,Allergy Skin Test consent and informed,اختبار الحساسية الجلدي,allergy-skin-test-consent-and-informed,Forearm or back skin with test sites,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Allergy Skin Test consent and informed
+Procedure (Arabic): اختبار الحساسية الجلدي
+Specialty: Allergy & Immunology
+Anatomical region / focus: Forearm or back skin with test sites
+Illustration type: process_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Focus on the care pathway, device, instrument, or procedural steps rather than detailed internal organ anatomy.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",allergy-skin-test-consent-and-informed_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/allergy-immunology/allergy-skin-test-consent-and-informed/allergy-skin-test-consent-and-informed_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/allergy-skin-test-consent-and-informed/allergy-skin-test-consent-and-informed_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+7,Obstetrics & Gynecology,Amniocentesis Chorionic Villus Sampling,أخذ عينة السائل الأمنيوسي أو الزغابات المشيمية,amniocentesis-chorionic-villus-sampling,"Uterus, placenta, and amniotic fluid",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Amniocentesis Chorionic Villus Sampling
+Procedure (Arabic): أخذ عينة السائل الأمنيوسي أو الزغابات المشيمية
+Specialty: Obstetrics & Gynecology
+Anatomical region / focus: Uterus, placenta, and amniotic fluid
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",amniocentesis-chorionic-villus-sampling_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/obstetrics-gynecology/amniocentesis-chorionic-villus-sampling/amniocentesis-chorionic-villus-sampling_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/amniocentesis-chorionic-villus-sampling/amniocentesis-chorionic-villus-sampling_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+8,General Surgery / Other,Amputation,بتر العضو,amputation,Affected limb and amputation level,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Amputation
+Procedure (Arabic): بتر العضو
+Specialty: General Surgery / Other
+Anatomical region / focus: Affected limb and amputation level
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",amputation_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/amputation/amputation_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/amputation/amputation_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+9,Radiology / Interventional Radiology,Angiogram with mechanical Thrombectomy (any body part),Angiogram with mechanical Thrombectomy (any body part),angiogram-with-mechanical-thrombectomy-any-body-part,Whole-body or region-specific CT scanner cross-section,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Angiogram with mechanical Thrombectomy (any body part)
+Procedure (Arabic): Angiogram with mechanical Thrombectomy (any body part)
+Specialty: Radiology / Interventional Radiology
+Anatomical region / focus: Whole-body or region-specific CT scanner cross-section
+Illustration type: process_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Focus on the care pathway, device, instrument, or procedural steps rather than detailed internal organ anatomy.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",angiogram-with-mechanical-thrombectomy-any-body-part_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/radiology/angiogram-with-mechanical-thrombectomy-any-body-part/angiogram-with-mechanical-thrombectomy-any-body-part_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/angiogram-with-mechanical-thrombectomy-any-body-part/angiogram-with-mechanical-thrombectomy-any-body-part_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+10,Vascular Surgery,Arteriovenous Fistula, fistula دموية شريانية وريدية,arteriovenous-fistula,Forearm or upper-arm artery and vein connection for dialysis access,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Arteriovenous Fistula
+Procedure (Arabic):  fistula دموية شريانية وريدية
+Specialty: Vascular Surgery
+Anatomical region / focus: Forearm or upper-arm artery and vein connection for dialysis access
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",arteriovenous-fistula_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/vascular-surgery/arteriovenous-fistula/arteriovenous-fistula_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/arteriovenous-fistula/arteriovenous-fistula_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+11,Vascular Surgery,Arteriovenous Goretex Loop Graft, graft جورتكس وريدي شرياني,arteriovenous-goretex-loop-graft,Forearm or upper-arm artery and vein with synthetic graft for dialysis access,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Arteriovenous Goretex Loop Graft
+Procedure (Arabic):  graft جورتكس وريدي شرياني
+Specialty: Vascular Surgery
+Anatomical region / focus: Forearm or upper-arm artery and vein with synthetic graft for dialysis access
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",arteriovenous-goretex-loop-graft_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/vascular-surgery/arteriovenous-goretex-loop-graft/arteriovenous-goretex-loop-graft_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/arteriovenous-goretex-loop-graft/arteriovenous-goretex-loop-graft_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+12,Orthopedics,Arthrogram,تصوير المفصل بالحقن الظليل,arthrogram,Affected joint and needle/contrast path,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Arthrogram
+Procedure (Arabic): تصوير المفصل بالحقن الظليل
+Specialty: Orthopedics
+Anatomical region / focus: Affected joint and needle/contrast path
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",arthrogram_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/orthopedics/arthrogram/arthrogram_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/arthrogram/arthrogram_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+13,Orthopedics,Arthroplasty Consent,موافقة استبدال المفصل,arthroplasty-consent,Affected joint and surrounding bones,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Arthroplasty Consent
+Procedure (Arabic): موافقة استبدال المفصل
+Specialty: Orthopedics
+Anatomical region / focus: Affected joint and surrounding bones
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",arthroplasty-consent_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/orthopedics/arthroplasty-consent/arthroplasty-consent_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/arthroplasty-consent/arthroplasty-consent_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+14,Radiology / Interventional Radiology,Aspiration Drainage Under Imaging,Aspiration Drainage Under Imaging,aspiration-drainage-under-imaging,Fluid collection and drainage catheter,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Aspiration Drainage Under Imaging
+Procedure (Arabic): Aspiration Drainage Under Imaging
+Specialty: Radiology / Interventional Radiology
+Anatomical region / focus: Fluid collection and drainage catheter
+Illustration type: process_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Focus on the care pathway, device, instrument, or procedural steps rather than detailed internal organ anatomy.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",aspiration-drainage-under-imaging_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/radiology/aspiration-drainage-under-imaging/aspiration-drainage-under-imaging_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/aspiration-drainage-under-imaging/aspiration-drainage-under-imaging_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+15,Obstetrics & Gynecology,Bartholin's Glands,غدة بارثولين,bartholin-s-glands,Bartholin gland region,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Bartholin's Glands
+Procedure (Arabic): غدة بارثولين
+Specialty: Obstetrics & Gynecology
+Anatomical region / focus: Bartholin gland region
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",bartholin-s-glands_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/obstetrics-gynecology/bartholin-s-glands/bartholin-s-glands_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/bartholin-s-glands/bartholin-s-glands_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+16,Radiology / Interventional Radiology,Biopsy Under Imaging,أخذ خزعة تحت التصوير الإشعاعي,biopsy-under-imaging,Target lesion and biopsy needle path under imaging,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Biopsy Under Imaging
+Procedure (Arabic): أخذ خزعة تحت التصوير الإشعاعي
+Specialty: Radiology / Interventional Radiology
+Anatomical region / focus: Target lesion and biopsy needle path under imaging
+Illustration type: process_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Focus on the care pathway, device, instrument, or procedural steps rather than detailed internal organ anatomy.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",biopsy-under-imaging_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/radiology/biopsy-under-imaging/biopsy-under-imaging_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/biopsy-under-imaging/biopsy-under-imaging_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+17,Ophthalmology,Blepharoplasty,تجميل الجفن,blepharoplasty,Upper and/or lower eyelids,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Blepharoplasty
+Procedure (Arabic): تجميل الجفن
+Specialty: Ophthalmology
+Anatomical region / focus: Upper and/or lower eyelids
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",blepharoplasty_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/ophthalmology/blepharoplasty/blepharoplasty_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/blepharoplasty/blepharoplasty_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+18,Transfusion Medicine / Blood Transfusion,Blood and blood products transfusion consent,Blood and blood products transfusion consent,blood-and-blood-products-transfusion-consent,"Intravenous line, blood bag, and infusion pathway",process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Blood and blood products transfusion consent
+Procedure (Arabic): Blood and blood products transfusion consent
+Specialty: Transfusion Medicine / Blood Transfusion
+Anatomical region / focus: Intravenous line, blood bag, and infusion pathway
+Illustration type: process_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Focus on the care pathway, device, instrument, or procedural steps rather than detailed internal organ anatomy.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",blood-and-blood-products-transfusion-consent_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/transfusion-medicine/blood-and-blood-products-transfusion-consent/blood-and-blood-products-transfusion-consent_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/blood-and-blood-products-transfusion-consent/blood-and-blood-products-transfusion-consent_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+19,Breast Surgery,Breast Abscess Haematoma,خراج أو ورم دموي في الثدي,breast-abscess-haematoma,Breast abscess cavity,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Breast Abscess Haematoma
+Procedure (Arabic): خراج أو ورم دموي في الثدي
+Specialty: Breast Surgery
+Anatomical region / focus: Breast abscess cavity
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",breast-abscess-haematoma_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/breast-surgery/breast-abscess-haematoma/breast-abscess-haematoma_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/breast-abscess-haematoma/breast-abscess-haematoma_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+20,Breast Surgery,Breast Biopsy Aspiration,خزعة أو شفط الثدي,breast-biopsy-aspiration,Breast tissue and target lesion,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Breast Biopsy Aspiration
+Procedure (Arabic): خزعة أو شفط الثدي
+Specialty: Breast Surgery
+Anatomical region / focus: Breast tissue and target lesion
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",breast-biopsy-aspiration_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/breast-surgery/breast-biopsy-aspiration/breast-biopsy-aspiration_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/breast-biopsy-aspiration/breast-biopsy-aspiration_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.

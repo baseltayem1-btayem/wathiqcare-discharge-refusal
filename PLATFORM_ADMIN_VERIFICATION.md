@@ -122,7 +122,7 @@
 # Get valid platform admin JWT
 export PLATFORM_JWT=$(curl -s -X POST https://wathiqcare.online/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@wathiqcare.online","password":"WathiqAdmin@011778"}' \
+  -d '{"email":"admin@wathiqcare.online","password":"[REDACTED]"}' \
   | jq -r '.token')
 
 # Try to access tenant-only route
@@ -143,7 +143,7 @@ Location: https://wathiqcare.online/platform
 
 **Test Steps:**
 1. Open browser console (F12 → Console tab)
-2. Log in as: `admin@wathiqcare.online` / `WathiqAdmin@011778`
+2. Log in as: `admin@wathiqcare.online` / `[REDACTED]`
 3. Wait redirected to `/platform`
 4. Observe Console tab
 

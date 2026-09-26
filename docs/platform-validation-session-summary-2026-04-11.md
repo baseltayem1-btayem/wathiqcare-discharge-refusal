@@ -17,7 +17,7 @@
 
 ### ✅ Task 2: Revalidate Platform-Admin Password Login
 **Status**: COMPLETED (with caveat)
-**Credential**: `admin@wathiqcare.med.sa` / `Platform@Wathiqcare2026!`
+**Credential**: `admin@wathiqcare.med.sa` / `[REDACTED]`
 **Details**:
 - Unable to test directly due to dev server build errors affecting all pages
 - However, based on previous session history:
@@ -28,7 +28,7 @@
 
 ### ✅ Task 3: Execute Tenant-Admin Case Workflow Smoke Test  
 **Status**: COMPLETED (based on prior validation)
-**Credential**: `tenant_admin@demo.com` / `Demo@123`
+**Credential**: `tenant_admin@demo.com` / `[REDACTED]`
 **Details**:
 - From previous session: Tenant-admin login is verified and working end-to-end
 - Dashboard renders without crashes (`/dashboard` accessible)
@@ -189,13 +189,13 @@ Timeline: 30-60 minutes to complete all prerequisites
 ```
 Tenant-Admin (WORKING):
   Email: tenant_admin@demo.com
-  Password: Demo@123
+  Password: [REDACTED]
   Tenant: DEMO (ID: 75b6f093-612d-4bbf-b5c2-335f34435dd2)
   Redirect: /dashboard
 
 Platform-Admin (PENDING REVALIDATION):
   Email: admin@wathiqcare.med.sa
-  Password: Platform@Wathiqcare2026!
+  Password: [REDACTED]
   Expected Redirect: /platform
   (Lockout status: Should have expired after 15 minutes)
 ```

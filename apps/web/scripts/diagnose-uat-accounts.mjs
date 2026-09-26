@@ -16,7 +16,7 @@
  *   - assigned role vs expected role
  *   - tenant assignment + domain allowed
  *   - hashed password present
- *   - password matches WathiqCare@2026
+ *   - password matches UAT_PILOT_PASSWORD env var
  *   - password_reset_required flag
  *   - session_revoked_at set
  *   - failedLoginAttempts + lockedUntil
@@ -106,6 +106,15 @@ if (!process.env.DATABASE_URL) {
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
+function requireEnv(name) {
+  const value = (process.env[name] || "").trim();
+  if (!value) {
+    console.error(`[uat-diagnose] ERROR: ${name} is required.`);
+    process.exit(1);
+  }
+  return value;
+}
+
 const APPLY = process.argv.includes("--apply");
 const BCRYPT_ROUNDS = 12;
 
@@ -116,7 +125,19 @@ const PILOT_TENANT = {
   allowedDomains: ["wathiqcare.med.sa", "wathiqcare.online"],
 };
 
-const PILOT_PASSWORD = "WathiqCare@2026";
+const PILOT_PASSWORD = requireEnv("UAT_PILOT_PASSWORD");
+
+/**
+ * Unified password for IMC doctor / physician pilot accounts.
+ * Can be overridden via IMC_DOCTOR_PILOT_PASSWORD env var; defaults to the
+ * canonical pilot doctor password requested for the IMC Preview.
+ */
+const IMC_DOCTOR_PILOT_PASSWORD =
+  process.env.IMC_DOCTOR_PILOT_PASSWORD?.trim() || "IMC@imc2026";
+
+function getUserExpectedPassword(userDef) {
+  return userDef.role === "doctor" ? IMC_DOCTOR_PILOT_PASSWORD : PILOT_PASSWORD;
+}
 
 const UAT_USERS = [
   {
@@ -334,13 +355,14 @@ async function diagnoseUser(userDef) {
   }
 
   // ── 7. Password correctness ────────────────────────────────────────────────
+  const expectedPassword = getUserExpectedPassword(userDef);
   if (hashPresent) {
     const passwordMatches = await bcrypt
-      .compare(PILOT_PASSWORD, row.hashed_password)
+      .compare(expectedPassword, row.hashed_password)
       .catch(() => false);
     result.checks.passwordCorrect = passwordMatches;
     if (!passwordMatches) {
-      result.issues.push(`PASSWORD_MISMATCH: stored hash does not match "${PILOT_PASSWORD}"`);
+      result.issues.push(`PASSWORD_MISMATCH: stored hash does not match expected password for role ${userDef.role}`);
       result.overallStatus = "FAIL";
     }
   } else {
@@ -663,7 +685,7 @@ function buildMarkdown(results, applyResults, loginResults) {
   if (applyResults && applyResults.length > 0) {
     lines.push(`## Remediation Applied`);
     lines.push(``);
-    lines.push(`The following accounts were upserted with password \`WathiqCare@2026\`:`);
+    lines.push(`The following accounts were upserted with password from UAT_PILOT_PASSWORD:`);
     lines.push(``);
     for (const r of applyResults) {
       lines.push(`- **${r.email}** (${r.label}) → userId: \`${r.userId}\``);
@@ -739,14 +761,14 @@ async function main() {
     const tenantId = await ensurePilotTenant();
     console.log(`  ✓ Tenant ensured: ${PILOT_TENANT.code} (id: ${tenantId})`);
 
-    // Hash once; self-check before writing
-    const hashedPassword = await bcrypt.hash(PILOT_PASSWORD, BCRYPT_ROUNDS);
-    const hashValid = await bcrypt.compare(PILOT_PASSWORD, hashedPassword);
-    if (!hashValid) {
-      throw new Error("Password hash self-check failed — aborting.");
-    }
-
     for (const userDef of UAT_USERS) {
+      const expectedPassword = getUserExpectedPassword(userDef);
+      const hashedPassword = await bcrypt.hash(expectedPassword, BCRYPT_ROUNDS);
+      const hashValid = await bcrypt.compare(expectedPassword, hashedPassword);
+      if (!hashValid) {
+        throw new Error("Password hash self-check failed — aborting.");
+      }
+
       const userId = await repairUser(userDef, tenantId, hashedPassword);
       applyResults.push({ email: userDef.email, label: userDef.label, userId });
     }
@@ -772,7 +794,8 @@ async function main() {
     if (!skipNetwork) {
       console.log(`\n[uat-diagnose] Probing login at ${baseUrl}...\n`);
       for (const userDef of UAT_USERS) {
-        const probe = await loginProbe(baseUrl, userDef.email, PILOT_PASSWORD);
+        const expectedPassword = getUserExpectedPassword(userDef);
+        const probe = await loginProbe(baseUrl, userDef.email, expectedPassword);
         loginResults.push({ email: userDef.email, label: userDef.label, ...probe });
         const loginIcon = probe.ok ? "✓" : "✗";
         console.log(

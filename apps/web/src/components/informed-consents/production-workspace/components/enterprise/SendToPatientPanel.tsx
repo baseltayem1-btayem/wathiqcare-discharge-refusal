@@ -1,10 +1,9 @@
 "use client";
 
-import { AlertTriangle, BadgeCheck, FileCheck2, Send, ShieldCheck } from "lucide-react";
-import { Button } from "@/components/design-system";
+import { AlertTriangle, BadgeCheck, Mail, Phone, Send, ShieldCheck } from "lucide-react";
+import { Button, Input } from "@/components/design-system";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { SecureSigningResult } from "../../types";
-import { isFilledDraftReviewable, type FilledDraftStatus } from "../../utils/pdfViewerMode";
 import { WorkspaceBadge, WorkspaceCard, WorkspaceCardHeader } from "../WorkspaceAtoms";
 
 interface SendToPatientPanelProps {
@@ -19,11 +18,9 @@ interface SendToPatientPanelProps {
   sendReason?: string;
   sendLoading: boolean;
   signingResult?: SecureSigningResult;
-  supportsFilledDraftPreview?: boolean;
-  filledDraftStatus?: FilledDraftStatus;
-  draftPdfUrl?: string;
+  onMobileChange: (value: string) => void;
+  onEmailChange: (value: string) => void;
   onApproveDraft: () => void;
-  onMarkFilledDraftReviewed?: () => void;
   onSend: () => void;
 }
 
@@ -39,11 +36,9 @@ export function SendToPatientPanel({
   sendReason,
   sendLoading,
   signingResult,
-  supportsFilledDraftPreview,
-  filledDraftStatus,
-  draftPdfUrl,
+  onMobileChange,
+  onEmailChange,
   onApproveDraft,
-  onMarkFilledDraftReviewed,
   onSend,
 }: SendToPatientPanelProps) {
   const { lang } = useI18n();
@@ -59,6 +54,25 @@ export function SendToPatientPanel({
       />
 
       <div className="space-y-4 px-5 py-5">
+        <div className="grid gap-3">
+          <Input
+            type="tel"
+            value={mobile}
+            onChange={(event) => onMobileChange(event.target.value)}
+            placeholder={lang === "ar" ? "رقم الجوال" : "Patient mobile number"}
+            startIcon={<Phone className="size-4" />}
+            disabled={sendLoading}
+          />
+          <Input
+            type="email"
+            value={email}
+            onChange={(event) => onEmailChange(event.target.value)}
+            placeholder={lang === "ar" ? "البريد الإلكتروني للمريض" : "Patient email address"}
+            startIcon={<Mail className="size-4" />}
+            disabled={sendLoading}
+          />
+        </div>
+
         <div className="grid gap-2">
           <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
             <span className="text-slate-700">{lang === "ar" ? "تمت مراجعة المعاينة" : "Preview reviewed"}</span>
@@ -97,41 +111,10 @@ export function SendToPatientPanel({
         ) : null}
 
         <div className="flex flex-col gap-3">
-          {supportsFilledDraftPreview &&
-          isFilledDraftReviewable(filledDraftStatus ?? "idle", draftPdfUrl, previewReviewed) ? (
-            <Button
-              variant="default"
-              size="sm"
-              className="h-11 w-full rounded-2xl border-blue-700 bg-white text-blue-700 hover:bg-blue-50 [&_svg]:text-blue-700 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-100"
-              disabled={sendLoading}
-              onClick={onMarkFilledDraftReviewed}
-            >
-              <FileCheck2 className="mr-1 size-4" />
-              {lang === "ar" ? "تأكيد مراجعة المعاينة المعبأة" : "Mark Filled Preview Reviewed"}
-            </Button>
-          ) : null}
-          <Button
-            variant={draftApproved ? "outline" : "default"}
-            size="sm"
-            className="h-11 w-full rounded-2xl border-slate-300 bg-white text-slate-800 hover:bg-slate-100 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-100"
-            disabled={draftApproved || !previewReviewed}
-            onClick={onApproveDraft}
-          >
-            {draftApproved
-              ? lang === "ar"
-                ? "تم اعتماد المسودة"
-                : "Draft Approved"
-              : lang === "ar"
-                ? "اعتماد المسودة"
-                : "Approve Draft"}
+          <Button variant={draftApproved ? "outline" : "brand"} size="sm" uppercase={false} className="h-11 rounded-2xl" disabled={draftApproved} onClick={onApproveDraft}>
+            {draftApproved ? (lang === "ar" ? "تم اعتماد المسودة" : "Draft Approved") : (lang === "ar" ? "اعتماد المسودة" : "Approve Draft")}
           </Button>
-          <Button
-            variant="default"
-            size="sm"
-            className="h-11 w-full rounded-2xl border-blue-700 bg-blue-700 text-white hover:border-blue-800 hover:bg-blue-800 [&_svg]:text-white disabled:border-slate-200 disabled:bg-slate-200 disabled:text-slate-500 disabled:opacity-100"
-            disabled={sendDisabled}
-            onClick={onSend}
-          >
+          <Button variant="brand" size="sm" uppercase={false} className="h-11 rounded-2xl" disabled={sendDisabled} onClick={onSend}>
             <Send className="mr-1 size-4" />
             {sendLoading ? (lang === "ar" ? "جاري الإرسال…" : "Sending…") : (lang === "ar" ? "إرسال إلى المريض" : "Send to Patient")}
           </Button>
@@ -144,30 +127,7 @@ export function SendToPatientPanel({
               <BadgeCheck className="size-4" />
               <span>{lang === "ar" ? "تم إنشاء جلسة التوقيع" : "Secure signing session created"}</span>
             </div>
-            <p className="mt-2 text-xs text-emerald-900">
-              {lang === "ar" ? "معرّف الجلسة:" : "Session ID:"} {signingResult.sessionId}
-            </p>
-            <p className="text-xs text-emerald-900">
-              {lang === "ar" ? "حالة الرسائل:" : "Dispatch status:"}{" "}
-              SMS {signingResult.dispatchStatuses.sms} · Email {signingResult.dispatchStatuses.email}
-            </p>
-            {signingResult.signingUrl ? (
-              <p className="mt-1 break-all text-xs text-emerald-900">
-                {lang === "ar" ? (
-                  <>رابط التوقيع:{" "}</>
-                ) : (
-                  <>Signing URL:{" "}</>
-                )}
-                <a
-                  href={signingResult.signingUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium underline underline-offset-2"
-                >
-                  {signingResult.signingUrl}
-                </a>
-              </p>
-            ) : null}
+            <p className="mt-2 break-all text-xs text-emerald-900">{signingResult.signingUrl}</p>
           </div>
         ) : null}
       </div>

@@ -50,6 +50,31 @@ function resolveApplicationDatabaseUrl(): string | undefined {
   return resolveRuntimeDatabaseUrl();
 }
 
+function isMutatingAuditAction(action: string): boolean {
+  return action.startsWith("update") || action.startsWith("delete");
+}
+
+function createAuditProtectionMiddleware() {
+  let auditFoundation:
+    | typeof import("./audit-foundation")
+    | undefined;
+
+  return async (params: { model?: string; action: string }, next: (params: { model?: string; action: string }) => Promise<unknown>): Promise<unknown> => {
+    if (params.model && isMutatingAuditAction(params.action)) {
+      if (!auditFoundation) {
+        auditFoundation = await import("./audit-foundation");
+      }
+      if (auditFoundation.isAuditProtectedModel(params.model)) {
+        auditFoundation.assertAuditAppendOnly(
+          params.model,
+          params.action.startsWith("update") ? "update" : "delete",
+        );
+      }
+    }
+    return next(params);
+  };
+}
+
 export function getPrisma(): PrismaClient {
   if (!prisma) {
     assertRuntimeEnv({ context: "prisma" });
@@ -58,6 +83,10 @@ export function getPrisma(): PrismaClient {
       new PrismaClient({
         datasourceUrl: normalizeDatabaseUrl(resolveApplicationDatabaseUrl()),
       });
+    const prismaWithMiddleware = prisma as unknown as { $use?: (middleware: unknown) => void };
+    if (typeof prismaWithMiddleware.$use === "function") {
+      prismaWithMiddleware.$use(createAuditProtectionMiddleware());
+    }
     if (process.env.NODE_ENV !== "production") {
       global.__wathiqcarePrisma__ = prisma;
     }

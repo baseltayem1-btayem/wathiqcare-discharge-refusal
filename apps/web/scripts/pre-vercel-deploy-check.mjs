@@ -70,8 +70,8 @@ function main() {
   }
 
   if (vercelEnv === 'production') {
-    // Allow main or phase24-evidence-package-final for production recovery
-    const allowedProductionBranches = ['main', 'phase24-evidence-package-final'];
+    // Allow main, release branches, or phase24-evidence-package-final for production recovery
+    const allowedProductionBranches = ['main', 'release/patient-journey-production', 'phase24-evidence-package-final'];
     if (branchName && !allowedProductionBranches.includes(branchName)) {
       issues.push(`Production deployment blocked: branch must be ${allowedProductionBranches.join(' or ')}, received ${branchName}`);
     }

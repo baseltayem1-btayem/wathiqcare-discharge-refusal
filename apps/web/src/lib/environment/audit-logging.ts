@@ -1,8 +1,4 @@
-/**
- * Environment Audit Logging
- *
- * Track access to demo/test accounts and environment-sensitive operations
- */
+import { logRuntimeEvent, sanitizeLogDetails } from "@/lib/server/runtime-observability";
 
 export type EnvironmentAuditEventType =
   | "test_account_access"
@@ -30,38 +26,24 @@ export interface EnvironmentAuditEvent {
   severity: "info" | "warning" | "error";
 }
 
-/**
- * Log environment-related audit events
- *
- * These should be persisted to an audit trail in the database
- */
 export function auditEnvironmentEvent(event: EnvironmentAuditEvent): void {
-  // Log to console in development
-  if (process.env.NODE_ENV === "development") {
-    console.log(
-      `[AUDIT ${event.severity.toUpperCase()}] ${event.eventType}`,
-      {
-        userId: event.userId,
-        userRole: event.userRole,
-        caseId: event.caseId,
-        environment: event.environment,
-        ...event.details,
-      }
-    );
-  }
-
-  // In production, this would be sent to:
-  // - Audit trail database
-  // - SIEM system
-  // - Compliance logging service
-
-  // TODO: Implement actual audit logging to database
-  // This is a placeholder that should be replaced with real logging
+  logRuntimeEvent({
+    module: "environment_audit",
+    event: event.eventType,
+    severity: event.severity === "warning" ? "warn" : event.severity,
+    details: {
+      userId: event.userId,
+      userRole: event.userRole,
+      caseId: event.caseId,
+      testCaseId: event.testCaseId,
+      environment: event.environment,
+      ipAddress: event.ipAddress,
+      userAgent: event.userAgent,
+      ...sanitizeLogDetails(event.details ?? {}),
+    },
+  });
 }
 
-/**
- * Helper to log test account access
- */
 export function auditTestAccountAccess(
   userId: string,
   userRole: string,
@@ -82,9 +64,6 @@ export function auditTestAccountAccess(
   });
 }
 
-/**
- * Helper to log test SMS attempts
- */
 export function auditTestSmsSent(
   userId: string,
   userRole: string,
@@ -109,9 +88,6 @@ export function auditTestSmsSent(
   });
 }
 
-/**
- * Helper to log test case creation
- */
 export function auditTestCaseCreated(
   userId: string,
   userRole: string,
@@ -131,9 +107,6 @@ export function auditTestCaseCreated(
   });
 }
 
-/**
- * Helper to log evidence export attempts
- */
 export function auditEvidenceExport(
   userId: string,
   userRole: string,
@@ -159,9 +132,6 @@ export function auditEvidenceExport(
   });
 }
 
-/**
- * Helper to log data mixing attempts
- */
 export function auditDataMixing(
   userId: string,
   userRole: string,
@@ -180,9 +150,6 @@ export function auditDataMixing(
   });
 }
 
-/**
- * Helper to log test data in reports
- */
 export function auditTestDataInReport(
   userId: string,
   userRole: string,

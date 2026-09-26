@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendor bundles are minified third-party code; linting them adds noise.
+    "public/vendor/**",
   ]),
   // CommonJS files: next.config.js and build scripts use require() intentionally.
   {

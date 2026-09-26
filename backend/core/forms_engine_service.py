@@ -490,7 +490,6 @@ class FormsEngineService:
                     "userRole": current_user.get("role"),
                 },
                 "otpCodeHash": self.sms_provider.hash_code(dispatch.otp_debug_code or ""),
-                "otpDebugCode": dispatch.otp_debug_code,
                 "verified": False,
             }
             _write_json(_otp_path(document_id), otp_payload)
@@ -510,7 +509,6 @@ class FormsEngineService:
                 "deliveryStatus": dispatch.delivery_status,
                 "maskedPhone": otp_payload["maskedPhone"],
                 "fallbackMode": bool(dispatch.stub_mode),
-                "otpDebugCode": dispatch.otp_debug_code,
             }
         except Exception:
             db.rollback()

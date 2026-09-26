@@ -47,60 +47,60 @@
       "role": "SYSTEM",
       "language": "BILINGUAL",
       "type": "/Tx",
-      "flags": 4096,
+      "flags": 0,
       "required": false,
       "applicabilityRule": "always",
       "checkboxOnState": null,
-      "multiline": true,
-      "autofit": true,
+      "multiline": false,
+      "autofit": false,
       "widgets": [
         {
           "page": 1,
           "rect": [
-            360,
-            730,
-            560,
-            762
+            420,
+            744,
+            610,
+            758
           ],
           "appearanceStates": null
         },
         {
           "page": 2,
           "rect": [
-            360,
-            730,
-            560,
-            762
+            420,
+            744,
+            610,
+            758
           ],
           "appearanceStates": null
         },
         {
           "page": 3,
           "rect": [
-            360,
-            730,
-            560,
-            762
+            420,
+            744,
+            610,
+            758
           ],
           "appearanceStates": null
         },
         {
           "page": 4,
           "rect": [
-            360,
-            730,
-            560,
-            762
+            420,
+            744,
+            610,
+            758
           ],
           "appearanceStates": null
         },
         {
           "page": 5,
           "rect": [
-            360,
-            730,
-            560,
-            762
+            420,
+            744,
+            610,
+            758
           ],
           "appearanceStates": null
         }
@@ -125,7 +125,7 @@
           "page": 1,
           "rect": [
             375,
-            711,
+            713,
             535,
             729
           ],
@@ -135,7 +135,7 @@
           "page": 2,
           "rect": [
             375,
-            711,
+            713,
             535,
             729
           ],
@@ -145,7 +145,7 @@
           "page": 3,
           "rect": [
             375,
-            711,
+            713,
             535,
             729
           ],
@@ -155,7 +155,7 @@
           "page": 4,
           "rect": [
             375,
-            711,
+            713,
             535,
             729
           ],
@@ -165,7 +165,7 @@
           "page": 5,
           "rect": [
             375,
-            711,
+            713,
             535,
             729
           ],
@@ -192,7 +192,7 @@
           "page": 1,
           "rect": [
             369,
-            684,
+            686,
             535,
             702
           ],
@@ -202,7 +202,7 @@
           "page": 2,
           "rect": [
             369,
-            684,
+            686,
             535,
             702
           ],
@@ -212,7 +212,7 @@
           "page": 3,
           "rect": [
             369,
-            684,
+            686,
             535,
             702
           ],
@@ -222,7 +222,7 @@
           "page": 4,
           "rect": [
             369,
-            684,
+            686,
             535,
             702
           ],
@@ -232,7 +232,7 @@
           "page": 5,
           "rect": [
             369,
-            684,
+            686,
             535,
             702
           ],
@@ -485,7 +485,7 @@
           "page": 1,
           "rect": [
             54,
-            368,
+            367,
             286,
             393
           ],
@@ -512,7 +512,7 @@
           "page": 1,
           "rect": [
             338,
-            368,
+            367,
             560,
             393
           ],
@@ -539,9 +539,9 @@
           "page": 2,
           "rect": [
             54,
-            80,
+            55,
             291,
-            150
+            128
           ],
           "appearanceStates": null
         }
@@ -566,9 +566,9 @@
           "page": 2,
           "rect": [
             337,
-            80,
+            55,
             560,
-            150
+            128
           ],
           "appearanceStates": null
         }
@@ -593,9 +593,9 @@
           "page": 3,
           "rect": [
             54,
-            580,
+            620,
             291,
-            630
+            650
           ],
           "appearanceStates": null
         }
@@ -620,9 +620,9 @@
           "page": 3,
           "rect": [
             337,
-            570,
+            620,
             560,
-            630
+            650
           ],
           "appearanceStates": null
         }
@@ -647,9 +647,9 @@
           "page": 3,
           "rect": [
             54,
-            440,
+            435,
             291,
-            560
+            555
           ],
           "appearanceStates": null
         }
@@ -674,9 +674,9 @@
           "page": 3,
           "rect": [
             337,
-            470,
+            435,
             560,
-            570
+            555
           ],
           "appearanceStates": null
         }
@@ -701,9 +701,9 @@
           "page": 3,
           "rect": [
             54,
-            245,
+            250,
             292,
-            390
+            375
           ],
           "appearanceStates": null
         }
@@ -728,9 +728,9 @@
           "page": 3,
           "rect": [
             337,
-            245,
+            250,
             560,
-            390
+            375
           ],
           "appearanceStates": null
         }
@@ -884,9 +884,9 @@
           "page": 4,
           "rect": [
             130,
-            90,
+            96,
             300,
-            118
+            116
           ],
           "appearanceStates": null
         },
@@ -894,9 +894,9 @@
           "page": 4,
           "rect": [
             330,
-            100,
+            96,
             520,
-            130
+            116
           ],
           "appearanceStates": null
         }
@@ -921,9 +921,9 @@
           "page": 4,
           "rect": [
             104,
-            73,
+            82,
             287,
-            93
+            102
           ],
           "appearanceStates": null
         }
@@ -948,9 +948,9 @@
           "page": 4,
           "rect": [
             346,
-            85,
+            68,
             529,
-            106
+            90
           ],
           "appearanceStates": null
         }
@@ -1287,10 +1287,10 @@
         {
           "page": 5,
           "rect": [
-            135,
-            370,
+            180,
+            364,
             293,
-            392
+            380
           ],
           "appearanceStates": null
         },
@@ -1298,9 +1298,9 @@
           "page": 5,
           "rect": [
             339,
-            365,
+            359,
             470,
-            388
+            375
           ],
           "appearanceStates": null
         }
@@ -1324,10 +1324,10 @@
         {
           "page": 5,
           "rect": [
-            124,
-            345,
+            170,
+            340,
             293,
-            366
+            364
           ],
           "appearanceStates": null
         },
@@ -1335,9 +1335,9 @@
           "page": 5,
           "rect": [
             338,
-            340,
+            335,
             520,
-            362
+            359
           ],
           "appearanceStates": null
         }
@@ -1391,7 +1391,7 @@
             337,
             310,
             529,
-            340
+            335
           ],
           "appearanceStates": null
         }
@@ -1905,5 +1905,5 @@
       "renderingStrategy": "TIME"
     }
   ],
-  "manifestHash": "843fe2af33d866bc640cf2fd4998355faef4887cf6ff4e765b3fb0a410816e47"
+  "manifestHash": "d02df90651db75fe366dc866b7bef2bf175e7e62581f872c8c23834048b99a61"
 }

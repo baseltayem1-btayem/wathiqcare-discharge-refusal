@@ -39,6 +39,8 @@ from backend.services.secure_link_service import (
     revoke_link,
     submit_decision,
     validate_token,
+    request_secure_link_otp,
+    verify_secure_link_otp,
 )
 from backend.core.email_service import EmailConfigurationError, EmailService
 from backend.models.notification_delivery_attempt import NotificationDeliveryAttempt
@@ -103,6 +105,7 @@ class SubmitDecisionRequest(BaseModel):
     typed_name: str
     refusal_acknowledged: bool = False
     signature_data: Optional[str] = None  # base64 PNG from canvas; None = typed-name fallback
+    otp_code: str  # required identity verification code
 
 
 class SubmitDecisionResponse(BaseModel):
@@ -113,6 +116,23 @@ class SubmitDecisionResponse(BaseModel):
     typed_name: str
     submitted_at: str
     confirmation_message: str
+
+
+class SecureLinkOtpResponse(BaseModel):
+    success: bool
+    delivery_status: str
+    failure_reason: Optional[str] = None
+    masked_email: str
+
+
+class SecureLinkOtpVerifyRequest(BaseModel):
+    otp_code: str
+
+
+class SecureLinkOtpVerifyResponse(BaseModel):
+    success: bool
+    verified: bool
+    attempts_remaining: int
 
 
 # ---------------------------------------------------------------------------
@@ -481,6 +501,7 @@ def submit_secure_decision(
             signature_data=payload.signature_data,
             ip_address=_client_ip(request),
             user_agent=_client_user_agent(request),
+            otp_code=payload.otp_code,
         )
     except ValueError as exc:
         msg = str(exc)
@@ -506,3 +527,55 @@ def submit_secure_decision_compat(
     Existing /api/discharge/secure/{token}/decision remains the canonical route.
     """
     return submit_secure_decision(token, payload, request)
+
+
+@router.post(
+    "/api/discharge/secure/{token}/otp",
+    response_model=SecureLinkOtpResponse,
+    summary="طلب رمز تحقق لمرة واحدة عبر الرابط الآمن",
+)
+def request_secure_link_otp_endpoint(token: str):
+    try:
+        return request_secure_link_otp(token)
+    except ValueError as exc:
+        msg = str(exc)
+        if "انتهت صلاحية" in msg:
+            raise HTTPException(status_code=410, detail=msg)
+        if "تم إلغاء" in msg or "غير صالح" in msg or "غير موجودة" in msg:
+            raise HTTPException(status_code=404, detail=msg)
+        raise HTTPException(status_code=400, detail=msg)
+
+
+@router.post(
+    "/api/discharge/secure/{token}/verify-otp",
+    response_model=SecureLinkOtpVerifyResponse,
+    summary="التحقق من رمز تحقق الرابط الآمن",
+)
+def verify_secure_link_otp_endpoint(token: str, payload: SecureLinkOtpVerifyRequest):
+    try:
+        return verify_secure_link_otp(token, payload.otp_code)
+    except ValueError as exc:
+        msg = str(exc)
+        if "انتهت صلاحية" in msg:
+            raise HTTPException(status_code=410, detail=msg)
+        if "تم إلغاء" in msg or "غير صالح" in msg or "غير موجودة" in msg:
+            raise HTTPException(status_code=404, detail=msg)
+        raise HTTPException(status_code=400, detail=msg)
+
+
+@router.post(
+    "/api/secure-links/{token}/otp",
+    response_model=SecureLinkOtpResponse,
+    summary="[Compatibility] طلب رمز تحقق لمرة واحدة",
+)
+def request_secure_link_otp_compat(token: str):
+    return request_secure_link_otp_endpoint(token)
+
+
+@router.post(
+    "/api/secure-links/{token}/verify-otp",
+    response_model=SecureLinkOtpVerifyResponse,
+    summary="[Compatibility] التحقق من رمز تحقق الرابط الآمن",
+)
+def verify_secure_link_otp_compat(token: str, payload: SecureLinkOtpVerifyRequest):
+    return verify_secure_link_otp_endpoint(token, payload)

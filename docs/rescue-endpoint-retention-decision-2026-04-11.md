@@ -184,7 +184,7 @@ The real problem is **shell seed script unreliability**. To prevent future recov
 ---
 
 ##References
-- Previous Session: Rescue endpoint created and validated for `tenant_admin@demo.com` / `Demo@123`
+- Previous Session: Rescue endpoint created and validated for `tenant_admin@demo.com` / `[REDACTED]`
 - Environment: `BOOTSTRAP_SECRET` = `Dolly@20202030` (in `.env.local` only)
 - Next.js Routes: `/api/platform/tenant-rescue` (POST)
 - Database Endpoint: PostgreSQL via Neon unpooled connection

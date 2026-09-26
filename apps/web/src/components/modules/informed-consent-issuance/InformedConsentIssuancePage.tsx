@@ -288,8 +288,13 @@ export default function InformedConsentIssuancePage({ auth, clinicalAiEnabled = 
   }, [selectedConsentTypeId]);
 
   const legalChecks = useMemo<LegalReadinessCheck[]>(() => {
-    const witnessRequired = selectedConsentTypeId === "high-risk" || selectedConsentTypeId === "ama";
-    const interpreterRequired = DEFAULT_PATIENT_INFO.capacityStatus !== "competent";
+    // Pilot scope exclusion: interpreter and witness signing workflows are not
+    // implemented for the controlled pilot.  Only `surgical` consent is exposed,
+    // and it is dispatched for competent patients without witness/interpreter
+    // requirements.  See `pilot-package/CONSENT_TYPE_READINESS_MATRIX.md` and
+    // `docs/rc2-operational-readiness/09-go-live-readiness.md` §3.
+    const witnessRequired = false;
+    const interpreterRequired = false;
 
     return [
       { key: "mandatory", label: { ar: "الحقول الإلزامية مكتملة", en: "Mandatory fields completed" }, passed: !!medicalExplanation.procedureDescription && !!medicalExplanation.diagnosisReason },
@@ -302,7 +307,7 @@ export default function InformedConsentIssuancePage({ auth, clinicalAiEnabled = 
       { key: "interpreter", label: { ar: interpreterRequired ? "المترجم مطلوب" : "المترجم غير مطلوب", en: interpreterRequired ? "Interpreter required" : "Interpreter not required" }, passed: !interpreterRequired || signatures.interpreterSigned },
       { key: "ready", label: { ar: "جاهز لتوليد PDF قانوني", en: "Ready to Generate Legal PDF" }, passed: false },
     ];
-  }, [medicalExplanation, selectedConsentTypeId, signatures]);
+  }, [medicalExplanation, signatures]);
 
   const readinessWithoutGate = legalChecks.slice(0, legalChecks.length - 1).every((check) => check.passed);
   const readinessChecks = legalChecks.map((check) => (check.key === "ready" ? { ...check, passed: readinessWithoutGate } : check));

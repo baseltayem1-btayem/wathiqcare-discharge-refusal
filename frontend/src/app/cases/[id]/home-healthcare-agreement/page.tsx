@@ -181,7 +181,7 @@ export default function HomeHealthcareAgreementPage() {
       const res = await apiFetch<{
         session_id: string;
         verification_status: string;
-        provider_result?: { otp_debug_code?: string; delivery_status?: string | null };
+        provider_result?: { delivery_status?: string | null };
       }>(
         `/api/discharge/cases/${caseId}/acknowledgment/start`,
         {

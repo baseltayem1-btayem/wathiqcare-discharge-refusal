@@ -315,7 +315,7 @@ Browser: Follows redirect to /platform
 
 ### ✅ Test 1: Platform Admin Can't See Tenant Menu
 ```
-Login: admin@wathiqcare.online / WathiqAdmin@011778
+Login: admin@wathiqcare.online / [REDACTED]
 Navigate: https://wathiqcare.online/platform
 Sidebar contains: [Overview, Tenants, Subscriptions, Billing, Health, Audit, Support, Settings]
 Sidebar hidden: [Dashboard, Cases, Operations, EMR, Workflow, Compliance]

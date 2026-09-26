@@ -555,17 +555,15 @@ test("routine path creates one session and one intended dispatch per channel", a
 
   assert.equal(client.sessions.length, 1);
   assert.equal(client.tokens.length, 1);
-  assert.equal(client.dispatches.length, 2);
+  // Channel-fallback model: only the preferred channel (SMS by default) is
+  // dispatched; the other channel is queued as a session-level fallback plan.
+  assert.equal(client.dispatches.length, 1);
 
   const smsDispatch = client.dispatches.find((d) => d.channel === PatientMessageChannel.SMS);
-  const emailDispatch = client.dispatches.find((d) => d.channel === PatientMessageChannel.EMAIL);
 
   assert.ok(smsDispatch);
-  assert.ok(emailDispatch);
   assert.equal(smsDispatch?.status, PatientMessageStatus.PENDING);
-  assert.equal(emailDispatch?.status, PatientMessageStatus.PENDING);
   assert.equal(smsDispatch?.recipientReference, "case:case-1:mobile");
-  assert.equal(emailDispatch?.recipientReference, "case:case-1:email");
 
   const session = client.sessions[0];
   assert.equal(session.status, "PENDING");
@@ -573,8 +571,13 @@ test("routine path creates one session and one intended dispatch per channel", a
   const metadata = session.metadata as Record<string, unknown>;
   assert.equal(metadata.approvedPdfHash, "pdf-hash-routine");
 
+  const fallbackPlans = metadata.fallbackDispatches as Array<{ channel: string; recipientReference: string }>;
+  assert.equal(fallbackPlans.length, 1);
+  assert.equal(fallbackPlans[0]?.channel, "EMAIL");
+  assert.equal(fallbackPlans[0]?.recipientReference, "case:case-1:email");
+
   assert.ok(result.tokens.PATIENT);
-  assert.equal(result.dispatches?.length, 2);
+  assert.equal(result.dispatches?.length, 1);
 });
 
 test("repeat click with the same idempotency key returns the same session", async () => {
@@ -597,7 +600,8 @@ test("repeat click with the same idempotency key returns the same session", asyn
 
   assert.equal(first.sessionId, second.sessionId);
   assert.equal(client.sessions.length, 1);
-  assert.equal(client.dispatches.length, 2);
+  // Only the preferred-channel dispatch is created; the fallback stays a plan.
+  assert.equal(client.dispatches.length, 1);
 });
 
 test("no raw token or signing URL is persisted in the session", async () => {

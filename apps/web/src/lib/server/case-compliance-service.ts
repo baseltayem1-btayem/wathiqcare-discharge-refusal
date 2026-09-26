@@ -1,10 +1,9 @@
 import crypto from "node:crypto";
-import { Prisma, DocumentStatus, DocumentType, $Enums } from "@prisma/client";
+import { DocumentStatus, DocumentType, $Enums } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
-import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { asRecord } from "@/lib/server/compliance-utils";
 import { recordCaseConsent } from "@/lib/server/consent-service";
 import { assertCaseReadyForLegalExport, getLegalReadiness } from "@/lib/server/legal-readiness-service";
@@ -125,42 +124,34 @@ export async function recordCasePresentation(
     operation: "case_presentation_capture",
   });
 
-  const updated = await prisma().case.update({
-    where: { id: caseId },
-    data: {
-      metadata: mergeSection(asRecord(caseRecord.metadata), "presentation", {
-        ...payload,
-        risks_explained: true,
-        recorded_at: new Date().toISOString(),
-      }),
-      updatedByUserId: auth.sub,
-    },
+  return prisma().$transaction(async (tx) => {
+    const updated = await tx.case.update({
+      where: { id: caseId },
+      data: {
+        metadata: mergeSection(asRecord(caseRecord.metadata), "presentation", {
+          ...payload,
+          risks_explained: true,
+          recorded_at: new Date().toISOString(),
+        }),
+        updatedByUserId: auth.sub,
+      },
+    });
+
+    await writeAuditLog({
+      tenantId: auth.tenant_id!,
+      userId: auth.sub,
+      entityType: "case",
+      entityId: caseId,
+      action: "risks_presented",
+      details: "Risks and legal implications explained to the patient/representative",
+      caseId,
+      metadataJson: payload as JsonInputValue,
+      request,
+      tx,
+    });
+
+    return updated;
   });
-
-  await writeAuditLog({
-    tenantId: auth.tenant_id!,
-    userId: auth.sub,
-    entityType: "case",
-    entityId: caseId,
-    action: "risks_presented",
-    details: "Risks and legal implications explained to the patient/representative",
-    caseId,
-    metadataJson: payload as JsonInputValue,
-    request,
-  });
-
-  await appendAuditChainEvent({
-    tenantId: auth.tenant_id!,
-    caseId,
-    eventType: "RISKS_EXPLAINED",
-    actorId: auth.sub,
-    actorRole: auth.role ?? null,
-    payloadSummary: "Risk explanation presentation recorded",
-    metadataJson: payload,
-    request,
-  }).catch(() => undefined);
-
-  return updated;
 }
 
 export async function recordCaseSignature(
@@ -193,82 +184,75 @@ export async function recordCaseSignature(
         ? "accepted"
         : "refused";
 
-  const updated = await prisma().case.update({
-    where: { id: caseId },
-    data: {
-      metadata: {
-        ...(asRecord(caseRecord.metadata) ?? {}),
-        signature: {
-          outcome: normalizedOutcome,
-          patient_decision: normalizedDecision,
-          signer_name: payload.signer_name?.trim() || null,
-          signer_role: payload.signer_role?.trim() || "patient",
-          reason: payload.reason?.trim() || null,
-          identity_verified: payload.identity_verified !== false,
-          recorded_at: new Date().toISOString(),
-        },
-        legal: {
-          ...(asRecord(asRecord(caseRecord.metadata)?.legal) ?? {}),
-          signature_obtained: normalizedOutcome === "signed",
-          witness_required: normalizedOutcome !== "signed",
-          patient_decision: normalizedDecision,
-          authority_verified: payload.identity_verified !== false,
-        },
-      } as JsonInputValue,
-      updatedByUserId: auth.sub,
-    },
-  });
-
-  if (payload.signer_name?.trim()) {
-    const existingConsentCount = await prisma().consentRecord.count({
-      where: { tenantId: auth.tenant_id!, caseId },
-    }).catch(() => 0);
-
-    if (existingConsentCount === 0) {
-      await recordCaseConsent(
-        auth,
-        caseId,
-        {
-          processingPurpose: "Discharge refusal legal consent evidence",
-          lawfulBasis: "PDPL healthcare treatment + legal defense basis",
-          consentType: "discharge_refusal_consent",
-          consentMethod: normalizedOutcome === "signed" ? "ELECTRONIC_SIGNATURE" : "WITNESS_ACKNOWLEDGMENT",
-          documentSnapshot: {
-            signer_name: payload.signer_name,
-            signer_role: payload.signer_role ?? "patient",
+  return prisma().$transaction(async (tx) => {
+    const updated = await tx.case.update({
+      where: { id: caseId },
+      data: {
+        metadata: {
+          ...(asRecord(caseRecord.metadata) ?? {}),
+          signature: {
             outcome: normalizedOutcome,
             patient_decision: normalizedDecision,
+            signer_name: payload.signer_name?.trim() || null,
+            signer_role: payload.signer_role?.trim() || "patient",
+            reason: payload.reason?.trim() || null,
+            identity_verified: payload.identity_verified !== false,
+            recorded_at: new Date().toISOString(),
           },
-        },
-        request,
-      ).catch(() => undefined);
+          legal: {
+            ...(asRecord(asRecord(caseRecord.metadata)?.legal) ?? {}),
+            signature_obtained: normalizedOutcome === "signed",
+            witness_required: normalizedOutcome !== "signed",
+            patient_decision: normalizedDecision,
+            authority_verified: payload.identity_verified !== false,
+          },
+        } as JsonInputValue,
+        updatedByUserId: auth.sub,
+      },
+    });
+
+    if (payload.signer_name?.trim()) {
+      const existingConsentCount = await tx.consentRecord.count({
+        where: { tenantId: auth.tenant_id!, caseId },
+      });
+
+      if (existingConsentCount === 0) {
+        await recordCaseConsent(
+          auth,
+          caseId,
+          {
+            processingPurpose: "Discharge refusal legal consent evidence",
+            lawfulBasis: "PDPL healthcare treatment + legal defense basis",
+            consentType: "discharge_refusal_consent",
+            consentMethod: normalizedOutcome === "signed" ? "ELECTRONIC_SIGNATURE" : "WITNESS_ACKNOWLEDGMENT",
+            documentSnapshot: {
+              signer_name: payload.signer_name,
+              signer_role: payload.signer_role ?? "patient",
+              outcome: normalizedOutcome,
+              patient_decision: normalizedDecision,
+            },
+          },
+          request,
+          tx,
+        );
+      }
     }
-  }
 
-  await writeAuditLog({
-    tenantId: auth.tenant_id!,
-    userId: auth.sub,
-    entityType: "case_signature",
-    entityId: caseId,
-    action: "signature_recorded",
-    details: `Signature outcome: ${normalizedOutcome}; decision: ${normalizedDecision}`,
-    caseId,
-    metadataJson: payload as JsonInputValue,
-    request,
+    await writeAuditLog({
+      tenantId: auth.tenant_id!,
+      userId: auth.sub,
+      entityType: "case_signature",
+      entityId: caseId,
+      action: "signature_recorded",
+      details: `Signature outcome: ${normalizedOutcome}; decision: ${normalizedDecision}`,
+      caseId,
+      metadataJson: payload as JsonInputValue,
+      request,
+      tx,
+    });
+
+    return updated;
   });
-
-  await appendAuditChainEvent({
-    tenantId: auth.tenant_id!,
-    caseId,
-    eventType: "SIGNATURE_RECORDED",
-    actorId: auth.sub,
-    actorRole: auth.role ?? null,
-    payloadSummary: `Signature recorded: ${normalizedOutcome}; decision: ${normalizedDecision}`,
-    metadataJson: payload,
-    request,
-  }).catch(() => undefined);
-
-  return updated;
 }
 
 export async function recordCaseWitness(
@@ -430,78 +414,68 @@ export async function recordCaseWitness(
     }
   }
 
-  const updated = await prisma().case.update({
-    where: { id: caseId },
-    data: {
-      metadata: {
-        ...(metadata ?? {}),
-        witnesses: toWitnessesMetadataValue(nextWitnesses),
-        witness: nextWitnesses[0]
-          ? {
-              witness_name: nextWitnesses[0].full_name,
-              witness_role: nextWitnesses[0].role,
-              recorded_at: nextWitnesses[0].updated_at,
-            }
-          : null,
-        legal: {
-          ...(asRecord(metadata?.legal) ?? {}),
-          witness_count: nextWitnesses.length,
-          legally_modified: Boolean(isFinalized && payload.force_unlock),
-          witness_unlock_reason:
-            isFinalized && payload.force_unlock ? payload.unlock_reason?.trim() || "forced_unlock" : null,
-        },
-      } as JsonInputValue,
-      updatedByUserId: auth.sub,
-    },
-  });
+  return prisma().$transaction(async (tx) => {
+    const updated = await tx.case.update({
+      where: { id: caseId },
+      data: {
+        metadata: {
+          ...(metadata ?? {}),
+          witnesses: toWitnessesMetadataValue(nextWitnesses),
+          witness: nextWitnesses[0]
+            ? {
+                witness_name: nextWitnesses[0].full_name,
+                witness_role: nextWitnesses[0].role,
+                recorded_at: nextWitnesses[0].updated_at,
+              }
+            : null,
+          legal: {
+            ...(asRecord(metadata?.legal) ?? {}),
+            witness_count: nextWitnesses.length,
+            legally_modified: Boolean(isFinalized && payload.force_unlock),
+            witness_unlock_reason:
+              isFinalized && payload.force_unlock ? payload.unlock_reason?.trim() || "forced_unlock" : null,
+          },
+        } as JsonInputValue,
+        updatedByUserId: auth.sub,
+      },
+    });
 
-  if (isFinalized && payload.force_unlock) {
+    if (isFinalized && payload.force_unlock) {
+      await writeAuditLog({
+        tenantId: auth.tenant_id!,
+        userId: auth.sub,
+        entityType: "case_witness",
+        entityId: caseId,
+        action: "witness_unlock_forced",
+        details: payload.unlock_reason?.trim() || "Witness records unlocked for legal correction",
+        caseId,
+        metadataJson: {
+          unlock_reason: payload.unlock_reason?.trim() || null,
+        },
+        request,
+        tx,
+      });
+    }
+
     await writeAuditLog({
       tenantId: auth.tenant_id!,
       userId: auth.sub,
       entityType: "case_witness",
       entityId: caseId,
-      action: "witness_unlock_forced",
-      details: payload.unlock_reason?.trim() || "Witness records unlocked for legal correction",
+      action: "witness_recorded",
+      details: `Witness record ${action}ed. Total witnesses: ${nextWitnesses.length}`,
       caseId,
       metadataJson: {
-        unlock_reason: payload.unlock_reason?.trim() || null,
-      },
+        action,
+        witness_id: payload.witness_id ?? null,
+        total_witnesses: nextWitnesses.length,
+      } as JsonInputValue,
       request,
+      tx,
     });
-  }
 
-  await writeAuditLog({
-    tenantId: auth.tenant_id!,
-    userId: auth.sub,
-    entityType: "case_witness",
-    entityId: caseId,
-    action: "witness_recorded",
-    details: `Witness record ${action}ed. Total witnesses: ${nextWitnesses.length}`,
-    caseId,
-    metadataJson: {
-      action,
-      witness_id: payload.witness_id ?? null,
-      total_witnesses: nextWitnesses.length,
-    } as JsonInputValue,
-    request,
+    return updated;
   });
-
-  await appendAuditChainEvent({
-    tenantId: auth.tenant_id!,
-    caseId,
-    eventType: "WITNESS_RECORDED",
-    actorId: auth.sub,
-    actorRole: auth.role ?? null,
-    payloadSummary: `Witness ${action}ed. Total witnesses: ${nextWitnesses.length}`,
-    metadataJson: {
-      action,
-      total_witnesses: nextWitnesses.length,
-    },
-    request,
-  }).catch(() => undefined);
-
-  return updated;
 }
 
 function buildLegalPackageHtml(args: {
@@ -591,81 +565,69 @@ export async function generateLegalPackageForCase(auth: AuthContext, caseId: str
   const version =
     caseRecord.documents.filter((item) => item.templateKey === "legal_package").length + 1;
 
-  const doc = await prisma().document.create({
-    data: {
+  return prisma().$transaction(async (tx) => {
+    const doc = await tx.document.create({
+      data: {
+        tenantId: auth.tenant_id!,
+        caseId,
+        documentType: DocumentType.CASE_FILE as $Enums.DocumentType,
+        status: DocumentStatus.GENERATED as $Enums.DocumentStatus,
+        documentCode: `LEGAL-PKG-${version}`,
+        titleEn: "Saudi Medico-Legal Evidence Package",
+        titleAr: "Ø­Ø²Ù…Ø© Ø§Ù„Ø£Ø¯Ù„Ø© Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠØ© Ø§Ù„Ø·Ø¨ÙŠØ©",
+        templateKey: "legal_package",
+        versionLabel: String(version),
+        fileName: `legal-package-${caseId}-v${version}.html`,
+        mimeType: "text/html",
+        previewHtml: html,
+        payloadJson: {
+          case_id: caseId,
+          readiness,
+          document_count: caseRecord.documents.length,
+          consent_count: caseRecord.consentRecords.length,
+        } as JsonInputValue,
+        sizeBytes: BigInt(Buffer.byteLength(html, "utf8")),
+        generatedByUserId: auth.sub,
+      },
+    });
+
+    await writeAuditLog({
+      tenantId: auth.tenant_id!,
+      userId: auth.sub,
+      entityType: "legal_package",
+      entityId: doc.id,
+      action: "legal_package_exported",
+      details: "Legal package generated after readiness validation",
+      caseId,
+      documentId: doc.id,
+      metadataJson: {
+        version,
+        readinessStatus: readiness.status,
+      },
+      request,
+      tx,
+    });
+
+    await logReportAccess({
       tenantId: auth.tenant_id!,
       caseId,
-      documentType: DocumentType.CASE_FILE as $Enums.DocumentType,
-      status: DocumentStatus.GENERATED as $Enums.DocumentStatus,
-      documentCode: `LEGAL-PKG-${version}`,
-      titleEn: "Saudi Medico-Legal Evidence Package",
-      titleAr: "Ø­Ø²Ù…Ø© Ø§Ù„Ø£Ø¯Ù„Ø© Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠØ© Ø§Ù„Ø·Ø¨ÙŠØ©",
-      templateKey: "legal_package",
-      versionLabel: String(version),
-      fileName: `legal-package-${caseId}-v${version}.html`,
-      mimeType: "text/html",
-      previewHtml: html,
-      payloadJson: {
-        case_id: caseId,
-        readiness,
-        document_count: caseRecord.documents.length,
-        consent_count: caseRecord.consentRecords.length,
-      } as JsonInputValue,
-      sizeBytes: BigInt(Buffer.byteLength(html, "utf8")),
-      generatedByUserId: auth.sub,
-    },
-  });
+      reportKey: "legal_package_export",
+      exportFormat: "HTML",
+      accessedByUserId: auth.sub,
+      accessedByRole: auth.role ?? null,
+      request,
+      metadataJson: {
+        documentId: doc.id,
+        version,
+      },
+    }, tx);
 
-  await writeAuditLog({
-    tenantId: auth.tenant_id!,
-    userId: auth.sub,
-    entityType: "legal_package",
-    entityId: doc.id,
-    action: "legal_package_exported",
-    details: "Legal package generated after readiness validation",
-    caseId,
-    documentId: doc.id,
-    metadataJson: {
+    return {
       version,
-      readinessStatus: readiness.status,
-    },
-    request,
+      generated_at: doc.generatedAt.toISOString(),
+      download_url: `data:text/html;charset=utf-8,${encodeURIComponent(html)}`,
+      json_download_url: `data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(doc.payloadJson ?? {}, null, 2))}`,
+      readiness,
+    };
   });
-
-  await appendAuditChainEvent({
-    tenantId: auth.tenant_id!,
-    caseId,
-    eventType: "EXPORT_LEGAL_PACKAGE",
-    actorId: auth.sub,
-    actorRole: auth.role ?? null,
-    payloadSummary: `Legal package exported (v${version})`,
-    documentVersion: String(version),
-    metadataJson: {
-      documentId: doc.id,
-      readinessStatus: readiness.status,
-    },
-    request,
-  }).catch(() => undefined);
-
-  await logReportAccess({
-    tenantId: auth.tenant_id!,
-    caseId,
-    reportKey: "legal_package_export",
-    exportFormat: "HTML",
-    accessedByUserId: auth.sub,
-    accessedByRole: auth.role ?? null,
-    request,
-    metadataJson: {
-      documentId: doc.id,
-      version,
-    },
-  }).catch(() => undefined);
-
-  return {
-    version,
-    generated_at: doc.generatedAt.toISOString(),
-    download_url: `data:text/html;charset=utf-8,${encodeURIComponent(html)}`,
-    json_download_url: `data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(doc.payloadJson ?? {}, null, 2))}`,
-    readiness,
-  };
 }

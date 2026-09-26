@@ -1,4 +1,4 @@
-﻿export type ConsentFieldRole =
+export type ConsentFieldRole =
   | "SYSTEM_AUTO"
   | "PHYSICIAN_REQUIRED"
   | "PHYSICIAN_OPTIONAL"
@@ -34,6 +34,7 @@ export type ConsentFieldCoordinates = {
   width: number;
   height: number;
   coordinateMode: "NORMALIZED";
+  size?: { width: number; height: number };
 };
 
 export type ConsentFieldDefinition = {

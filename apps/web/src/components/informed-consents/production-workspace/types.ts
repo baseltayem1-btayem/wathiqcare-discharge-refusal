@@ -34,8 +34,6 @@ export type ProductionEncounter = {
   allergies?: string | null;
   currentMedications?: string | null;
   physicianSpecialty?: string | null;
-  physicianSpecialtyEn?: string | null;
-  physicianSpecialtyAr?: string | null;
   caseNumber?: string | null;
   syncStatus?: "SYNCED" | "CACHED" | "UAT_MOCK";
   isMock?: boolean;
@@ -66,34 +64,20 @@ export type PhysicianContext = {
   tenantId: string;
   licenseNumber?: string;
   specialty?: string;
-  specialtyEn?: string;
-  specialtyAr?: string;
   department?: string;
 };
 
 export type SecureSigningResult = {
+  ok: true;
   sessionId: string;
   documentId: string;
-  dispatchStatuses: {
-    sms: string;
-    email: string;
-  };
-  status: {
-    linkCreated: boolean;
-    smsSent: boolean;
-    opened: boolean;
-    otpRequested: boolean;
-    otpVerified: boolean;
-    signed: boolean;
-    expired: boolean;
-    revoked: boolean;
-    failed: boolean;
-    failedAttempts: number;
-  };
+  signingUrl: string;
+  recipientMobile: string;
+  recipientEmail?: string;
+  smsDeliveryStatus: "sent" | "failed";
+  emailDeliveryStatus?: "sent" | "failed";
   createdAt: string;
   expiresAt?: string;
-  /** Present only when the workflow response exposes it (non-redacted envs). */
-  signingUrl?: string;
 };
 
 export type TimelineEvent = {

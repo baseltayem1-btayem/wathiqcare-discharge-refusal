@@ -8,7 +8,7 @@
       "email": "local.doctor.1776517835287@wathiqcare.online",
       "created": true,
       "loginPossible": true,
-      "password": "Admin@Wathiqcare2026!",
+      "password": "[REDACTED]",
       "roleValue": "doctor"
     },
     {
@@ -16,7 +16,7 @@
       "email": "local.legal_admin.1776517836464@wathiqcare.online",
       "created": true,
       "loginPossible": true,
-      "password": "Admin@Wathiqcare2026!",
+      "password": "[REDACTED]",
       "roleValue": "legal_admin"
     },
     {
@@ -24,7 +24,7 @@
       "email": "local.signatory.1776517837036@wathiqcare.online",
       "created": true,
       "loginPossible": true,
-      "password": "Admin@Wathiqcare2026!",
+      "password": "[REDACTED]",
       "roleValue": "signatory"
     }
   ],

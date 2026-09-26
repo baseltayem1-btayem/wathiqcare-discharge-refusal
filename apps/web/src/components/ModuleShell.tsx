@@ -4,13 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Building2, Landmark, Layers3, LogOut, ShieldCheck, Workflow } from "lucide-react";
+import { Layers3, LogOut, Workflow } from "lucide-react";
 
 import AppBreadcrumbs from "@/components/AppBreadcrumbs";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import WathiqCareShell, { type WathiqCareShellAction } from "@/components/WathiqCareShell";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getAccessibleModules, getModuleDefinition, moduleStatusLabel, type ModuleKey } from "@/lib/modules/catalog";
+import { getAccessibleModules, getModuleDefinition, type ModuleKey } from "@/lib/modules/catalog";
 import { clearToken, fetchAuthMeCached } from "@/utils/api";
 
 type TenantBranding = {
@@ -156,7 +156,6 @@ export default function ModuleShell({
   }
 
   const tenantName = tenantBranding?.name?.trim() || "WathiqCare";
-  const roleLabel = auth.platform_role ? (isRtl ? "مسؤول منصة" : "Platform Admin") : auth.role || (isRtl ? "مستخدم" : "User");
 
   return (
     <WathiqCareShell
@@ -190,11 +189,6 @@ export default function ModuleShell({
       moduleMeta={(
         <>
           {moduleDefinition ? <span className="wc-module-pill">{isRtl ? moduleDefinition.arabicTitle : moduleDefinition.englishTitle}</span> : null}
-          {moduleDefinition ? <span className="wc-module-pill">{moduleStatusLabel(moduleDefinition.status, isRtl)}</span> : null}
-          <span className="wc-module-pill">
-            <ShieldCheck className="h-3 w-3" />
-            <span>{isRtl ? roleLabel : roleLabel}</span>
-          </span>
         </>
       )}
       nextAction={nextAction}
@@ -222,32 +216,11 @@ export default function ModuleShell({
           <div className="wc-panel">
             <AppBreadcrumbs />
           </div>
-          <div className="wc-panel wc-panel-inline text-[11px]">
-            <span><strong>{isRtl ? "الجهة" : "Entity"}:</strong> {tenantName}</span>
-            <span><strong>{isRtl ? "الوظيفة" : "Role"}:</strong> {roleLabel}</span>
-            <span><strong>{isRtl ? "المسار" : "Route"}:</strong> <span className="font-mono">{pathname}</span></span>
-          </div>
           {isTenantContextDegraded ? (
             <div className="wc-panel border-amber-200 bg-amber-50 text-xs text-amber-900">
               {isRtl
                 ? "تعذر تحميل بيانات الجهة الحالية. تم تشغيل المنصة في وضع محدود حتى استعادة البيانات."
                 : "Tenant context could not be loaded. Running in degraded mode until context data recovers."}
-            </div>
-          ) : null}
-          {moduleDefinition ? (
-            <div className="grid gap-2 lg:grid-cols-3">
-              <div className="wc-panel wc-panel-inline">
-                <Landmark className="h-3.5 w-3.5 text-[var(--primary)]" />
-                <span>{isRtl ? moduleDefinition.executiveDescription.ar : moduleDefinition.executiveDescription.en}</span>
-              </div>
-              <div className="wc-panel wc-panel-inline">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-700" />
-                <span>{isRtl ? "سياق تشغيلي منضبط وقابل للتدقيق" : "Governed operational context with audit-ready controls"}</span>
-              </div>
-              <div className="wc-panel wc-panel-inline">
-                <Building2 className="h-3.5 w-3.5 text-[var(--primary)]" />
-                <span>{isRtl ? "مهيأ للاستخدام المؤسسي متعدد الأدوار" : "Prepared for enterprise, role-scoped operation"}</span>
-              </div>
             </div>
           ) : null}
         </div>

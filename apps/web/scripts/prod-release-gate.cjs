@@ -12,8 +12,17 @@ const {
 } = require("@prisma/client");
 
 const BASE_URL = (process.env.VALIDATION_BASE_URL || "http://127.0.0.1:3113").replace(/\/$/, "");
-const DEFAULT_PASSWORD = process.env.RELEASE_GATE_PASSWORD || "Admin@Wathiqcare2026!";
-const RESET_PASSWORD = process.env.RELEASE_GATE_RESET_PASSWORD || "Reset@Wathiqcare2026!";
+
+function requireEnv(name) {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(`FATAL: ${name} is required. Set a strong release-gate password and retry.`);
+  }
+  return value;
+}
+
+const DEFAULT_PASSWORD = requireEnv("RELEASE_GATE_PASSWORD");
+const RESET_PASSWORD = requireEnv("RELEASE_GATE_RESET_PASSWORD");
 const REPORT_PATH = path.resolve(process.cwd(), "artifacts", "release-gate", "final-prod-release-gate.json");
 const SESSION_COOKIE_NAME = "wathiqcare_access_token";
 
@@ -473,7 +482,7 @@ async function main() {
       return { caseId };
     });
 
-    const otpFlow = await step("OTP lifecycle", async () => {
+    const otpFlow = await step("Tablet signature lifecycle", async () => {
       const startResponse = await apiJson(
         "POST",
         `${BASE_URL}/api/discharge/cases/${caseFlow.caseId}/acknowledgment/start`,
@@ -484,35 +493,43 @@ async function main() {
             method: "TABLET_SIGNATURE",
             payload: {
               patient_name: "Ahmed Release Gate",
-              phone_number: "+966553333333",
             },
           },
         },
       );
       assert(startResponse.status === 200, `ack start failed: ${startResponse.status} ${startResponse.text}`);
       const sessionId = startResponse.json?.session_id;
-      const otpCode = startResponse.json?.provider_result?.otp_debug_code;
-      assert(sessionId && otpCode, `otp session incomplete: ${startResponse.text}`);
+      assert(sessionId, `ack session id missing: ${startResponse.text}`);
+      assert(
+        !startResponse.json?.provider_result?.otp_debug_code,
+        "ack start must not expose a raw OTP debug code",
+      );
 
       const wrongResponse = await apiJson(
         "POST",
         `${BASE_URL}/api/discharge/cases/${caseFlow.caseId}/acknowledgment/${sessionId}/verify`,
         {
           cookie: roleSessions.tenantAdmin.cookie,
-          body: { payload: { signature_payload: "sig", otp_code: "000000" } },
+          body: { payload: { signature_payload: "" } },
         },
       );
-      assert(wrongResponse.status === 200 && wrongResponse.json?.verified === false, `wrong otp did not fail safely: ${wrongResponse.text}`);
+      assert(
+        wrongResponse.status === 200 && wrongResponse.json?.verified === false,
+        `empty signature did not fail safely: ${wrongResponse.text}`,
+      );
 
       const verifyResponse = await apiJson(
         "POST",
         `${BASE_URL}/api/discharge/cases/${caseFlow.caseId}/acknowledgment/${sessionId}/verify`,
         {
           cookie: roleSessions.tenantAdmin.cookie,
-          body: { payload: { signature_payload: "sig", otp_code: otpCode, device: "release-gate" } },
+          body: { payload: { signature_payload: "sig", device: "release-gate" } },
         },
       );
-      assert(verifyResponse.status === 200 && verifyResponse.json?.verified === true, `otp verify failed: ${verifyResponse.text}`);
+      assert(
+        verifyResponse.status === 200 && verifyResponse.json?.verified === true,
+        `signature verify failed: ${verifyResponse.text}`,
+      );
       return { sessionId };
     });
 

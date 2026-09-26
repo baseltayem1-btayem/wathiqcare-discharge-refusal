@@ -5,14 +5,21 @@ import {
   ConsentDocumentStatus,
   ConsentEvidenceCopyType,
   ConsentSignatureRole,
+  ConsentSigningOutcome,
   Prisma,
   type PrismaClient,
 } from "@prisma/client";
 import type { NextRequest } from "next/server";
-import { ensureEvidenceEventSchema, recordEvidenceEvent } from "@/lib/server/evidence-package-2-service";
+import {
+  buildEvidencePackageV2,
+  ensureEvidenceEventSchema,
+  recordConsentTimelineEvent,
+  recordEvidenceEvent,
+} from "@/lib/server/evidence-package-2-service";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { sendPatientCopyNotificationEmail } from "@/lib/server/pilot-email-override";
+import type { AuthContext } from "@/lib/server/auth";
 import {
   buildConsentContentHash,
   buildRefusalFormPayload,
@@ -34,6 +41,16 @@ import {
 import { extractStoredPolicyDecision } from "@/lib/server/witness-policy-service";
 
 const prisma = () => getPrisma();
+
+type GuardianMetadata = {
+  relationship?: string;
+  authorityDocumentUrl?: string;
+  signerIdNumber?: string;
+};
+
+type RefusalMetadata = {
+  refusalReason?: string;
+};
 
 const OTP_PROVIDER_KEY = "public_signing_otp";
 const OTP_REQUESTED_EVENT = "OTP_REQUESTED";
@@ -109,7 +126,7 @@ function getPublicFinalPdfUrls(token: string) {
   };
 }
 
-function buildFinalPdfState(
+export function buildFinalPdfState(
   token: string,
   args: { signerCompletesWorkflow: boolean; hasPhysicianSignature: boolean },
 ): PublicSignatureResult["finalPdf"] {
@@ -280,6 +297,7 @@ async function persistPublicSigningEvidencePackages(
   args: {
     tenantId: string;
     documentId: string;
+    signingSessionId?: string;
     caseId: string | null;
     patientName: string | null;
     patientEmail: string | null;
@@ -310,9 +328,15 @@ async function persistPublicSigningEvidencePackages(
     ConsentEvidenceCopyType.LEGAL_ARCHIVE_COPY,
   ];
   const filePrefix = args.decision.status === "CONSENT_REFUSED" ? `REFUSAL-${reference}` : reference;
+  const outcome =
+    args.decision.status === "CONSENT_REFUSED"
+      ? ConsentSigningOutcome.REFUSED
+      : ConsentSigningOutcome.CONSENTED;
   const metadata: Prisma.InputJsonValue = {
     source: "public-signing",
     generatedAt: args.generatedAt.toISOString(),
+    signingSessionId: args.signingSessionId || null,
+    outcome,
     otpHash: args.otpHash,
     otpVerifiedAt: args.otpVerifiedAt,
     ipAddress: args.ipAddress,
@@ -374,15 +398,22 @@ async function persistPublicSigningEvidencePackages(
     const storagePath = `informed-consents/${args.documentId}/evidence/${fileName}`;
     const row = existingByType.get(copyType);
 
+    const deliveryStatus = copyType === ConsentEvidenceCopyType.PATIENT_COPY
+      ? (args.patientEmail ? "QUEUED" : "PENDING")
+      : "ARCHIVED";
+
     if (row) {
       await client.consentEvidencePackage.update({
         where: { id: row.id },
         data: {
+          signingSessionId: args.signingSessionId,
           fileName,
           storagePath,
           checksumHash: args.pdfHash,
           generatedBy: args.generatedBy,
           generatedAt: args.generatedAt,
+          outcome,
+          deliveryStatus,
           metadata,
         },
       });
@@ -393,12 +424,15 @@ async function persistPublicSigningEvidencePackages(
       data: {
         tenantId: args.tenantId,
         consentDocumentId: args.documentId,
+        signingSessionId: args.signingSessionId,
         copyType,
         fileName,
         storagePath,
         checksumHash: args.pdfHash,
         generatedBy: args.generatedBy,
         generatedAt: args.generatedAt,
+        outcome,
+        deliveryStatus,
         metadata,
       },
     });
@@ -415,8 +449,43 @@ async function persistPublicSigningEvidencePackages(
         copyType: ConsentEvidenceCopyType.PATIENT_COPY,
         recipientEmail: args.patientEmail,
       });
+
+      const patientCopy = await client.consentEvidencePackage.findFirst({
+        where: {
+          tenantId: args.tenantId,
+          consentDocumentId: args.documentId,
+          copyType: ConsentEvidenceCopyType.PATIENT_COPY,
+        },
+        orderBy: { generatedAt: "desc" },
+      });
+      if (patientCopy) {
+        await client.consentEvidencePackage.update({
+          where: { id: patientCopy.id },
+          data: {
+            deliveredAt: new Date(),
+            deliveryStatus: "DELIVERED",
+          },
+        });
+      }
     } catch (error) {
       console.error("[public-signing] patient copy notification email failed", error);
+
+      const patientCopy = await client.consentEvidencePackage.findFirst({
+        where: {
+          tenantId: args.tenantId,
+          consentDocumentId: args.documentId,
+          copyType: ConsentEvidenceCopyType.PATIENT_COPY,
+        },
+        orderBy: { generatedAt: "desc" },
+      });
+      if (patientCopy) {
+        await client.consentEvidencePackage.update({
+          where: { id: patientCopy.id },
+          data: {
+            deliveryStatus: "FAILED",
+          },
+        });
+      }
     }
   }
 }
@@ -428,6 +497,8 @@ export async function submitPublicSigningSignature(args: {
   /** Patient declaration keys accepted in the signing journey (routine path). */
   declarations?: unknown;
   request: NextRequest;
+  guardianMetadata?: GuardianMetadata;
+  refusalMetadata?: RefusalMetadata;
 }): Promise<PublicSignatureResult> {
   const context = await validatePublicSigningSession({
     token: args.token,
@@ -499,11 +570,46 @@ export async function submitPublicSigningSignature(args: {
     const refusalForm = decision.refusalForm || buildRefusalFormPayload({ doc, education });
     const hasPhysicianSignature = doc.signatures.some((signature) => signature.role === ConsentSignatureRole.PHYSICIAN);
 
+    const refusalReason = getString(args.refusalMetadata?.refusalReason || decision.refusalReason);
+    const finalPdfHash = doc.auditChecksum || doc.immutablePdfHash || documentHash;
+    const finalPdfPath = `informed-consents/${doc.id}/evidence/REFUSAL-${doc.consentReference}-PATIENT.pdf`;
+
     await prisma().$transaction(async (tx) => {
+      const signature = await tx.consentDocumentSignature.create({
+        data: {
+          tenantId: context.tenantId,
+          consentDocumentId: context.documentId,
+          role: signerRole,
+          signerName,
+          signerIdNumber: getString(args.guardianMetadata?.signerIdNumber || ""),
+          signerRelationship: getString(args.guardianMetadata?.relationship || ""),
+          authorityDocumentUrl: getString(args.guardianMetadata?.authorityDocumentUrl || ""),
+          signatureMethod: $Enums.ConsentMethod.OTP,
+          ipAddress: requestIpAddress,
+          userAgent: requestUserAgent,
+          signatureHash,
+          outcome: ConsentSigningOutcome.REFUSED,
+          metadata: {
+            signatureId,
+            capturedAt,
+            otpVerifiedAt: context.publicSession.verifiedAt,
+            tokenHash: context.publicSession.tokenHash,
+            challengeId: context.publicSession.challengeId,
+            refusalFormHash: refusalForm.formHash,
+            refusalReason,
+          },
+        },
+      });
+
       await tx.consentDocument.update({
         where: { id: context.documentId },
         data: {
           status: ConsentDocumentStatus.SIGNED,
+          outcome: ConsentSigningOutcome.REFUSED,
+          refusalReason: refusalReason || null,
+          refusalRiskAcknowledged: true,
+          finalPdfPath,
+          finalPdfHash,
           metadata: mergeDecisionExecutionContext({
             rawMetadata: doc.metadata,
             eventType: "REFUSAL_ACKNOWLEDGED",
@@ -513,8 +619,10 @@ export async function submitPublicSigningSignature(args: {
             education,
             refusalForm,
             refusalAcknowledged: true,
+            refusalReason,
             refusalSignature: {
               signatureId,
+              signatureDbId: signature.id,
               signerName,
               signatureHash,
               capturedAt,
@@ -526,16 +634,26 @@ export async function submitPublicSigningSignature(args: {
         },
       });
 
+      await tx.signingSession.update({
+        where: { id: context.sessionId },
+        data: {
+          outcome: ConsentSigningOutcome.REFUSED,
+          finalPdfHash,
+          finalPdfUrl: finalPdfPath,
+        },
+      });
+
       await persistPublicSigningEvidencePackages({
         tenantId: context.tenantId,
         documentId: context.documentId,
+        signingSessionId: context.sessionId,
         caseId: doc.caseId,
         patientName: doc.patientName,
         patientEmail: null,
         consentReference: doc.consentReference,
         generatedAt: new Date(capturedAt),
         generatedBy: "public_signer",
-        pdfHash: doc.auditChecksum || doc.immutablePdfHash || documentHash,
+        pdfHash: finalPdfHash,
         documentHash,
         otpHash: latestRequestedChallenge.otpHash,
         otpVerifiedAt: context.publicSession.verifiedAt,
@@ -611,7 +729,37 @@ export async function submitPublicSigningSignature(args: {
           decisionStatus: decision.status,
         },
       }, tx);
+
+      await recordConsentTimelineEvent({
+        tenantId: context.tenantId,
+        consentDocumentId: context.documentId,
+        signingSessionId: context.sessionId,
+        action: "DECISION_REFUSED",
+        actorRole: signerRole,
+        ipAddress: requestIpAddress,
+        userAgent: requestUserAgent,
+        metadata: {
+          signerName,
+          signatureId,
+          signatureDbId: signature.id,
+          refusalReason,
+          finalPdfHash,
+        },
+      }, tx);
     });
+
+    try {
+      await buildEvidencePackageV2(
+        { tenant_id: context.tenantId } as AuthContext,
+        context.documentId,
+        {
+          signingSessionId: context.sessionId,
+          finalPdfHash,
+        },
+      );
+    } catch (evidenceError) {
+      console.error("[public-signing] evidence package v2 build failed after refusal", evidenceError);
+    }
 
     return {
       documentId: context.documentId,
@@ -669,6 +817,13 @@ export async function submitPublicSigningSignature(args: {
       ).metadata
     : {};
 
+  const signatureOutcome =
+    signerRole === ConsentSignatureRole.GUARDIAN
+      ? ConsentSigningOutcome.GUARDIAN_SIGNED
+      : ConsentSigningOutcome.CONSENTED;
+  const finalPdfHash = doc.auditChecksum || doc.immutablePdfHash || documentHash;
+  const finalPdfPath = `informed-consents/${doc.id}/evidence/${doc.consentReference}-PATIENT.pdf`;
+
   const { signature, nextStatus, hasPhysician } = await prisma().$transaction(async (tx) => {
     const signature = await tx.consentDocumentSignature.create({
       data: {
@@ -676,10 +831,14 @@ export async function submitPublicSigningSignature(args: {
         consentDocumentId: context.documentId,
         role: signerRole,
         signerName,
+        signerIdNumber: getString(args.guardianMetadata?.signerIdNumber || ""),
+        signerRelationship: getString(args.guardianMetadata?.relationship || ""),
+        authorityDocumentUrl: getString(args.guardianMetadata?.authorityDocumentUrl || ""),
         signatureMethod: $Enums.ConsentMethod.OTP,
         ipAddress: requestIpAddress,
         userAgent: requestUserAgent,
         signatureHash,
+        outcome: signatureOutcome,
         metadata: {
           ...signaturePersistenceMetadata,
           capturedBy: "public_signer",
@@ -705,6 +864,9 @@ export async function submitPublicSigningSignature(args: {
       where: { id: context.documentId },
       data: {
         status: nextStatus,
+        outcome: signatureOutcome,
+        finalPdfPath,
+        finalPdfHash,
         ...(patientDeclarationRecord
           ? {
               metadata: {
@@ -716,10 +878,20 @@ export async function submitPublicSigningSignature(args: {
       },
     });
 
+    await tx.signingSession.update({
+      where: { id: context.sessionId },
+      data: {
+        outcome: signatureOutcome,
+        finalPdfHash,
+        finalPdfUrl: finalPdfPath,
+      },
+    });
+
     const pdfHash = doc.auditChecksum || doc.immutablePdfHash || documentHash;
     await persistPublicSigningEvidencePackages({
       tenantId: context.tenantId,
       documentId: context.documentId,
+      signingSessionId: context.sessionId,
       caseId: doc.caseId,
       patientName: doc.patientName,
       patientEmail,
@@ -817,10 +989,39 @@ export async function submitPublicSigningSignature(args: {
       },
     }, tx);
 
+    await recordConsentTimelineEvent({
+      tenantId: context.tenantId,
+      consentDocumentId: context.documentId,
+      signingSessionId: context.sessionId,
+      action: signerRole === ConsentSignatureRole.GUARDIAN ? "GUARDIAN_SIGNED" : "SIGNATURE_CAPTURED",
+      actorRole: signerRole,
+      ipAddress: requestIpAddress,
+      userAgent: requestUserAgent,
+      metadata: {
+        signerName,
+        signatureId: signature.id,
+        signatureOutcome,
+        finalPdfHash,
+      },
+    }, tx);
+
     return { signature, nextStatus, hasPhysician };
   }, {
     timeout: 20000,
   });
+
+  try {
+    await buildEvidencePackageV2(
+      { tenant_id: context.tenantId } as AuthContext,
+      context.documentId,
+      {
+        signingSessionId: context.sessionId,
+        finalPdfHash,
+      },
+    );
+  } catch (evidenceError) {
+    console.error("[public-signing] evidence package v2 build failed after signature", evidenceError);
+  }
 
   if (patientEmail) {
     try {

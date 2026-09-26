@@ -12,7 +12,7 @@ Scope: apps/web rescue execution
 | P0-03 | P0 | Tenant admin | `/tenant/security` depended on missing `/api/tenant/roles` and could break UX | Implemented `/api/tenant/roles` and disabled the page pending full RBAC validation | Route renders stabilization notice; API exists and returns controlled responses |
 | P0-04 | P0 | Error handling | App lacked root-level fallbacks, allowing blank-screen failure states | Added root `app/error.tsx` and `app/global-error.tsx` | Runtime route sweeps no longer produce blank screens on the previously failing paths |
 | P0-05 | P0 | API contracts | Production-path API failures were inconsistent and leaked uncontrolled error shapes | Standardized shared error envelope in server HTTP helper | Auth and launch APIs now return `success/error/traceId/timestamp` envelopes |
-| P0-06 | P0 | Authentication | Required tenant test user was not present in the active web database | Added platform rescue tenant upsert endpoint and reseeded exact credential | `tenant_admin@demo.com / Demo@123` logs in successfully and reaches `/dashboard` |
+| P0-06 | P0 | Authentication | Required tenant test user was not present in the active web database | Added platform rescue tenant upsert endpoint and reseeded exact credential | `tenant_admin@demo.com / [REDACTED]` logs in successfully and reaches `/dashboard` |
 
 ## P1 Open
 
@@ -28,4 +28,4 @@ Scope: apps/web rescue execution
 - Rescue route added for controlled tenant repair: `POST /api/platform/tenant-rescue`
 - Controlled tenant credential validated during rescue:
   - Email: `tenant_admin@demo.com`
-  - Password: `Demo@123`
+  - Password: `[REDACTED]`

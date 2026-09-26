@@ -1,0 +1,50 @@
+[
+  {
+    "route": "/",
+    "url": "https://wathiqcare.online/",
+    "status": 200,
+    "title": "WathiqCare™ | Human-Centered Informed Consent, Legally Protected Care",
+    "screenshot": "live-screenshots/_.png",
+    "textPreview": "WathiqCare\nPlatform Modules\nContact Us\nRequest Demo\nSubscriber Login\nعربي\nEnterprise-grade security & governance\nIMC × WathiqCare\nHuman-Centered Informed Consent, Legally Protected Care.\n\nA Smart Digital Platform for Informed Consent and Medical Authorization in Saudi Arabia.\n\nGet started now\nSubscriber Login\nLearn more information\nTrusted by industry experts\n4.9\nWhy To Choose WathiqCare?\n100% Secure Data Handling\n99.9% System Reliability\n0 Security Breaches\nDesigned for Every Stakeholder in the"
+  },
+  {
+    "route": "/modules",
+    "url": "https://wathiqcare.online/modules",
+    "status": 200,
+    "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+    "screenshot": "live-screenshots/_modules.png",
+    "textPreview": "WathiqCare Enterprise Workspace\nعربي\nEN\nModules Command Center\n\nUnified healthcare legal modules designed for clinical governance, traceability, speed, and controlled production workflows.\n\n3\nMODULES\n24/7\nACCESS\nIMC\nGOVERNANCE\n\nENTERPRISE PHYSICIAN WORKSPACE\n\nInformed Consents\nProduction Active\n\nApproved consent library, patient journey, procedure selection, anesthesia review, education, physician approval, and secure patient signing.\n\nDoctor Workspace\nConsent Journey\nSecure Signing\nOpen Workspa"
+  },
+  {
+    "route": "/modules/informed-consents",
+    "url": "https://wathiqcare.online/modules/informed-consents",
+    "status": 200,
+    "title": "Subscriber Login | WathiqCareâ„¢ | WathiqCare™",
+    "screenshot": "live-screenshots/_modules_informed-consents.png",
+    "textPreview": "W\nWathiqCare\nSUBSCRIBER ACCESS\n\nCLINICAL CONSENT PLATFORM\n\nSecure doctor access for informed consent operations.\n\nSign in to review approved forms, manage consent journeys, and access support workflows without exposing internal navigation on the public site.\n\nDoctor Only\nWORKSPACE\nOTP Protected\nSIGNING\nAudit Ready\nEVIDENCE\n\nSUBSCRIBER LOGIN\n\nSign in to your workspace\n\nUse your organization account to access the doctor workspace and consent operations.\n\nEMAIL ADDRESS\nPASSWORD\nSign In\nâ† Back to "
+  },
+  {
+    "route": "/modules/informed-consents/forms",
+    "url": "https://wathiqcare.online/modules/informed-consents/forms",
+    "status": 200,
+    "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+    "screenshot": "live-screenshots/_modules_informed-consents_forms.png",
+    "textPreview": "APPROVED IMC LIBRARY\n\nApproved Consent Forms\n\nProduction library for approved IMC consent templates with smart search, governance controls, and in-page PDF preview.\n\n5\n\nAPPROVED\n\n2\n\nANESTHESIA\n\n1\n\nHIGH RISK\n\nAll Approved Forms\nGeneral Surgery\nAnesthesia\nMedical\nDiagnostic\nSpecial Procedure\nAll Specialties\nAnesthesia\nGastroenterology\nGeneral Surgery\nAll Risk Levels\nStandard\nMedium\nHigh\nApproved Templates\n\nOnly approved and controlled templates are displayed.\n\n5 results\nAppendectomy Consent Form\n\n"
+  },
+  {
+    "route": "/login",
+    "url": "https://wathiqcare.online/login",
+    "status": 200,
+    "title": "Subscriber Login | WathiqCareâ„¢ | WathiqCare™",
+    "screenshot": "live-screenshots/_login.png",
+    "textPreview": "W\nWathiqCare\nSUBSCRIBER ACCESS\n\nCLINICAL CONSENT PLATFORM\n\nSecure doctor access for informed consent operations.\n\nSign in to review approved forms, manage consent journeys, and access support workflows without exposing internal navigation on the public site.\n\nDoctor Only\nWORKSPACE\nOTP Protected\nSIGNING\nAudit Ready\nEVIDENCE\n\nSUBSCRIBER LOGIN\n\nSign in to your workspace\n\nUse your organization account to access the doctor workspace and consent operations.\n\nEMAIL ADDRESS\nPASSWORD\nSign In\nâ† Back to "
+  },
+  {
+    "route": "/request-demo",
+    "url": "https://wathiqcare.online/request-demo",
+    "status": 200,
+    "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+    "screenshot": "live-screenshots/_request-demo.png",
+    "textPreview": "Back to Home\nLanguage\nEN\nعربي\nEnter System\nRequest a Demo\n\nPlease fill in your facility details and our team will contact you to schedule a personalized demonstration.\n\nPDPL Compliant\nCBAHI Ready\n99.9% Uptime\n24/7 Support\ndemo@wathiqcare.online\n+966 543587772\nDemo Request Details\n\nRequired fields are marked with an asterisk.\n\nFacility Name*\nFull Name*\nContact Email*\nPhone Number*\nContact Address*\nNumber of Employees*\nWebsite\nSubmit Request\nWhat happens next?\n1. We review your facility requiremen"
+  }
+]

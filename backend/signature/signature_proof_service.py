@@ -353,7 +353,6 @@ class SignatureProofService:
                     "challenge_id": dispatch.challenge_id,
                     "provider": dispatch.provider,
                     "stub_mode": dispatch.stub_mode,
-                    "otp_debug_code": dispatch.otp_debug_code,
                 }
                 session["proof_metadata"].update(
                     {
@@ -440,7 +439,6 @@ class SignatureProofService:
                             "challenge_id": dispatch.challenge_id,
                             "provider": dispatch.provider,
                             "stub_mode": dispatch.stub_mode,
-                            "otp_debug_code": dispatch.otp_debug_code,
                         }
                     )
                     session["proof_metadata"].update(

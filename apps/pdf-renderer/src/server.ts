@@ -1,4 +1,4 @@
-﻿import express from "express";
+import express from "express";
 import chromium from "@sparticuz/chromium";
 import { chromium as playwrightChromium, type Browser } from "playwright-core";
 
@@ -7,7 +7,15 @@ const app = express();
 app.use(express.json({ limit: "25mb" }));
 
 const PORT = Number(process.env.PORT || 8080);
-const INTERNAL_SECRET = process.env.PDF_RENDERER_SECRET || "";
+const NODE_ENV = process.env.NODE_ENV || "development";
+
+function getRendererSecret(): string {
+  return process.env.PDF_RENDERER_SECRET || "";
+}
+
+function allowUnauthenticatedRenderer(): boolean {
+  return String(process.env.ALLOW_UNAUTHENTICATED_RENDERER || "").toLowerCase() === "true";
+}
 
 async function ensureArabicFontsLoaded(): Promise<void> {
   const chromiumWithFont = chromium as unknown as {
@@ -46,14 +54,27 @@ type RenderRequest = {
   lang?: string;
 };
 
+function isProduction(): boolean {
+  return NODE_ENV === "production";
+}
+
 function requireInternalSecret(req: express.Request, res: express.Response): boolean {
-  if (!INTERNAL_SECRET) {
+  const secret = getRendererSecret();
+
+  if (!secret) {
+    if (isProduction() && !allowUnauthenticatedRenderer()) {
+      res.status(401).json({
+        error: "PDF renderer secret not configured",
+        detail: "Set PDF_RENDERER_SECRET or ALLOW_UNAUTHENTICATED_RENDERER=true (dev only)",
+      });
+      return false;
+    }
     return true;
   }
 
   const provided = String(req.headers["x-wathiq-internal-secret"] || "");
 
-  if (provided !== INTERNAL_SECRET) {
+  if (provided !== secret) {
     res.status(401).json({ error: "Unauthorized PDF renderer request" });
     return false;
   }
@@ -200,7 +221,15 @@ app.post("/render", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`WathiqCare PDF renderer running on port ${PORT}`);
-});
+const isMainModule =
+  import.meta.url === `file://${process.argv[1]}` ||
+  import.meta.url.endsWith(process.argv[1] || "");
+
+if (isMainModule) {
+  app.listen(PORT, () => {
+    console.log(`WathiqCare PDF renderer running on port ${PORT}`);
+  });
+}
+
+export { app, requireInternalSecret };
 

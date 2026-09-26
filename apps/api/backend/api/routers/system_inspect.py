@@ -43,6 +43,39 @@ def _check_db() -> Dict[str, Any]:
         return {"reachable": False, "error": str(exc)}
 
 
+def _check_audit_logs() -> Dict[str, Any]:
+    """Verify that audit logs are being persisted and are recent."""
+    try:
+        from backend.core.database import SessionLocal
+        from backend.models.workflow_audit_log import WorkflowAuditLog
+
+        db = SessionLocal()
+        try:
+            latest = (
+                db.query(WorkflowAuditLog)
+                .order_by(WorkflowAuditLog.created_at.desc())
+                .first()
+            )
+            count = db.query(WorkflowAuditLog).count()
+            latest_at = latest.created_at.isoformat() if latest and latest.created_at else None
+            stale_threshold_minutes = 60
+            stale = False
+            if latest_at:
+                latest_dt = datetime.fromisoformat(latest_at)
+                stale = (datetime.now(timezone.utc) - latest_dt).total_seconds() > stale_threshold_minutes * 60
+            return {
+                "persisted": True,
+                "row_count": count,
+                "latest_at": latest_at,
+                "stale": stale,
+                "error": None,
+            }
+        finally:
+            db.close()
+    except Exception as exc:
+        return {"persisted": False, "row_count": None, "latest_at": None, "stale": True, "error": str(exc)}
+
+
 def _shc_status() -> Dict[str, Any]:
     """Return structured SHC module status and readiness reason."""
     module_enabled = _flag("SHC_COMPLIANCE_MODULE")
@@ -153,20 +186,24 @@ def system_inspect(
     * **status** – overall ``"healthy"`` / ``"degraded"`` verdict.
     """
     db_status = _check_db()
+    audit_status = _check_audit_logs()
     modules = _modules()
     integrations = _integrations()
     shc_status = _shc_status()
 
     # "healthy" means: DB is reachable AND the two mandatory integration
-    # flags are switched on.  Integration flags reflect *configuration*
-    # only – they do not probe the external systems at runtime.
+    # flags are switched on AND audit logs are being persisted.  Integration
+    # flags reflect *configuration* only – they do not probe the external
+    # systems at runtime.
     core_integrations_configured = (
         integrations["his"]["enabled"] and integrations["fhir"]["enabled"]
     )
+    audit_healthy = audit_status["persisted"] and not audit_status["stale"]
     overall_status = (
         "healthy"
         if db_status["reachable"]
         and core_integrations_configured
+        and audit_healthy
         and not (shc_status["module_enabled"] and shc_status["engine_status"] != "active")
         else "degraded"
     )
@@ -179,6 +216,7 @@ def system_inspect(
             "inspected_at": datetime.now(timezone.utc).isoformat(),
         },
         "database": db_status,
+        "audit": audit_status,
         "modules": modules,
         "shc": shc_status,
         "integrations": integrations,

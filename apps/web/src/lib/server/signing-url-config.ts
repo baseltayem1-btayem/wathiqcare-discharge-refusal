@@ -7,6 +7,7 @@ const DEFAULT_APPROVED_HOSTS = [
 ];
 
 const PRODUCTION_HOSTS = new Set(["wathiqcare.online", "wathiqcare.med.sa"]);
+const CANONICAL_PRODUCTION_URL = "https://wathiqcare.online";
 
 function getApprovedHosts(): string[] {
   const env = process.env.SIGNING_URL_APPROVED_HOSTS?.trim();
@@ -31,8 +32,35 @@ function isPreviewEnvironment(): boolean {
   return process.env.VERCEL_ENV === "preview";
 }
 
+function isProductionEnvironment(): boolean {
+  return process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production";
+}
+
 function isTestEnvironment(): boolean {
   return process.env.NODE_ENV === "test";
+}
+
+function resolveCanonicalProductionUrl(): string {
+  const configured =
+    process.env.NEXT_PUBLIC_CANONICAL_PRODUCTION_URL?.trim()
+    || process.env.CANONICAL_PRODUCTION_URL?.trim();
+
+  const withProtocol = configured
+    ? (configured.match(/^https?:\/\//i) ? configured : `https://${configured}`)
+    : CANONICAL_PRODUCTION_URL;
+
+  // In production the canonical URL must point to an explicitly approved
+  // production host. Never silently fall back to a wildcard or localhost URL.
+  try {
+    const url = new URL(withProtocol);
+    if (!PRODUCTION_HOSTS.has(url.hostname.toLowerCase())) {
+      return CANONICAL_PRODUCTION_URL;
+    }
+  } catch {
+    return CANONICAL_PRODUCTION_URL;
+  }
+
+  return withProtocol;
 }
 
 /**
@@ -40,8 +68,9 @@ function isTestEnvironment(): boolean {
  *
  * Precedence:
  *  1. Explicitly supplied baseUrl
- *  2. SIGNING_BASE_URL environment variable
- *  3. NEXTAUTH_URL environment variable
+ *  2. Canonical production URL (only in production environments)
+ *  3. SIGNING_BASE_URL environment variable
+ *  4. NEXTAUTH_URL environment variable
  *
  * Fails closed if none are provided, the protocol is not allowed, or the host
  * is not in the approved-host list. In preview environments a production URL
@@ -50,12 +79,13 @@ function isTestEnvironment(): boolean {
 export function resolveTrustedSigningBaseUrl(baseUrl?: string): string {
   const raw =
     baseUrl?.trim()
+    || (isProductionEnvironment() ? resolveCanonicalProductionUrl() : undefined)
     || process.env.SIGNING_BASE_URL?.trim()
     || process.env.NEXTAUTH_URL?.trim();
 
   if (!raw) {
     throw new Error(
-      "Signing base URL is not configured. Provide a baseUrl argument or set SIGNING_BASE_URL/NEXTAUTH_URL.",
+      "Signing base URL is not configured. Provide a baseUrl argument or set SIGNING_BASE_URL/NEXTAUTH_URL/NEXT_PUBLIC_CANONICAL_PRODUCTION_URL.",
     );
   }
 
@@ -82,6 +112,14 @@ export function resolveTrustedSigningBaseUrl(baseUrl?: string): string {
 
   if (!isApprovedHost(host)) {
     throw new Error(`Signing base URL host is not approved: ${host}`);
+  }
+
+  // Production environments must generate links only on production hosts.
+  // This is a defense-in-depth check on top of the canonical-URL precedence.
+  if (isProductionEnvironment() && !PRODUCTION_HOSTS.has(host)) {
+    throw new Error(
+      `Production signing base URL must use a production host: ${host}`,
+    );
   }
 
   return `${url.origin}`;

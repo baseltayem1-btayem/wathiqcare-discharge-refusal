@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
@@ -16,8 +17,15 @@ import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 import { getConsentFieldMappingByFormId } from "@/lib/server/consent-field-mappings";
 import type { ConsentFieldDefinition, ConsentFieldMapping } from "@/lib/consents/field-mapping/types";
+import {
+  IMC_APPROVED_CONSENT_FORMS_MANIFEST,
+  type ImcApprovedConsentManifestItem as TypeScriptManifestItem,
+} from "@/lib/server/imc-approved-consent-forms.manifest";
 import { isSignatureHashStale } from "@/lib/server/signature-hash-binding";
-import { renderFieldAddressedOverlays } from "@/lib/server/acroform/field-addressed-pdf-renderer";
+import {
+  assertRequiredFieldsPresent,
+  renderFieldAddressedOverlays,
+} from "@/lib/server/acroform/field-addressed-pdf-renderer";
 import type { AcroFormTemplateManifest } from "@/lib/server/acroform/field-addressed-template-manifest";
 import amputationManifest from "@/lib/server/acroform/manifests/imc-mr-1135-amputation.manifest.json";
 import { buildAmputationFieldAddressedValues } from "@/lib/server/acroform/field-mapping/amputation-field-mapping";
@@ -81,12 +89,48 @@ type ImcManifestItem = {
   lengthBytes: number;
 };
 
+type CopyType = "PATIENT_COPY" | "MEDICAL_RECORD_COPY" | "LEGAL_ARCHIVE_COPY";
+
+function resolveTypeScriptManifestItem(args: {
+  approvedConsentFormId: string;
+  publicPath?: string | null;
+}): TypeScriptManifestItem | null {
+  return (
+    IMC_APPROVED_CONSENT_FORMS_MANIFEST.find(
+      (item) =>
+        item.id === args.approvedConsentFormId ||
+        item.slug === args.approvedConsentFormId ||
+        (args.publicPath &&
+          (item.pdfUrl === args.publicPath || item.patientCopyPdfUrl === args.publicPath)),
+    ) || null
+  );
+}
+
+function resolveBasePublicPath(args: {
+  manifestItem: TypeScriptManifestItem;
+  copyType: CopyType;
+}): string {
+  if (args.copyType === "PATIENT_COPY" && args.manifestItem.patientCopyPdfUrl) {
+    return args.manifestItem.patientCopyPdfUrl;
+  }
+  return args.manifestItem.pdfUrl;
+}
+
 type FieldMapPoint = {
   page?: number;
   x: number;
   y: number;
   size?: number;
   maxWidth?: number;
+};
+
+type SignatureFallbackPlacement = {
+  page: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  coordinateMode: "NORMALIZED" | "POINTS";
 };
 
 type TemplateFieldMap = {
@@ -1768,6 +1812,7 @@ async function drawProductionMappedSignature(args: {
   mapping: unknown;
   fieldKey: string;
   signatureImageDataUrl: string | null | undefined;
+  fallbackPlacement?: SignatureFallbackPlacement;
 }) {
   if (!args.signatureImageDataUrl?.trim()) {
     return false;
@@ -1783,18 +1828,28 @@ async function drawProductionMappedSignature(args: {
 
   const coordinateMode = asString(effectiveMapping.coordinateMode).toUpperCase();
 
-  const field = collectProductionMappingFields(effectiveMapping).find(
+  let field = collectProductionMappingFields(effectiveMapping).find(
     (candidate) => asString(candidate.key) === args.fieldKey,
   );
+
+  // Signature fields may not have explicit coordinates in the mapping; when a
+  // fallback placement is supplied we still need the field record to render.
+  if (!field && args.fallbackPlacement) {
+    const directFields = asRecord(effectiveMapping).fields;
+    if (Array.isArray(directFields)) {
+      field = directFields.find((candidate) => asString(asRecord(candidate).key) === args.fieldKey);
+    }
+  }
 
   if (!field) {
     return false;
   }
 
-  const hasDefaultCoordinates = Boolean(
-    asRecord(field.coordinates) || asRecord(field.placement) || asRecord(field.position),
-  );
-  const hasArabicCoordinates = Boolean(asRecord(field.arabicCoordinates));
+  const hasDefaultCoordinates =
+    Object.keys(asRecord(field.coordinates)).length > 0 ||
+    Object.keys(asRecord(field.placement)).length > 0 ||
+    Object.keys(asRecord(field.position)).length > 0;
+  const hasArabicCoordinates = Object.keys(asRecord(field.arabicCoordinates)).length > 0;
 
   const results: boolean[] = [];
 
@@ -1821,14 +1876,36 @@ async function drawProductionMappedSignature(args: {
   }
 
   if (!hasDefaultCoordinates && !hasArabicCoordinates) {
-    const drawn = await drawSignatureInPlacement({
-      pdfDoc: args.pdfDoc,
-      field,
-      signatureImageDataUrl: args.signatureImageDataUrl,
-      languageVariant: "DEFAULT",
-      coordinateMode,
-    });
-    results.push(drawn);
+    if (args.fallbackPlacement) {
+      const fallbackField = {
+        ...field,
+        coordinates: {
+          page: args.fallbackPlacement.page,
+          x: args.fallbackPlacement.x,
+          y: args.fallbackPlacement.y,
+          width: args.fallbackPlacement.width,
+          height: args.fallbackPlacement.height,
+          coordinateMode: args.fallbackPlacement.coordinateMode,
+        },
+      };
+      const drawn = await drawSignatureInPlacement({
+        pdfDoc: args.pdfDoc,
+        field: fallbackField,
+        signatureImageDataUrl: args.signatureImageDataUrl,
+        languageVariant: "DEFAULT",
+        coordinateMode,
+      });
+      results.push(drawn);
+    } else {
+      const drawn = await drawSignatureInPlacement({
+        pdfDoc: args.pdfDoc,
+        field,
+        signatureImageDataUrl: args.signatureImageDataUrl,
+        languageVariant: "DEFAULT",
+        coordinateMode,
+      });
+      results.push(drawn);
+    }
   }
 
   return results.some(Boolean);
@@ -2431,6 +2508,110 @@ export async function renderImcApprovedDoctorDraftPdf(args: {
   };
 }
 
+export async function renderImcApprovedConsentPdfFromSynthetic(args: {
+  formId: string;
+  copyType?: CopyType;
+  origin?: string;
+  doctorCompletionValues?: Record<string, unknown>;
+  physicianSignatureDataUrl: string;
+  patientOrGuardianSignatureDataUrl: string;
+  patientOrGuardianRole?: "PATIENT" | "GUARDIAN";
+  signedAt?: Date | string;
+  patientName?: string;
+  mrn?: string;
+  dob?: string | null;
+  procedure?: string;
+  physicianName?: string;
+  documentId?: string;
+  consentReference?: string;
+  encounterId?: string;
+  caseId?: string;
+  caseNumber?: string;
+  tenantName?: string;
+}) {
+  const copyType: CopyType = args.copyType || "PATIENT_COPY";
+  const manifestItem = resolveTypeScriptManifestItem({
+    approvedConsentFormId: args.formId,
+  });
+
+  if (!manifestItem) {
+    throw new ApiError(404, `IMC approved form manifest entry not found for ${args.formId}`);
+  }
+
+  const publicPath = resolveBasePublicPath({ manifestItem, copyType });
+  const pdfBytes = await readPublicPdf(publicPath);
+  const mapping = getConsentFieldMappingByFormId(args.formId);
+
+  const pdfDoc = await PDFDocument.load(pdfBytes, { updateMetadata: false });
+  const stableDate = args.signedAt ? new Date(args.signedAt) : new Date();
+  pdfDoc.setCreationDate(stableDate);
+  pdfDoc.setModificationDate(stableDate);
+
+  const normalizedDoctorValues = normalizeProductionOverlayValues(args.doctorCompletionValues || {});
+  const values: Record<string, string> = { ...normalizedDoctorValues };
+
+  const browser = await launchOverlayBrowser();
+  let textFieldsDrawn = 0;
+  try {
+    textFieldsDrawn = await drawProductionMappedText({
+      browser,
+      pdfDoc,
+      mapping,
+      values,
+      excludedKeys: new Set([
+        "patient_signature",
+        "guardian_signature",
+        "treating_physician_signature",
+      ]),
+    });
+  } finally {
+    await browser.close();
+  }
+
+  const lastPageIndex = Math.max(0, pdfDoc.getPageCount() - 1);
+  const fallbackSignaturePlacement: SignatureFallbackPlacement = {
+    page: lastPageIndex + 1,
+    x: 0.15,
+    y: 0.88,
+    width: 0.3,
+    height: 0.075,
+    coordinateMode: "NORMALIZED",
+  };
+
+  const physicianSignatureDrawn = await drawProductionMappedSignature({
+    pdfDoc,
+    mapping,
+    fieldKey: "treating_physician_signature",
+    signatureImageDataUrl: args.physicianSignatureDataUrl,
+    fallbackPlacement: fallbackSignaturePlacement,
+  });
+
+  const patientOrGuardianSignatureKey =
+    args.patientOrGuardianRole === "GUARDIAN" ? "guardian_signature" : "patient_signature";
+
+  const patientSignatureDrawn = await drawProductionMappedSignature({
+    pdfDoc,
+    mapping,
+    fieldKey: patientOrGuardianSignatureKey,
+    signatureImageDataUrl: args.patientOrGuardianSignatureDataUrl,
+    fallbackPlacement: fallbackSignaturePlacement,
+  });
+
+  await drawPaginationOverlay(pdfDoc);
+
+  const bytes = await pdfDoc.save();
+  const checksum = crypto.createHash("sha256").update(Buffer.from(bytes)).digest("hex");
+
+  return {
+    bytes: Buffer.from(bytes),
+    pageCount: pdfDoc.getPageCount(),
+    textFieldsDrawn,
+    physicianSignatureDrawn,
+    patientSignatureDrawn,
+    checksum,
+  };
+}
+
 export async function renderImcApprovedConsentPdf(args: {
   documentId: string;
   tenantId: string;
@@ -2782,6 +2963,8 @@ export async function renderImcApprovedConsentPdf(args: {
         dob: doc.dob,
         signedAt,
       });
+
+      assertRequiredFieldsPresent(amputationValues, amputationManifest as AcroFormTemplateManifest);
 
       await renderFieldAddressedOverlays({
         pdfDoc,
