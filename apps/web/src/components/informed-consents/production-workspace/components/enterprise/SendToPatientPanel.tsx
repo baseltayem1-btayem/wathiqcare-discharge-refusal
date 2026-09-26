@@ -102,7 +102,7 @@ export function SendToPatientPanel({
             <Button
               variant="default"
               size="sm"
-              className="h-11 w-full rounded-2xl border-blue-700 bg-white text-blue-700 hover:bg-blue-50 [&_svg]:text-blue-700 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+              className="h-11 w-full rounded-2xl border-blue-700 bg-white text-blue-700 hover:bg-blue-50 [&_svg]:text-blue-700 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-100"
               disabled={sendLoading}
               onClick={onMarkFilledDraftReviewed}
             >
@@ -113,7 +113,7 @@ export function SendToPatientPanel({
           <Button
             variant={draftApproved ? "outline" : "default"}
             size="sm"
-            className="h-11 w-full rounded-2xl border-slate-300 bg-white text-slate-800 hover:bg-slate-100 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+            className="h-11 w-full rounded-2xl border-slate-300 bg-white text-slate-800 hover:bg-slate-100 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-100"
             disabled={draftApproved || !previewReviewed}
             onClick={onApproveDraft}
           >

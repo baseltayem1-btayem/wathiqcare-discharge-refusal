@@ -131,20 +131,30 @@ export function ApprovedPdfViewer({
                 <WorkspaceField label={lang === "ar" ? "النوع" : "Form type"} value={consentForm?.formType || "—"} />
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="inline-flex w-full gap-1 rounded-2xl border border-slate-200 bg-slate-100 p-1 sm:w-auto">
                 <Button
-                  variant={viewerMode === "source" ? "default" : "outline"}
+                  variant="outline"
                   size="sm"
-                  className="rounded-xl"
+                  aria-pressed={viewerMode === "source"}
+                  className={
+                    viewerMode === "source"
+                      ? "flex-1 rounded-xl border-blue-700 bg-blue-700 text-white hover:border-blue-800 hover:bg-blue-800 [&_svg]:text-white sm:flex-none"
+                      : "flex-1 rounded-xl border-slate-300 bg-white text-blue-700 hover:bg-blue-50 hover:text-blue-800 [&_svg]:text-blue-700 sm:flex-none"
+                  }
                   onClick={() => setViewerMode("source")}
                 >
                   <FileText className="mr-1 size-3.5" />
                   {sourceTitle}
                 </Button>
                 <Button
-                  variant={viewerMode === "filled" ? "default" : "outline"}
+                  variant="outline"
                   size="sm"
-                  className="rounded-xl"
+                  aria-pressed={viewerMode === "filled"}
+                  className={
+                    viewerMode === "filled"
+                      ? "flex-1 rounded-xl border-blue-700 bg-blue-700 text-white hover:border-blue-800 hover:bg-blue-800 [&_svg]:text-white sm:flex-none"
+                      : "flex-1 rounded-xl border-slate-300 bg-white text-blue-700 hover:bg-blue-50 hover:text-blue-800 [&_svg]:text-blue-700 sm:flex-none"
+                  }
                   onClick={() => setViewerMode("filled")}
                 >
                   <FileCheck2 className="mr-1 size-3.5" />
@@ -293,7 +303,11 @@ export function ApprovedPdfViewer({
                       variant={filledDraftReviewed ? "outline" : "default"}
                       size="sm"
                       disabled={!isFilledDraftReviewable(filledDraftStatus, draftPdfUrl, filledDraftReviewed)}
-                      className="rounded-xl focus:ring-2 focus:ring-blue-100"
+                      className={
+                        filledDraftReviewed
+                          ? "rounded-xl border-emerald-300 bg-white text-emerald-700 [&_svg]:text-emerald-700 disabled:opacity-100"
+                          : "rounded-xl border-blue-700 bg-blue-700 text-white hover:border-blue-800 hover:bg-blue-800 [&_svg]:text-white disabled:border-slate-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:opacity-100"
+                      }
                       onClick={onMarkFilledDraftReviewed}
                       aria-label={filledDraftReviewed ? "Filled preview reviewed" : "Mark filled preview reviewed"}
                       aria-describedby="filled-preview-review-desc"
@@ -311,7 +325,11 @@ export function ApprovedPdfViewer({
                       variant={reviewed ? "outline" : "default"}
                       size="sm"
                       disabled={reviewed || isAcroFormBacked}
-                      className="rounded-xl"
+                      className={
+                        reviewed
+                          ? "rounded-xl border-emerald-300 bg-white text-emerald-700 [&_svg]:text-emerald-700 disabled:opacity-100"
+                          : "rounded-xl border-blue-700 bg-blue-700 text-white hover:border-blue-800 hover:bg-blue-800 [&_svg]:text-white disabled:border-slate-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:opacity-100"
+                      }
                       onClick={onMarkReviewed}
                     >
                       {reviewed
@@ -441,7 +459,17 @@ export function ApprovedPdfViewer({
                     <ExternalLink className="size-3.5" /> {lang === "ar" ? "\u0641\u062A\u062D \u0646\u0633\u062E\u0629 \u0627\u0644\u0645\u0631\u064A\u0636" : "Open patient copy"}
                   </a>
                 ) : null}
-                <Button variant={reviewed ? "outline" : "default"} size="sm" disabled={reviewed} className="rounded-xl" onClick={onMarkReviewed}>
+                <Button
+                  variant={reviewed ? "outline" : "default"}
+                  size="sm"
+                  disabled={reviewed}
+                  className={
+                    reviewed
+                      ? "rounded-xl border-emerald-300 bg-white text-emerald-700 [&_svg]:text-emerald-700 disabled:opacity-100"
+                      : "rounded-xl border-blue-700 bg-blue-700 text-white hover:border-blue-800 hover:bg-blue-800 [&_svg]:text-white disabled:border-slate-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:opacity-100"
+                  }
+                  onClick={onMarkReviewed}
+                >
                   {reviewed ? (lang === "ar" ? "تم وسم المعاينة" : "Marked reviewed") : (lang === "ar" ? "تأكيد مراجعة المعاينة" : "Mark Preview Reviewed")}
                 </Button>
               </div>
