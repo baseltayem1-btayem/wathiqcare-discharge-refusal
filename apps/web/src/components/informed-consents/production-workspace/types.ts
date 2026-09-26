@@ -92,6 +92,8 @@ export type SecureSigningResult = {
   };
   createdAt: string;
   expiresAt?: string;
+  /** Present only when the workflow response exposes it (non-redacted envs). */
+  signingUrl?: string;
 };
 
 export type TimelineEvent = {

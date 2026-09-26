@@ -102,7 +102,7 @@ export function SendToPatientPanel({
             <Button
               variant="default"
               size="sm"
-              className="h-11 rounded-2xl"
+              className="h-11 w-full rounded-2xl border-blue-700 bg-white text-blue-700 hover:bg-blue-50 [&_svg]:text-blue-700 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-100"
               disabled={sendLoading}
               onClick={onMarkFilledDraftReviewed}
             >
@@ -113,7 +113,7 @@ export function SendToPatientPanel({
           <Button
             variant={draftApproved ? "outline" : "default"}
             size="sm"
-            className="h-11 rounded-2xl"
+            className="h-11 w-full rounded-2xl border-slate-300 bg-white text-slate-800 hover:bg-slate-100 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-100"
             disabled={draftApproved || !previewReviewed}
             onClick={onApproveDraft}
           >
@@ -125,7 +125,13 @@ export function SendToPatientPanel({
                 ? "اعتماد المسودة"
                 : "Approve Draft"}
           </Button>
-          <Button variant="default" size="sm" className="h-11 rounded-2xl" disabled={sendDisabled} onClick={onSend}>
+          <Button
+            variant="default"
+            size="sm"
+            className="h-11 w-full rounded-2xl border-blue-700 bg-blue-700 text-white hover:border-blue-800 hover:bg-blue-800 [&_svg]:text-white disabled:border-slate-200 disabled:bg-slate-200 disabled:text-slate-500 disabled:opacity-100"
+            disabled={sendDisabled}
+            onClick={onSend}
+          >
             <Send className="mr-1 size-4" />
             {sendLoading ? (lang === "ar" ? "جاري الإرسال…" : "Sending…") : (lang === "ar" ? "إرسال إلى المريض" : "Send to Patient")}
           </Button>
@@ -145,6 +151,23 @@ export function SendToPatientPanel({
               {lang === "ar" ? "حالة الرسائل:" : "Dispatch status:"}{" "}
               SMS {signingResult.dispatchStatuses.sms} · Email {signingResult.dispatchStatuses.email}
             </p>
+            {signingResult.signingUrl ? (
+              <p className="mt-1 break-all text-xs text-emerald-900">
+                {lang === "ar" ? (
+                  <>رابط التوقيع:{" "}</>
+                ) : (
+                  <>Signing URL:{" "}</>
+                )}
+                <a
+                  href={signingResult.signingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium underline underline-offset-2"
+                >
+                  {signingResult.signingUrl}
+                </a>
+              </p>
+            ) : null}
           </div>
         ) : null}
       </div>

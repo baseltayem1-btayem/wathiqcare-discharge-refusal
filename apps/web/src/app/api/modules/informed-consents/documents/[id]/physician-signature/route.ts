@@ -269,24 +269,6 @@ export async function POST(
         ? body.signatureDataUrl.trim()
         : "";
 
-    if (!signatureDataUrl) {
-      throw new ApiError(
-        400,
-        "Treating physician signature image is required.",
-      );
-    }
-
-    if (
-      !isSupportedSignatureDataUrl(
-        signatureDataUrl,
-      )
-    ) {
-      throw new ApiError(
-        400,
-        "Treating physician signature must be a valid PNG or JPEG image.",
-      );
-    }
-
     const prisma =
       getPrisma();
 
@@ -412,6 +394,27 @@ export async function POST(
         status:
           consentDocument.status,
       });
+    }
+
+    // The signature image is only required when no authenticated signature
+    // exists yet for this actor; a repeated send reuses the captured one via
+    // the alreadyCaptured short-circuit above.
+    if (!signatureDataUrl) {
+      throw new ApiError(
+        400,
+        "Treating physician signature image is required.",
+      );
+    }
+
+    if (
+      !isSupportedSignatureDataUrl(
+        signatureDataUrl,
+      )
+    ) {
+      throw new ApiError(
+        400,
+        "Treating physician signature must be a valid PNG or JPEG image.",
+      );
     }
 
     if (

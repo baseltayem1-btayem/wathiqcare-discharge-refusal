@@ -440,6 +440,115 @@ export function buildConsentDocumentFingerprint(
   return computePayloadFingerprint(medicalPayload);
 }
 
+export type ReusableConsentDocumentMatch = {
+  id: string;
+  consentReference: string;
+  status: string;
+  patientName: string | null;
+  mrn: string | null;
+  plannedProcedure: string | null;
+};
+
+/**
+ * Intent identity for "the same consent creation": the approved consent form
+ * (DB id or code) or the assembly template the workspace selected, plus the
+ * selected procedure. Used to reuse an existing document instead of blocking
+ * a repeat send with 409.
+ */
+export type ReusableConsentDocumentIntent = {
+  approvedConsentFormId?: string;
+  approvedConsentFormCode?: string;
+  assemblyTemplateId?: string;
+  plannedProcedure?: string | null;
+};
+
+function normalizeMatchText(value: string | null | undefined): string {
+  return (value || "").trim().toLowerCase();
+}
+
+/**
+ * Pure candidate selector: candidates are already scoped to the tenant + case
+ * + form/template identity. The selected procedure must match exactly
+ * (normalized); when the caller has no procedure value, the most recent
+ * candidate is accepted.
+ */
+export function selectReusableConsentDocument(
+  candidates: ReusableConsentDocumentMatch[],
+  intent: ReusableConsentDocumentIntent,
+): ReusableConsentDocumentMatch | null {
+  const procedureIntent = normalizeMatchText(intent.plannedProcedure);
+  const matched = candidates.find((candidate) => {
+    if (!procedureIntent) return true;
+    return normalizeMatchText(candidate.plannedProcedure) === procedureIntent;
+  });
+  return matched ?? null;
+}
+
+/**
+ * Look up an existing consent document for the same send intent so a repeat
+ * create request can reuse it instead of failing with 409 or creating a
+ * duplicate. VOID/ARCHIVED documents are never reused.
+ */
+export async function findReusableConsentDocument(
+  client: PrismaClient | Prisma.TransactionClient,
+  args: {
+    tenantId: string;
+    caseId: string;
+    intent: ReusableConsentDocumentIntent;
+  },
+): Promise<ReusableConsentDocumentMatch | null> {
+  const identityFilters: Prisma.ConsentDocumentWhereInput[] = [];
+
+  const assemblyTemplateId = args.intent.assemblyTemplateId?.trim();
+  if (assemblyTemplateId) {
+    identityFilters.push(
+      { templateId: assemblyTemplateId },
+      { metadata: { path: ["assemblyTemplateId"], equals: assemblyTemplateId } },
+    );
+  }
+
+  const approvedConsentFormId = args.intent.approvedConsentFormId?.trim();
+  if (approvedConsentFormId) {
+    identityFilters.push({
+      metadata: { path: ["approvedConsentFormId"], equals: approvedConsentFormId },
+    });
+  }
+
+  const approvedConsentFormCode = args.intent.approvedConsentFormCode?.trim();
+  if (approvedConsentFormCode) {
+    identityFilters.push({
+      metadata: { path: ["approvedConsentFormCode"], equals: approvedConsentFormCode },
+    });
+  }
+
+  if (identityFilters.length === 0) {
+    return null;
+  }
+
+  const candidates = await client.consentDocument.findMany({
+    where: {
+      tenantId: args.tenantId,
+      caseId: args.caseId,
+      status: {
+        notIn: [ConsentDocumentStatus.VOID, ConsentDocumentStatus.ARCHIVED],
+      },
+      OR: identityFilters,
+    },
+    orderBy: [{ createdAt: "desc" }],
+    take: 10,
+    select: {
+      id: true,
+      consentReference: true,
+      status: true,
+      patientName: true,
+      mrn: true,
+      plannedProcedure: true,
+    },
+  });
+
+  return selectReusableConsentDocument(candidates, args.intent);
+}
+
 async function findExistingConsentDocumentByKey(
   client: PrismaClient | Prisma.TransactionClient,
   tenantId: string,
