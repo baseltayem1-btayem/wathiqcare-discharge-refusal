@@ -1,9 +1,6 @@
 {
-  "buildCommand": "npm run runtime:pre-vercel && npm run prisma:generate && npm run build",
-  "installCommand": "npm install && npm run prisma:generate",
-  "outputDirectory": "apps/web/.next",
+  "installCommand": "cd apps/web && npm install && npm run prisma:generate",
+  "buildCommand": "cd apps/web && npm run runtime:pre-vercel && npm run prisma:generate && npm run build && cd ../.. && node copy-next-output-for-vercel.cjs",
   "framework": "nextjs",
-  "env": {
-    "NEXT_PUBLIC_ENABLE_WORKFLOW_GUIDANCE": "true"
-  }
+  "outputDirectory": ".next"
 }
