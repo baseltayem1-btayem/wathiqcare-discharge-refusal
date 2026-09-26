@@ -153,7 +153,11 @@ export function SendToPatientPanel({
             </p>
             {signingResult.signingUrl ? (
               <p className="mt-1 break-all text-xs text-emerald-900">
-                {lang === "ar" ? "رابط التوقيع:" : "Signing URL:"}{" "}
+                {lang === "ar" ? (
+                  <>رابط التوقيع:{" "}</>
+                ) : (
+                  <>Signing URL:{" "}</>
+                )}
                 <a
                   href={signingResult.signingUrl}
                   target="_blank"
