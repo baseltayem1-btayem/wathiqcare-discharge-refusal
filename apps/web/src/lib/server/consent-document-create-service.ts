@@ -1,15 +1,17 @@
 import crypto from "node:crypto";
-import { Prisma, PrismaClient, type ConsentDocument } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { $Enums, ConsentDocumentStatus, ConsentSectionKind } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
-import { writeConsentAudit, writeConsentAuditInTx } from "@/lib/server/consent-audit-service";
+import { writeConsentAuditInTx } from "@/lib/server/consent-audit-service";
 import {
   computePayloadFingerprint,
   validateIdempotencyKey,
 } from "@/lib/server/idempotency-core";
+import { evaluateWitnessPolicy, type TemplateWitnessPolicyConfig } from "@/lib/server/witness-policy-service";
+import { resolveTemplateWitnessPolicy } from "@/lib/server/witness-policy-profiles";
 
 const prisma = () => getPrisma();
 
@@ -391,13 +393,28 @@ export type CreateConsentDocumentPayload = {
   department?: string;
   diagnosis?: string;
   plannedProcedure?: string;
+  dob?: string;
+  gender?: string;
   admissionDetails?: string;
   procedureDetails?: string;
   physicianNotesAr?: string;
   physicianNotesEn?: string;
+  /** Governed policy carried by the approved form selected for this document. */
+  approvedWitnessPolicy?: TemplateWitnessPolicyConfig;
   idempotencyKey?: string;
   idempotencyFingerprint?: string;
   metadata?: Record<string, unknown>;
+  /** Initial lifecycle status. Defaults to DRAFT. Production workspace may use READY_FOR_SIGNATURE. */
+  initialStatus?: ConsentDocumentStatus;
+  /** Runtime witness-policy trigger facts captured at creation time. */
+  witnessTriggerFacts?: {
+    substituteDecisionMaker?: boolean;
+    lacksCapacity?: boolean;
+    cannotReadOrUseJourney?: boolean;
+    communicationBarrier?: boolean;
+    disputedOrObjected?: boolean;
+    refusalOrAma?: boolean;
+  };
 };
 
 export function buildConsentDocumentFingerprint(
@@ -421,6 +438,115 @@ export function buildConsentDocumentFingerprint(
     physicianNotesEn: payload.physicianNotesEn?.trim() || null,
   };
   return computePayloadFingerprint(medicalPayload);
+}
+
+export type ReusableConsentDocumentMatch = {
+  id: string;
+  consentReference: string;
+  status: string;
+  patientName: string | null;
+  mrn: string | null;
+  plannedProcedure: string | null;
+};
+
+/**
+ * Intent identity for "the same consent creation": the approved consent form
+ * (DB id or code) or the assembly template the workspace selected, plus the
+ * selected procedure. Used to reuse an existing document instead of blocking
+ * a repeat send with 409.
+ */
+export type ReusableConsentDocumentIntent = {
+  approvedConsentFormId?: string;
+  approvedConsentFormCode?: string;
+  assemblyTemplateId?: string;
+  plannedProcedure?: string | null;
+};
+
+function normalizeMatchText(value: string | null | undefined): string {
+  return (value || "").trim().toLowerCase();
+}
+
+/**
+ * Pure candidate selector: candidates are already scoped to the tenant + case
+ * + form/template identity. The selected procedure must match exactly
+ * (normalized); when the caller has no procedure value, the most recent
+ * candidate is accepted.
+ */
+export function selectReusableConsentDocument(
+  candidates: ReusableConsentDocumentMatch[],
+  intent: ReusableConsentDocumentIntent,
+): ReusableConsentDocumentMatch | null {
+  const procedureIntent = normalizeMatchText(intent.plannedProcedure);
+  const matched = candidates.find((candidate) => {
+    if (!procedureIntent) return true;
+    return normalizeMatchText(candidate.plannedProcedure) === procedureIntent;
+  });
+  return matched ?? null;
+}
+
+/**
+ * Look up an existing consent document for the same send intent so a repeat
+ * create request can reuse it instead of failing with 409 or creating a
+ * duplicate. VOID/ARCHIVED documents are never reused.
+ */
+export async function findReusableConsentDocument(
+  client: PrismaClient | Prisma.TransactionClient,
+  args: {
+    tenantId: string;
+    caseId: string;
+    intent: ReusableConsentDocumentIntent;
+  },
+): Promise<ReusableConsentDocumentMatch | null> {
+  const identityFilters: Prisma.ConsentDocumentWhereInput[] = [];
+
+  const assemblyTemplateId = args.intent.assemblyTemplateId?.trim();
+  if (assemblyTemplateId) {
+    identityFilters.push(
+      { templateId: assemblyTemplateId },
+      { metadata: { path: ["assemblyTemplateId"], equals: assemblyTemplateId } },
+    );
+  }
+
+  const approvedConsentFormId = args.intent.approvedConsentFormId?.trim();
+  if (approvedConsentFormId) {
+    identityFilters.push({
+      metadata: { path: ["approvedConsentFormId"], equals: approvedConsentFormId },
+    });
+  }
+
+  const approvedConsentFormCode = args.intent.approvedConsentFormCode?.trim();
+  if (approvedConsentFormCode) {
+    identityFilters.push({
+      metadata: { path: ["approvedConsentFormCode"], equals: approvedConsentFormCode },
+    });
+  }
+
+  if (identityFilters.length === 0) {
+    return null;
+  }
+
+  const candidates = await client.consentDocument.findMany({
+    where: {
+      tenantId: args.tenantId,
+      caseId: args.caseId,
+      status: {
+        notIn: [ConsentDocumentStatus.VOID, ConsentDocumentStatus.ARCHIVED],
+      },
+      OR: identityFilters,
+    },
+    orderBy: [{ createdAt: "desc" }],
+    take: 10,
+    select: {
+      id: true,
+      consentReference: true,
+      status: true,
+      patientName: true,
+      mrn: true,
+      plannedProcedure: true,
+    },
+  });
+
+  return selectReusableConsentDocument(candidates, args.intent);
 }
 
 async function findExistingConsentDocumentByKey(
@@ -502,10 +628,14 @@ export async function createConsentDocument(
     throw new ApiError(404, "Template not found");
   }
 
-  if (template.requiresWitness || template.requiresInterpreter) {
+  // Interpreter signing workflows remain outside the current scope.
+  // Witness requirements are no longer a creation blocker: the typed,
+  // versioned witness policy is evaluated at runtime and enforced at the
+  // send/signature/finalization transitions instead.
+  if (template.requiresInterpreter) {
     throw new ApiError(
       422,
-      "This consent template requires a witness or interpreter, which is not yet supported in the pilot scope.",
+      "This consent template requires an interpreter, which is not yet supported in the pilot scope.",
     );
   }
 
@@ -525,6 +655,28 @@ export async function createConsentDocument(
   if (!version) {
     throw new ApiError(404, "Template version not found");
   }
+
+  // Resolve the effective witness policy: the governed approved-form policy
+  // selected for this document takes precedence over compatibility-template
+  // metadata. This policy is persisted with the document and re-evaluated at
+  // each workflow enforcement point.
+  // wins; otherwise a governed code-controlled registry profile may apply
+  // (exact templateCode + version gate, fail closed on mismatch).
+  const resolvedWitnessPolicy = resolveTemplateWitnessPolicy({
+    metadata: template.metadata,
+    templateCode: template.templateCode,
+    templateVersionLabel: version.versionLabel,
+  });
+  const approvedWitnessPolicy = payload.approvedWitnessPolicy;
+  const witnessPolicyDecision = evaluateWitnessPolicy({
+    templateRequiresWitness: template.requiresWitness,
+    templateRiskLevel: template.riskLevel,
+    templatePolicy: approvedWitnessPolicy ?? resolvedWitnessPolicy.policy,
+    templatePolicySource: approvedWitnessPolicy
+      ? "APPROVED_FORM_GOVERNANCE"
+      : resolvedWitnessPolicy.policySource ?? undefined,
+    triggers: payload.witnessTriggerFacts,
+  });
 
   let idempotencyKey: string | undefined;
   let idempotencyFingerprint: string | undefined;
@@ -572,6 +724,12 @@ export async function createConsentDocument(
 
   const emrMeta = (caseRecord.metadata || {}) as Record<string, unknown>;
 
+  const fixedClausePayload: Record<string, string> = {};
+  for (const field of FIXED_CLAUSE_FIELDS) {
+    fixedClausePayload[field] = normalizeText((version as unknown as Record<string, string>)[field]);
+  }
+  const immutablePdfHash = computeFixedClauseChecksum(fixedClausePayload);
+
   try {
     const created = await db.$transaction(async (tx) => {
       const consentDocument = await tx.consentDocument.create({
@@ -581,14 +739,15 @@ export async function createConsentDocument(
           templateId,
           templateVersionId: version.id,
           consentReference: generateReference("IC"),
-          status: ConsentDocumentStatus.DRAFT,
+          status: payload.initialStatus ?? ConsentDocumentStatus.DRAFT,
           language: payload.language || "bilingual",
           idempotencyKey: idempotencyKey ?? null,
           idempotencyFingerprint: idempotencyFingerprint ?? null,
+          immutablePdfHash,
           patientName: caseRecord.patientName || "Unknown Patient",
           mrn: caseRecord.medicalRecordNo || null,
-          dob: typeof emrMeta.dob === "string" ? emrMeta.dob : null,
-          gender: typeof emrMeta.gender === "string" ? emrMeta.gender : null,
+          dob: payload.dob?.trim() || (typeof emrMeta.dob === "string" ? emrMeta.dob : null),
+          gender: payload.gender?.trim() || (typeof emrMeta.gender === "string" ? emrMeta.gender : null),
           physicianName: payload.physicianName?.trim() || auth.email || "Assigned Physician",
           physicianLicense: payload.physicianLicense?.trim() || null,
           physicianSpecialty: payload.physicianSpecialty?.trim() || template.specialty,
@@ -619,7 +778,26 @@ export async function createConsentDocument(
               diagnosis: typeof emrMeta.diagnosis === "string" ? emrMeta.diagnosis : null,
               plannedProcedure: typeof emrMeta.plannedProcedure === "string" ? emrMeta.plannedProcedure : null,
             },
+            patientIdentity: {
+              name: caseRecord.patientName || null,
+              mrn: caseRecord.medicalRecordNo || null,
+            },
+            demographics: {
+              dob: payload.dob?.trim() || (typeof emrMeta.dob === "string" ? emrMeta.dob : null),
+              gender: payload.gender?.trim() || (typeof emrMeta.gender === "string" ? emrMeta.gender : null),
+            },
+            physicianIdentity: {
+              name: payload.physicianName?.trim() || auth.email || "Assigned Physician",
+              license: payload.physicianLicense?.trim() || null,
+              specialty: payload.physicianSpecialty?.trim() || template.specialty,
+              department: payload.department?.trim() || template.department || null,
+            },
             source: "modules.informed-consents",
+            immutablePdfHash,
+            ...(approvedWitnessPolicy
+              ? { approvedFormWitnessPolicy: approvedWitnessPolicy as unknown as Prisma.InputJsonValue }
+              : {}),
+            witnessPolicyDecision: witnessPolicyDecision as unknown as Prisma.InputJsonValue,
             governance: {
               fieldPolicy: DYNAMIC_FIELD_GOVERNANCE,
               prohibitedAiFields: Array.from(PROHIBITED_AI_FIELDS),
@@ -678,6 +856,22 @@ export async function createConsentDocument(
           })),
         });
       }
+
+      await writeConsentAuditInTx(tx, {
+        tenantId,
+        actorUserId: auth.sub,
+        actorRole: auth.role || null,
+        action: "WITNESS_POLICY_EVALUATED",
+        summary: `Witness policy evaluated for ${consentDocument.consentReference}: ${witnessPolicyDecision.witnessMode} (required witnesses: ${witnessPolicyDecision.requiredWitnessCount})`,
+        source: "policy",
+        consentDocumentId: consentDocument.id,
+        templateId,
+        templateVersionId: version.id,
+        caseId,
+        metadata: {
+          decision: witnessPolicyDecision as unknown as Prisma.InputJsonValue,
+        },
+      });
 
       await writeConsentAuditInTx(tx, {
         tenantId,

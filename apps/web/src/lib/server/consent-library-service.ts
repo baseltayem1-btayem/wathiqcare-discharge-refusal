@@ -22,6 +22,21 @@ import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { hasInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
 import { logRuntimeIncident } from "@/lib/server/runtime-observability";
+import {
+  assertWitnessSatisfied,
+  evaluateWitnessPolicy,
+  extractStoredPolicyDecision,
+  extractWitnessTriggerFacts,
+  type CompletedWitness,
+} from "@/lib/server/witness-policy-service";
+import { resolveDocumentWitnessPolicy, resolveTemplateWitnessPolicy } from "@/lib/server/witness-policy-profiles";
+import { resolveWitnessDocumentHash } from "@/lib/server/witness-requirement-service";
+import {
+  validateClinicianAttestation,
+  validatePatientDeclarations,
+  type ClinicianAttestationRecord,
+  type PatientDeclarationRecord,
+} from "@/lib/server/patient-declarations-service";
 
 const prisma = () => getPrisma();
 
@@ -1365,15 +1380,14 @@ export async function createConsentDocument(
     throw new ApiError(404, "Template not found");
   }
 
-  // Pilot scope exclusion: interpreter and witness signing workflows are not
-  // implemented for the controlled pilot.  Block issuance of templates that
-  // explicitly require these roles.  See
-  // `pilot-package/CONSENT_TYPE_READINESS_MATRIX.md` and
-  // `docs/rc2-operational-readiness/09-go-live-readiness.md` §3.
-  if (template.requiresWitness || template.requiresInterpreter) {
+  // Interpreter signing workflows remain outside the current scope.
+  // Witness requirements are evaluated by the typed, versioned witness
+  // policy instead of blocking draft creation (legacy paper behaviour is
+  // preserved through the LEGACY_TEMPLATE_FLAG policy source).
+  if (template.requiresInterpreter) {
     throw new ApiError(
       422,
-      "This consent template requires a witness or interpreter, which is not yet supported in the pilot scope.",
+      "This consent template requires an interpreter, which is not yet supported in the pilot scope.",
     );
   }
 
@@ -1393,6 +1407,22 @@ export async function createConsentDocument(
   if (!version) {
     throw new ApiError(404, "Template version not found");
   }
+
+  // Resolve the effective witness policy: explicit template metadata policy
+  // wins; otherwise a governed code-controlled registry profile may apply
+  // (exact templateCode + version gate, fail closed on mismatch).
+  const resolvedWitnessPolicy = resolveTemplateWitnessPolicy({
+    metadata: template.metadata,
+    templateCode: template.templateCode,
+    templateVersionLabel: version.versionLabel,
+  });
+  const witnessPolicyDecision = evaluateWitnessPolicy({
+    templateRequiresWitness: template.requiresWitness,
+    templateRiskLevel: template.riskLevel,
+    templatePolicy: resolvedWitnessPolicy.policy,
+    templatePolicySource: resolvedWitnessPolicy.policySource ?? undefined,
+    triggers: (payload as { witnessTriggerFacts?: Parameters<typeof evaluateWitnessPolicy>[0]["triggers"] }).witnessTriggerFacts,
+  });
 
   const creationSyncIssues = validateBilingualSync({
     record: version as unknown as Record<string, unknown>,
@@ -1460,6 +1490,7 @@ export async function createConsentDocument(
             plannedProcedure: typeof emrMeta.plannedProcedure === "string" ? emrMeta.plannedProcedure : null,
           },
           source: "modules.informed-consents",
+          witnessPolicyDecision: witnessPolicyDecision as unknown as JsonInputValue,
           governance: {
             fieldPolicy: DYNAMIC_FIELD_GOVERNANCE,
             prohibitedAiFields: Array.from(PROHIBITED_AI_FIELDS),
@@ -2062,8 +2093,82 @@ export async function finalizeConsentDocument(
   }
 
   const highRiskTemplate = ["HIGH", "CRITICAL"].includes(String(doc.template.riskLevel || "").toUpperCase());
-  if ((doc.template.requiresWitness || highRiskTemplate) && !hasWitness) {
+
+  // Policy-driven witness enforcement. The decision is deterministically
+  // re-evaluated at finalization with current runtime trigger facts (a
+  // refusal or dispute can fire after the creation-time snapshot); the
+  // stored snapshot preserves creation-time policy provenance. Enforcement
+  // always uses the stricter outcome (fail closed).
+  const reevaluatedPolicy = resolveDocumentWitnessPolicy({
+    documentMetadata: metadata,
+    templateMetadata: doc.template.metadata,
+    templateCode: doc.template.templateCode,
+    templateVersionLabel: doc.templateVersion?.versionLabel,
+  });
+  const reevaluatedDecision = evaluateWitnessPolicy({
+    templateRequiresWitness: doc.template.requiresWitness,
+    templateRiskLevel: doc.template.riskLevel,
+    templatePolicy: reevaluatedPolicy.policy,
+    templatePolicySource: reevaluatedPolicy.policySource ?? undefined,
+    triggers: extractWitnessTriggerFacts({
+      metadata,
+      hasGuardianSignature: hasGuardian,
+      decisionStatus:
+        (asRecord(asRecord(metadata.executionContext)?.decision)?.status as string | undefined) ??
+        null,
+    }),
+  });
+  const storedDecision = extractStoredPolicyDecision(metadata);
+  const witnessDecision =
+    (storedDecision?.requiredWitnessCount ?? 0) > reevaluatedDecision.requiredWitnessCount
+      ? storedDecision!
+      : reevaluatedDecision;
+  if (witnessDecision.requiredWitnessCount > 0) {
+    const witnessRecords = await prisma().consentWitnessSignature.findMany({
+      where: { tenantId, consentDocumentId: id },
+      select: { witnessUserId: true, witnessRole: true, documentHash: true },
+    });
+    const completedWitnesses: CompletedWitness[] = witnessRecords.map((record) => ({
+      userId: record.witnessUserId,
+      role: record.witnessRole as CompletedWitness["role"],
+      documentHash: record.documentHash,
+    }));
+    try {
+      assertWitnessSatisfied(witnessDecision, completedWitnesses, {
+        expectedDocumentHash: resolveWitnessDocumentHash(doc),
+      });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        blockers.push(error.message);
+      } else {
+        throw error;
+      }
+    }
+  } else if (!hasWitness && (doc.template.requiresWitness || highRiskTemplate)) {
+    // Should not happen: legacy flags always evaluate to REQUIRED. Kept as a
+    // fail-closed backstop for documents created before policy snapshots.
     blockers.push("Witness signature is required for high-risk or witness-mandatory templates");
+  }
+
+  // Routine electronic path: with zero required witnesses, the electronic
+  // evidence (declarations + clinician attestation) must be complete and
+  // bound to the current document content.
+  if (witnessDecision.requiredWitnessCount === 0) {
+    const contentHash = computeFixedClauseChecksum(doc as unknown as Record<string, unknown>);
+    const declarations = metadata.patientDeclarations as PatientDeclarationRecord | undefined;
+    const declarationResult = validatePatientDeclarations(declarations, contentHash);
+    if (declarationResult.stale) {
+      blockers.push("Patient declarations are bound to an outdated document version");
+    } else if (!declarationResult.complete) {
+      blockers.push("Patient declarations are incomplete");
+    }
+    const attestation = metadata.clinicianAttestation as ClinicianAttestationRecord | undefined;
+    const attestationResult = validateClinicianAttestation(attestation, contentHash);
+    if (attestationResult.stale) {
+      blockers.push("Clinician attestation is bound to an outdated document version");
+    } else if (!attestationResult.complete) {
+      blockers.push("Clinician attestation is missing or incomplete");
+    }
   }
 
   const interpreterRequired = doc.template.requiresInterpreter || signatureSecurity.interpreterRequired === true;

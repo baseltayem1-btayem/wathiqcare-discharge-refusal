@@ -1,10 +1,14 @@
-﻿"use client";
+"use client";
 
 import { AlertTriangle, ClipboardSignature, ShieldCheck } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import TabletSignaturePad from "@/components/forms/TabletSignaturePad";
 import type { ConsentFieldMappingReadiness } from "../../lib/api";
 import { analyzeDoctorReadiness } from "../../doctorReadiness";
+import {
+  evaluateAnesthesiaGate,
+  NOT_APPLICABLE_REASON_KEY,
+} from "../../utils/anesthesiaGate";
 import { WorkspaceBadge, WorkspaceCard, WorkspaceCardHeader } from "../WorkspaceAtoms";
 
 interface DoctorCompletionPanelProps {
@@ -37,9 +41,16 @@ export function DoctorCompletionPanel({
 
   const completedDoctorFields =
     doctorReadinessReport.completedCount;
+  const anesthesiaGate = evaluateAnesthesiaGate({
+    requiredAnesthesiaFields: anesthesiaFields,
+    doctorCompletionValues: values,
+  });
+  const hasAnesthesiaAppliesField = doctorFields.some(
+    (field) => field.key === "anesthesia_applies",
+  );
   const anesthesiaDecision = values.anesthesia_applies;
-  const anesthesiaApplies = anesthesiaDecision === "true";
-  const anesthesiaNotApplicable = anesthesiaDecision === "false";
+  const anesthesiaApplies = anesthesiaGate.applies;
+  const anesthesiaNotApplicable = anesthesiaGate.notApplicable;
 
   if (!mapping) {
     return (
@@ -149,18 +160,81 @@ export function DoctorCompletionPanel({
         )}
 
         {anesthesiaFields.length > 0 ? (
-          <div className={anesthesiaApplies ? "rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" : "rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700"}>
+          <div className={anesthesiaApplies ? "rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" : anesthesiaNotApplicable ? "rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" : "rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700"}>
             <div className="flex items-start gap-2">
               <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="font-semibold">Anesthesia workflow</p>
                 <p className="mt-1 text-xs leading-5">
-                  {anesthesiaApplies
-                    ? "Anesthesia applies. An anesthesiologist review/completion step is required before patient dispatch."
-                    : anesthesiaNotApplicable
-                      ? "Anesthesia marked as not applicable for this consent."
-                      : "Select anesthesia applicability in the physician fields above."}
+                  {anesthesiaGate.status === "applicable_incomplete"
+                    ? "Anesthesia review required: complete the anesthesia fields below before patient dispatch."
+                    : anesthesiaGate.status === "applicable_complete"
+                      ? "Anesthesia review completed."
+                      : anesthesiaGate.status === "not_applicable"
+                        ? "Anesthesia marked not applicable."
+                        : anesthesiaGate.status === "not_applicable_missing_reason"
+                          ? "Anesthesia marked not applicable — provide the reason below."
+                          : "Confirm whether anesthesia applies to this procedure."}
                 </p>
+
+                {!hasAnesthesiaAppliesField ? (
+                  <select
+                    aria-label="Anesthesia applicability"
+                    value={anesthesiaDecision ?? ""}
+                    disabled={disabled}
+                    onChange={(event) => onValueChange("anesthesia_applies", event.target.value)}
+                    className="mt-3 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-500"
+                  >
+                    <option value="">Select anesthesia applicability</option>
+                    <option value="true">Yes — anesthesia applies</option>
+                    <option value="false">No — not applicable</option>
+                  </select>
+                ) : null}
+
+                {anesthesiaApplies ? (
+                  <div className="mt-3 space-y-3">
+                    {anesthesiaGate.effectiveFields.map((field) => {
+                      const value = values[field.key] ?? "";
+                      const complete = value.trim().length > 0;
+                      return (
+                        <div key={field.key} className="rounded-xl border border-slate-200 bg-white px-3 py-3">
+                          <div className="mb-1 flex items-center justify-between gap-3">
+                            <label className="text-xs font-semibold text-slate-900" htmlFor={field.key}>
+                              {field.labelEn}
+                            </label>
+                            <WorkspaceBadge tone={complete ? "green" : "gold"}>{complete ? "Complete" : "Required"}</WorkspaceBadge>
+                          </div>
+                          <textarea
+                            id={field.key}
+                            value={value}
+                            disabled={disabled}
+                            onChange={(event) => onValueChange(field.key, event.target.value)}
+                            placeholder="Document the anesthesia review"
+                            rows={3}
+                            className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-800 outline-none focus:border-blue-500"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
+
+                {anesthesiaNotApplicable ? (
+                  <div className="mt-3 rounded-xl border border-slate-200 bg-white px-3 py-3">
+                    <label className="text-xs font-semibold text-slate-900" htmlFor={NOT_APPLICABLE_REASON_KEY}>
+                      Reason anesthesia is not applicable
+                    </label>
+                    <textarea
+                      id={NOT_APPLICABLE_REASON_KEY}
+                      value={values[NOT_APPLICABLE_REASON_KEY] ?? ""}
+                      disabled={disabled}
+                      onChange={(event) => onValueChange(NOT_APPLICABLE_REASON_KEY, event.target.value)}
+                      placeholder="Document why anesthesia does not apply to this consent."
+                      rows={2}
+                      className="mt-1 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-800 outline-none focus:border-blue-500"
+                    />
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>

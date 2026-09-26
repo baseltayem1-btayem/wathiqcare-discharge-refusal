@@ -9,7 +9,12 @@ import {
 
 import {
   addConsentSignature,
+  computeFixedClauseChecksum,
 } from "@/lib/server/consent-library-service";
+
+import {
+  buildClinicianAttestationRecord,
+} from "@/lib/server/patient-declarations-service";
 
 import {
   ApiError,
@@ -264,24 +269,6 @@ export async function POST(
         ? body.signatureDataUrl.trim()
         : "";
 
-    if (!signatureDataUrl) {
-      throw new ApiError(
-        400,
-        "Treating physician signature image is required.",
-      );
-    }
-
-    if (
-      !isSupportedSignatureDataUrl(
-        signatureDataUrl,
-      )
-    ) {
-      throw new ApiError(
-        400,
-        "Treating physician signature must be a valid PNG or JPEG image.",
-      );
-    }
-
     const prisma =
       getPrisma();
 
@@ -299,8 +286,18 @@ export async function POST(
           select: {
             id: true,
             status: true,
+            immutablePdfHash: true,
             physicianName: true,
             physicianLicense: true,
+            metadata: true,
+            legalTextAr: true,
+            legalTextEn: true,
+            pdplTextAr: true,
+            pdplTextEn: true,
+            witnessDeclAr: true,
+            witnessDeclEn: true,
+            physicianCertAr: true,
+            physicianCertEn: true,
           },
         });
 
@@ -322,6 +319,15 @@ export async function POST(
         .physicianLicense
         ?.trim()
       || "";
+
+    const documentHash =
+      consentDocument.immutablePdfHash
+      || computeFixedClauseChecksum(
+        consentDocument as unknown as Record<string, unknown>,
+      );
+    const documentHashSource = consentDocument.immutablePdfHash
+      ? "immutable_pdf_hash"
+      : "fixed_clause_checksum";
 
     const physicianSignatures =
       await prisma
@@ -388,6 +394,27 @@ export async function POST(
         status:
           consentDocument.status,
       });
+    }
+
+    // The signature image is only required when no authenticated signature
+    // exists yet for this actor; a repeated send reuses the captured one via
+    // the alreadyCaptured short-circuit above.
+    if (!signatureDataUrl) {
+      throw new ApiError(
+        400,
+        "Treating physician signature image is required.",
+      );
+    }
+
+    if (
+      !isSupportedSignatureDataUrl(
+        signatureDataUrl,
+      )
+    ) {
+      throw new ApiError(
+        400,
+        "Treating physician signature must be a valid PNG or JPEG image.",
+      );
     }
 
     if (
@@ -464,10 +491,31 @@ export async function POST(
               contextualPhysicianLicense
                 ? "document-context-only"
                 : "unavailable",
+
+            documentHash,
+            documentHashSource,
           },
         },
         request,
       );
+
+    // Separate clinician attestation (never merged with the patient's
+    // declarations): the physician certification signature attests that the
+    // procedure, material risks, complications and alternatives were
+    // explained and questions answered. Bound to the current document
+    // content hash; stale attestations are rejected at finalization.
+    const attestationInput =
+      asMetadataRecord(body.attestation) ?? {};
+    const clinicianAttestation = buildClinicianAttestationRecord({
+      clinicianUserId: actorUserId,
+      documentHash: computeFixedClauseChecksum(
+        consentDocument as unknown as Record<string, unknown>,
+      ),
+      explainedProcedureRisksAlternatives:
+        attestationInput.explainedProcedureRisksAlternatives !== false,
+      answeredQuestions:
+        attestationInput.answeredQuestions !== false,
+    });
 
     const persistedSignature =
       updatedDocument
@@ -478,6 +526,27 @@ export async function POST(
             "PHYSICIAN",
         )
         .at(-1);
+
+    await prisma
+      .consentDocument
+      .update({
+        where: {
+          id: documentId,
+        },
+
+        data: {
+          metadata: {
+            ...(asMetadataRecord(consentDocument.metadata) ?? {}),
+            clinicianAttestation,
+            physicianSignature: {
+              signedAt: persistedSignature?.signedAt?.toISOString() || new Date().toISOString(),
+              signatureId: persistedSignature?.id || "",
+              signerName: authenticatedSignerName,
+              signerLicense: contextualPhysicianLicense || null,
+            },
+          },
+        },
+      });
 
     return NextResponse.json({
       ok: true,

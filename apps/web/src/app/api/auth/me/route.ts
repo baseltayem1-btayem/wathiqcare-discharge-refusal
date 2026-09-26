@@ -15,10 +15,33 @@ export async function GET(request: NextRequest) {
     const prisma = getPrisma();
     const user = await prisma.user.findUnique({
       where: { id: auth.sub },
-      include: {
+      select: {
+        id: true,
+        tenantId: true,
+        email: true,
+        fullName: true,
+        userType: true,
+        role: true,
+        status: true,
+        isActive: true,
+        emailVerified: true,
+        emailVerifiedAt: true,
+        lastLoginAt: true,
+        createdAt: true,
+        updatedAt: true,
         memberships: {
           where: { status: "ACTIVE" },
-          include: {
+          select: {
+            id: true,
+            tenantId: true,
+            userId: true,
+            role: true,
+            status: true,
+            joinedAt: true,
+            invitedAt: true,
+            suspendedAt: true,
+            createdAt: true,
+            updatedAt: true,
             tenant: {
               select: {
                 id: true,
@@ -83,18 +106,23 @@ export async function GET(request: NextRequest) {
 
     const platformRole =
       auth.platform_role ??
-      (user.userType === "PLATFORM_ADMIN" ? platformRoleForUserRole(user.role) ?? "platform_admin" : platformRoleForUserRole(user.role));
+      (user.userType === "PLATFORM_ADMIN"
+        ? platformRoleForUserRole(user.role) ?? "platform_admin"
+        : platformRoleForUserRole(user.role));
+
     const stepUp = await getStepUpStatusFromRequest({
       request,
       auth,
       tenantId: effectiveTenantId ?? "platform",
     });
+
     const userType =
       user.userType === "PLATFORM_ADMIN"
         ? "platform_admin"
         : user.userType === "TENANT_ADMIN"
           ? "tenant_admin"
           : "tenant_user";
+
     const homePath = "/modules";
 
     return jsonSuccess(

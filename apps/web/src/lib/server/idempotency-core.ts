@@ -4,7 +4,9 @@ export type IdempotencyOperation =
   | "CONSENT_DOCUMENT_CREATE"
   | "SIGNING_SESSION_CREATE"
   | "PATIENT_MESSAGE_SMS"
-  | "PATIENT_MESSAGE_EMAIL";
+  | "PATIENT_MESSAGE_EMAIL"
+  | "WITNESS_REQUIREMENT_CREATE"
+  | "WITNESS_SIGNATURE_CAPTURE";
 
 export type RootOperationKeyInput = {
   tenantId: string;

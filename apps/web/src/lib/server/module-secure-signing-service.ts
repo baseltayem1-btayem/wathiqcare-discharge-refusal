@@ -1,7 +1,10 @@
 import crypto from "node:crypto";
 import { Prisma, PatientMessageChannel, PatientMessageStatus } from "@prisma/client";
 import type { PrismaClient } from "@prisma/client";
-import { createSigningSessionIdempotent } from "@/lib/server/signing-session-service";
+import type { Browser } from "puppeteer";
+import {
+  createSigningSessionIdempotent,
+} from "@/lib/server/signing-session-service";
 import { getPrisma } from "@/lib/server/prisma";
 import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { ApiError } from "@/lib/server/http";
@@ -13,6 +16,11 @@ import {
   hashRecipient,
   validateIdempotencyKey,
 } from "@/lib/server/idempotency-core";
+import {
+  processPendingDispatches,
+  type SmsGateway,
+} from "@/lib/server/patient-message-outbox-service";
+import { createTaqnyatSmsGateway } from "@/lib/server/taqnyat-sms-gateway";
 
 const prisma = () => getPrisma();
 
@@ -323,6 +331,15 @@ export type SendModuleSecureSigningLinkOptions = {
   approvedConsentFormKey?: string;
   approvedTemplateVersionId?: string;
   immutablePdfHash?: string;
+  /** Governed filled-draft fingerprint bound at dispatch; included in idempotency identity. */
+  filledDraftFingerprint?: string;
+  /** Optional Puppeteer browser for deterministic testing. */
+  browser?: Browser;
+  /**
+   * SMS gateway used for inline delivery of this session's queued messages.
+   * Defaults to the production Taqnyat gateway; tests inject a fake.
+   */
+  smsGateway?: SmsGateway;
 };
 
 function normalizeSendOptions(args: SendModuleSecureSigningLinkOptions): {
@@ -345,6 +362,7 @@ function buildSendPayloadFingerprint(args: SendModuleSecureSigningLinkOptions): 
     approvedConsentFormKey: args.approvedConsentFormKey,
     approvedTemplateVersionId: args.approvedTemplateVersionId,
     immutablePdfHash: args.immutablePdfHash,
+    filledDraftFingerprint: args.filledDraftFingerprint,
     mobileHash: hashRecipient(normalizedMobile, { tenantId: args.tenantId }),
     emailHash: hashRecipient(normalizedEmail, { tenantId: args.tenantId }),
     locale: args.locale || "en",
@@ -412,6 +430,7 @@ export function deriveSendRootOperationKey(args: {
   approvedConsentFormKey?: string;
   approvedTemplateVersionId?: string;
   immutablePdfHash?: string;
+  filledDraftFingerprint?: string;
   mobileNumber: string;
   recipientEmail: string;
   locale?: "ar" | "en";
@@ -426,6 +445,7 @@ export function deriveSendRootOperationKey(args: {
     approvedConsentFormKey: args.approvedConsentFormKey,
     approvedTemplateVersionId: args.approvedTemplateVersionId,
     immutablePdfHash: args.immutablePdfHash,
+    filledDraftFingerprint: args.filledDraftFingerprint,
     mobileHash: hashRecipient(normalizedMobile, { tenantId: args.tenantId }),
     emailHash: hashRecipient(normalizedEmail, { tenantId: args.tenantId }),
     locale: args.locale || "en",
@@ -449,6 +469,16 @@ export async function sendModuleSecureSigningLink(
     throw new ApiError(400, "Invalid email address");
   }
 
+  // Explicit-resend validation is input-only and must fail before any database
+  // lookup so that offline/unit-test callers receive the expected 400.
+  if (args.explicitResend) {
+    const resendRequestKey = args.resendRequestKey?.trim();
+    if (!resendRequestKey) {
+      throw new ApiError(400, "Explicit resend requires a resend request key");
+    }
+    validateIdempotencyKey(resendRequestKey);
+  }
+
   const payloadFingerprint = buildSendPayloadFingerprint(args);
 
   // The canonical server-derived identity is always used as the root for
@@ -461,6 +491,7 @@ export async function sendModuleSecureSigningLink(
     approvedConsentFormKey: args.approvedConsentFormKey,
     approvedTemplateVersionId: args.approvedTemplateVersionId,
     immutablePdfHash: args.immutablePdfHash,
+    filledDraftFingerprint: args.filledDraftFingerprint,
     mobileNumber: args.mobileNumber,
     recipientEmail: args.recipientEmail,
     locale: args.locale,
@@ -470,11 +501,7 @@ export async function sendModuleSecureSigningLink(
   let sessionIdempotencyKey: string;
 
   if (args.explicitResend) {
-    const resendRequestKey = args.resendRequestKey?.trim();
-    if (!resendRequestKey) {
-      throw new ApiError(400, "Explicit resend requires a resend request key");
-    }
-    validateIdempotencyKey(resendRequestKey);
+    const resendRequestKey = args.resendRequestKey!.trim();
     rootKey = canonicalRootKey;
     sessionIdempotencyKey = deriveChildIdempotencyKey(
       `${canonicalRootKey}:resend:${resendRequestKey}`,
@@ -493,6 +520,10 @@ export async function sendModuleSecureSigningLink(
     );
   }
 
+  // The session PDF is a lightweight placeholder: the governed patient copy is
+  // rendered at download time from the approved source (see
+  // renderImcApprovedConsentPdf), so no document lookup or patient-copy
+  // generation happens at send time.
   const pdfBytes = buildPdfBuffer("WathiqCare Secure Signing", [
     `Module: ${args.moduleKey}`,
     `Case: ${args.caseId}`,
@@ -530,12 +561,116 @@ export async function sendModuleSecureSigningLink(
     client: args.client,
   });
 
-  const smsDispatch = session.dispatches?.find((d) => d.channel === "SMS");
-  const emailDispatch = session.dispatches?.find((d) => d.channel === "EMAIL");
+  // Deliver this session's queued patient messages inline. There is no
+  // separate background dispatcher in this deployment: the outbox claim is
+  // scoped to this session and SMS channel, accepted dispatches are never
+  // re-sent (duplicate-safe retries), and previously failed dispatches are
+  // retried now instead of waiting for a poller that does not exist.
+  const smsGateway = args.smsGateway ?? createTaqnyatSmsGateway();
+  console.log("[secure-signing] delivering session dispatches", {
+    tenantId: args.tenantId,
+    caseId: args.caseId,
+    documentId: args.documentId,
+    sessionId: session.sessionId,
+    approvedConsentFormKey: args.approvedConsentFormKey ?? null,
+    approvedTemplateVersionId: args.approvedTemplateVersionId ?? null,
+    mobileNumber: normalizedMobile.replace(/\d(?=\d{4})/g, "*"),
+    explicitResend: args.explicitResend === true,
+  });
+
+  await processPendingDispatches({
+    tenantId: args.tenantId,
+    smsGateway,
+    channel: PatientMessageChannel.SMS,
+    signingSessionId: session.sessionId,
+    retryFailedImmediately: true,
+    ...(args.client ? { client: args.client } : {}),
+  });
+
+  const refreshedDispatches = await (args.client ?? prisma()).patientMessageDispatch.findMany({
+    where: { tenantId: args.tenantId, signingSessionId: session.sessionId },
+  });
+
+  const smsDispatch = refreshedDispatches.find(
+    (dispatch) => dispatch.channel === PatientMessageChannel.SMS,
+  );
+  const emailDispatch = refreshedDispatches.find(
+    (dispatch) => dispatch.channel === PatientMessageChannel.EMAIL,
+  );
+
+  if (
+    smsDispatch &&
+    (smsDispatch.status === PatientMessageStatus.FAILED ||
+      smsDispatch.status === PatientMessageStatus.PERMANENT_FAILURE)
+  ) {
+    const failureCode = smsDispatch.lastErrorCode ?? "UNKNOWN";
+    const failureReason = smsDispatch.lastErrorMessage ?? "SMS provider delivery failed";
+
+    console.error("[secure-signing] sms delivery failed", {
+      tenantId: args.tenantId,
+      caseId: args.caseId,
+      documentId: args.documentId,
+      sessionId: session.sessionId,
+      dispatchId: smsDispatch.id,
+      errorCode: failureCode,
+      failureReason,
+    });
+
+    logRuntimeIncident({
+      module: "secure_signing",
+      type: "PROVIDER_DELIVERY_FAILURE",
+      operation: "sendModuleSecureSigningLink",
+      tenantId: args.tenantId,
+      error: new Error(`SMS delivery failed: ${failureCode}`),
+      details: {
+        caseId: args.caseId,
+        documentId: args.documentId,
+        sessionId: session.sessionId,
+        dispatchId: smsDispatch.id,
+        errorCode: failureCode,
+        failureReason,
+      },
+    });
+
+    try {
+      await appendAuditChainEvent({
+        tenantId: args.tenantId,
+        caseId: args.caseId,
+        eventType: "SECURE_SIGNING_SMS_DELIVERY_FAILED",
+        actorId: args.initiatedBy,
+        actorRole: "system",
+        payloadSummary: `SMS delivery failed for document ${args.documentId} (session ${session.sessionId}): ${failureCode}`,
+        metadataJson: {
+          moduleKey: args.moduleKey,
+          caseId: args.caseId,
+          documentId: args.documentId,
+          sessionId: session.sessionId,
+          dispatchId: smsDispatch.id,
+          errorCode: failureCode,
+          failureReason,
+          mobileHash: hashRecipient(normalizedMobile, { tenantId: args.tenantId }),
+        },
+      });
+    } catch (auditError) {
+      logRuntimeIncident({
+        module: "secure_signing",
+        type: "UNHANDLED_EXCEPTION",
+        operation: "sms_delivery_failure_audit",
+        tenantId: args.tenantId,
+        error: auditError instanceof Error ? auditError : new Error(String(auditError)),
+        details: { sessionId: session.sessionId, reason: "failure_audit_write_failed" },
+      });
+    }
+
+    throw new ApiError(
+      502,
+      `SMS delivery failed (${failureCode}): ${failureReason}`,
+    );
+  }
 
   const dispatchStatuses = {
-    sms: smsDispatch ? PatientMessageStatus.PENDING : PatientMessageStatus.PERMANENT_FAILURE,
-    email: emailDispatch ? PatientMessageStatus.PENDING : PatientMessageStatus.PERMANENT_FAILURE,
+    sms: smsDispatch ? smsDispatch.status : PatientMessageStatus.PERMANENT_FAILURE,
+    email: emailDispatch ? emailDispatch.status : PatientMessageStatus.PERMANENT_FAILURE,
   };
 
   const now = new Date().toISOString();
@@ -575,6 +710,7 @@ export async function sendModuleSecureSigningLink(
     tenantId: args.tenantId,
     sessionId: session.sessionId,
     smsStatus,
+    client: args.client,
   });
 
   const smsDeliveryStatus = toLegacyDeliveryStatus(smsStatus);

@@ -117,6 +117,9 @@ export const ENABLE_TRAKCARE_LIVE = envBool("FF_ENABLE_TRAKCARE_LIVE", false);
 /** Enable static IMC pilot patient fallback in the Informed Consents workspace */
 export const ENABLE_IMC_PILOT_PATIENTS = envBool("ENABLE_IMC_PILOT_PATIENTS", true);
 
+/** Enable real patient send in the IMC pilot (Preview/Pilot only; never Production) */
+export const ENABLE_IMC_PILOT_REAL_SEND = envBool("FF_IMC_PILOT_REAL_SEND", false);
+
 /** Enable provider webhook processing (signature, delivery callbacks) */
 export const ENABLE_WEBHOOKS = envBool("FF_ENABLE_WEBHOOKS", true);
 

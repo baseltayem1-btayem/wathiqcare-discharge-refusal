@@ -105,7 +105,7 @@ export function ApprovedPdfViewer({
               ) : null}
               {draftPdfError ? (
                 <div className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800">
-                  {draftPdfError}
+                  Doctor-completed draft generation failed: {draftPdfError} The approved PDF remains available below and in a new tab; dispatch is not blocked by this preview failure.
                 </div>
               ) : null}
               {draftPdfUrl ? (

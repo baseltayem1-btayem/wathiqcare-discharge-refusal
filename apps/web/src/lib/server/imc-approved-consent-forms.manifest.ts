@@ -22,9 +22,41 @@ export type ImcApprovedConsentManifestItem = {
   patientCopyPdfUrl?: string;
   summary: string;
   sourceFile: string;
+  witnessPolicy: ImcApprovedWitnessPolicy;
 };
 
-export const IMC_APPROVED_CONSENT_FORMS_MANIFEST: ImcApprovedConsentManifestItem[] = [
+export type ImcApprovedWitnessPolicy = {
+  witnessMode: 'NONE' | 'CONDITIONAL' | 'REQUIRED';
+  requiredWitnessCount: number;
+  requiredWitnessRoles: ('NURSING_REPRESENTATIVE' | 'PATIENT_EXPERIENCE_REPRESENTATIVE')[];
+  allowSamePersonMultipleRoles: boolean;
+  policyVersion: string;
+};
+
+const IMC_APPROVED_WITNESS_POLICY_VERSION = '2026.09.1';
+
+function governedWitnessPolicyForRisk(riskLevel: ImcApprovedConsentManifestItem['riskLevel']): ImcApprovedWitnessPolicy {
+  if (riskLevel === 'high') {
+    return {
+      witnessMode: 'REQUIRED',
+      requiredWitnessCount: 1,
+      requiredWitnessRoles: ['NURSING_REPRESENTATIVE'],
+      allowSamePersonMultipleRoles: false,
+      policyVersion: IMC_APPROVED_WITNESS_POLICY_VERSION,
+    };
+  }
+  return {
+    witnessMode: 'CONDITIONAL',
+    requiredWitnessCount: 0,
+    requiredWitnessRoles: [],
+    allowSamePersonMultipleRoles: false,
+    policyVersion: IMC_APPROVED_WITNESS_POLICY_VERSION,
+  };
+}
+
+type ImcApprovedConsentManifestSourceItem = Omit<ImcApprovedConsentManifestItem, 'witnessPolicy'>;
+
+const IMC_APPROVED_CONSENT_FORMS_SOURCE: ImcApprovedConsentManifestSourceItem[] = [
   {
     id: 'imc-gs-appendectomy-v1',
     slug: 'appendectomy-consent',
@@ -4814,5 +4846,11 @@ export const IMC_APPROVED_CONSENT_FORMS_MANIFEST: ImcApprovedConsentManifestItem
     sourceFile: 'Wounds-Skin-Tissue-Mucus Membranes.pdf',
   }
 ];
+
+export const IMC_APPROVED_CONSENT_FORMS_MANIFEST: ImcApprovedConsentManifestItem[] =
+  IMC_APPROVED_CONSENT_FORMS_SOURCE.map((item) => ({
+    ...item,
+    witnessPolicy: governedWitnessPolicyForRisk(item.riskLevel),
+  }));
 
 export const IMC_APPROVED_CONSENT_FORMS_COUNT = IMC_APPROVED_CONSENT_FORMS_MANIFEST.length;

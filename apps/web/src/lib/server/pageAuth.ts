@@ -1,9 +1,10 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { verifyAndDecodeJwt } from "@/lib/server/jwt";
 import { getSessionCookieName } from "@/lib/server/sessionCookie";
 import { getPrisma } from "@/lib/server/prisma";
-import { platformRoleForUserRole } from "@/lib/server/roles";
+import { canonicalizeUserRole, platformRoleForUserRole } from "@/lib/server/roles";
 import { canAccessModule, resolveModuleKeyFromPath } from "@/lib/modules/catalog";
 import { logRuntimeIncident, recordRuntimeMetric } from "@/lib/server/runtime-observability";
 
@@ -68,10 +69,11 @@ async function resolveDbBackedPageClaims(claims: PageAuthClaims, nextPath?: stri
     redirectToLogin(nextPath, "session_invalid");
   }
 
+  const canonicalRole = canonicalizeUserRole(user.role);
   const platformRole =
     user.userType === "PLATFORM_ADMIN"
-      ? platformRoleForUserRole(user.role) ?? "platform_admin"
-      : platformRoleForUserRole(user.role);
+      ? platformRoleForUserRole(canonicalRole) ?? "platform_admin"
+      : platformRoleForUserRole(canonicalRole);
   const tenantActive = user.primaryTenant?.isActive === true;
   const membershipActive = user.memberships.some((item) => item.tenantId === user.tenantId);
 
@@ -106,7 +108,7 @@ async function resolveDbBackedPageClaims(claims: PageAuthClaims, nextPath?: stri
   return {
     ...claims,
     email: user.email,
-    role: user.role,
+    role: canonicalRole,
     user_type:
       user.userType === "PLATFORM_ADMIN"
         ? "platform_admin"
@@ -214,6 +216,10 @@ export async function requirePageAuthClaimsOrRedirect(nextPath?: string): Promis
     recordRuntimeMetric("session_validation_duration_ms", Date.now() - startedAt);
     return claims;
   } catch (error) {
+    if (isRedirectError(error)) {
+      throw error;
+    }
+
     logRuntimeIncident({
       module: "session",
       type: "AUTH_FAILURE",

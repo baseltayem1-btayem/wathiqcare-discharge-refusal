@@ -1,5 +1,5 @@
-﻿import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, statSync } from "node:fs";
 import path from "node:path";
 
 const ROOT = process.cwd();
@@ -53,17 +53,21 @@ function runGit(args) {
   }).trim();
 }
 
-function getChangedFiles() {
+function getDiffRange() {
   const baseSha = process.env.PR_BASE_SHA;
   const headSha = process.env.PR_HEAD_SHA;
 
   if (baseSha && headSha) {
-    return runGit(["diff", "--name-only", baseSha, headSha])
-      .split(/\r?\n/)
-      .filter(Boolean);
+    return [baseSha, headSha];
   }
 
-  return runGit(["diff", "--name-only", "HEAD~1", "HEAD"])
+  return ["HEAD~1", "HEAD"];
+}
+
+function getChangedFiles() {
+  const [baseSha, headSha] = getDiffRange();
+
+  return runGit(["diff", "--name-only", baseSha, headSha])
     .split(/\r?\n/)
     .filter(Boolean);
 }
@@ -95,32 +99,79 @@ function isTechnicalLine(line) {
   return TECHNICAL_LINE_PATTERNS.some((pattern) => pattern.test(trimmed));
 }
 
+function getChangedLineEntries(scannedFiles) {
+  if (scannedFiles.length === 0) return [];
+
+  const [baseSha, headSha] = getDiffRange();
+  const diff = runGit([
+    "diff",
+    "--unified=0",
+    "--no-color",
+    baseSha,
+    headSha,
+    "--",
+    ...scannedFiles,
+  ]);
+
+  const entries = [];
+  let currentFile = "";
+  let newLineNumber = 0;
+
+  for (const line of diff.split(/\r?\n/)) {
+    if (line.startsWith("+++ b/")) {
+      currentFile = line.slice("+++ b/".length);
+      continue;
+    }
+
+    const hunkMatch = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line);
+    if (hunkMatch) {
+      newLineNumber = Number(hunkMatch[1]);
+      continue;
+    }
+
+    if (!currentFile) continue;
+
+    if (line.startsWith("+") && !line.startsWith("+++")) {
+      entries.push({
+        file: currentFile,
+        line: newLineNumber,
+        content: line.slice(1),
+      });
+      newLineNumber += 1;
+      continue;
+    }
+
+    if (!line.startsWith("-") && !line.startsWith("\\")) {
+      newLineNumber += 1;
+    }
+  }
+
+  return entries;
+}
+
 const changedFiles = getChangedFiles();
 const scannedFiles = changedFiles.filter(shouldScan);
+const changedLineEntries = getChangedLineEntries(scannedFiles);
 const violations = [];
 
-for (const file of scannedFiles) {
-  const content = readFileSync(path.join(ROOT, file), "utf8");
-  const lines = content.split(/\r?\n/);
+for (const entry of changedLineEntries) {
+  if (isTechnicalLine(entry.content)) continue;
 
-  lines.forEach((line, index) => {
-    if (isTechnicalLine(line)) return;
+  const stripped = stripTechnicalNoise(entry.content);
 
-    const stripped = stripTechnicalNoise(line);
-
-    if (ARABIC.test(stripped) && LATIN.test(stripped)) {
-      violations.push({
-        file,
-        line: index + 1,
-        reason: "Changed line mixes Arabic and Latin text",
-        excerpt: line.trim().slice(0, 180),
-      });
-    }
-  });
+  if (ARABIC.test(stripped) && LATIN.test(stripped)) {
+    violations.push({
+      file: entry.file,
+      line: entry.line,
+      reason: "Changed line mixes Arabic and Latin text",
+      excerpt: entry.content.trim().slice(0, 180),
+    });
+  }
 }
 
 console.log(`[pr-language-gate] changedFiles=${changedFiles.length}`);
 console.log(`[pr-language-gate] scannedFiles=${scannedFiles.length}`);
+console.log(`[pr-language-gate] changedLineCount=${changedLineEntries.length}`);
 console.log(`[pr-language-gate] violationCount=${violations.length}`);
 
 for (const violation of violations) {

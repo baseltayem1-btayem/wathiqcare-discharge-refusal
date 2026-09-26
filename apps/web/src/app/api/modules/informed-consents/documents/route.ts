@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireModuleOperationalAccess } from "@/lib/server/auth";
+import { requireModuleOperationalAccess, type AuthContext } from "@/lib/server/auth";
 import { isMissingTableOrColumnError } from "@/lib/server/auth-reset";
 import { createConsentDocument } from "@/lib/server/consent-document-create-service";
+import {
+  findReusableConsentDocument,
+  IdempotencyConflictError,
+  type ReusableConsentDocumentMatch,
+} from "@/lib/server/consent-document-create-service";
 import { resolveRuntimeDatabaseUrl } from "@/lib/config/env-validation";
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
@@ -11,6 +16,8 @@ import { imcPilotPatients } from "@/components/informed-consents/production-work
 import { imcApprovedConsentLibraryGenerated } from "@/components/informed-consents/enterprise-workflow/imcApprovedConsentLibrary.generated";
 import { listRuntimeConsentTemplates } from "@/lib/server/informed-consents-template-catalog";
 import { validateIdempotencyKey } from "@/lib/server/idempotency-core";
+import { writeConsentAudit } from "@/lib/server/consent-library-service";
+import { parseTemplateWitnessPolicy } from "@/lib/server/witness-policy-service";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -399,6 +406,62 @@ const CONSENT_SCHEMA_BOOTSTRAP_STATEMENTS = [
     CREATE INDEX IF NOT EXISTS idx_consent_timeline_events_doc_created
       ON consent_timeline_events (tenant_id, consent_document_id, created_at)
   `,
+  `
+    CREATE TABLE IF NOT EXISTS consent_witness_requirements (
+      id TEXT NOT NULL PRIMARY KEY,
+      tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      consent_document_id TEXT NOT NULL REFERENCES consent_documents(id) ON DELETE CASCADE,
+      witness_index INT NOT NULL,
+      required_role TEXT NOT NULL
+        CHECK (required_role IN ('NURSING_REPRESENTATIVE','PATIENT_EXPERIENCE_REPRESENTATIVE')),
+      status TEXT NOT NULL DEFAULT 'PENDING'
+        CHECK (status IN ('PENDING','ASSIGNED','SIGNED','REVOKED')),
+      policy_version TEXT NOT NULL,
+      assigned_user_id TEXT,
+      assigned_at TIMESTAMPTZ,
+      idempotency_key TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      CONSTRAINT uq_consent_witness_requirements_doc_index
+        UNIQUE (tenant_id, consent_document_id, witness_index)
+    )
+  `,
+  `
+    CREATE TABLE IF NOT EXISTS consent_witness_signatures (
+      id TEXT NOT NULL PRIMARY KEY,
+      tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      consent_document_id TEXT NOT NULL REFERENCES consent_documents(id) ON DELETE CASCADE,
+      witness_requirement_id TEXT NOT NULL REFERENCES consent_witness_requirements(id) ON DELETE RESTRICT,
+      witness_user_id TEXT NOT NULL,
+      employee_id TEXT,
+      witness_role TEXT NOT NULL
+        CHECK (witness_role IN ('NURSING_REPRESENTATIVE','PATIENT_EXPERIENCE_REPRESENTATIVE')),
+      department TEXT,
+      attestation_version TEXT NOT NULL,
+      signature_id TEXT NOT NULL,
+      authentication_reference TEXT NOT NULL,
+      signed_at TIMESTAMPTZ NOT NULL,
+      signed_at_ksa TEXT NOT NULL,
+      document_hash TEXT NOT NULL,
+      ip_hash TEXT,
+      user_agent_hash TEXT,
+      audit_event_id TEXT,
+      idempotency_key TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      CONSTRAINT uq_consent_witness_signatures_tenant_idempotency
+        UNIQUE (tenant_id, idempotency_key),
+      CONSTRAINT uq_consent_witness_signatures_requirement
+        UNIQUE (witness_requirement_id)
+    )
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_consent_witness_requirements_doc
+      ON consent_witness_requirements (tenant_id, consent_document_id, status)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_consent_witness_signatures_doc
+      ON consent_witness_signatures (tenant_id, consent_document_id)
+  `,
 ];
 
 let consentSchemaBootstrapPromise: Promise<void> | null = null;
@@ -765,24 +828,72 @@ function buildApprovedLibraryPdfPath(
   );
 }
 
-function resolveApprovedLibraryItem(
+function resolveApprovedLibraryAliases(
   identifier: string,
-) {
-  const normalizedIdentifier =
+): string[] {
+  const normalized =
     normalizeApprovedLibraryValue(
       identifier,
     );
 
-  if (!normalizedIdentifier) {
+  if (!normalized) {
+    return [];
+  }
+
+  const aliases = new Set<string>([
+    normalized,
+  ]);
+
+  if (
+    normalized.startsWith(
+      "imc-approved-",
+    )
+  ) {
+    aliases.add(
+      normalized.replace(
+        /^imc-approved-/,
+        "imc-",
+      ),
+    );
+  }
+
+  if (
+    normalized.startsWith("imc-")
+    && !normalized.startsWith(
+      "imc-approved-",
+    )
+  ) {
+    aliases.add(
+      normalized.replace(
+        /^imc-/,
+        "imc-approved-",
+      ),
+    );
+  }
+
+  return Array.from(aliases);
+}
+
+function resolveApprovedLibraryItem(
+  identifier: string,
+) {
+  const aliases =
+    resolveApprovedLibraryAliases(
+      identifier,
+    );
+
+  if (aliases.length === 0) {
     return null;
   }
 
   return (
     imcApprovedConsentLibraryGenerated.find(
       (item) =>
-        normalizeApprovedLibraryValue(
-          item.id,
-        ) === normalizedIdentifier,
+        aliases.includes(
+          normalizeApprovedLibraryValue(
+            item.id,
+          ),
+        ),
     )
     || imcApprovedConsentLibraryGenerated.find(
       (item) => {
@@ -792,10 +903,10 @@ function resolveApprovedLibraryItem(
             unknown
           >;
 
-        return (
+        return aliases.includes(
           normalizeApprovedLibraryValue(
             record.slug,
-          ) === normalizedIdentifier
+          ),
         );
       },
     )
@@ -912,6 +1023,8 @@ async function materializeApprovedLibraryConsentForm(
     String(item.titleAr || "").trim()
     || titleEn;
 
+  const witnessPolicy = parseTemplateWitnessPolicy({ witnessPolicy: record.witnessPolicy });
+
   const governanceSnapshot = {
     source:
       "imc-approved-library",
@@ -967,6 +1080,8 @@ async function materializeApprovedLibraryConsentForm(
       )
       || null,
 
+    witnessPolicy,
+
     materializedFrom:
       "generated-imc-approved-library",
 
@@ -1010,10 +1125,7 @@ async function materializeApprovedLibraryConsentForm(
       pdfTemplateUrl,
 
       requiresWitness:
-        readApprovedLibraryBoolean(
-          record,
-          "requiresWitness",
-        ),
+        witnessPolicy?.witnessMode === "REQUIRED",
 
       requiresInterpreter:
         readApprovedLibraryBoolean(
@@ -1050,10 +1162,7 @@ async function materializeApprovedLibraryConsentForm(
       pdfTemplateUrl,
 
       requiresWitness:
-        readApprovedLibraryBoolean(
-          record,
-          "requiresWitness",
-        ),
+        witnessPolicy?.witnessMode === "REQUIRED",
 
       requiresInterpreter:
         readApprovedLibraryBoolean(
@@ -1081,6 +1190,98 @@ async function materializeApprovedLibraryConsentForm(
       effectiveDate: true,
       governanceSnapshot: true,
       pdfTemplateUrl: true,
+    },
+  });
+}
+
+function buildReusableDocumentResponse(
+  document: ReusableConsentDocumentMatch,
+  reason: string,
+) {
+  return NextResponse.json({
+    ok: true,
+    reusedExistingDocument: true,
+    reuseReason: reason,
+    document: {
+      id: document.id,
+      consentReference: document.consentReference,
+      status: document.status,
+      patientName: document.patientName,
+      mrn: document.mrn,
+    },
+  });
+}
+
+async function auditReusedConsentDocument(args: {
+  auth: AuthContext;
+  tenantId: string;
+  document: ReusableConsentDocumentMatch;
+  caseId: string;
+  reason: string;
+}) {
+  try {
+    await writeConsentAudit({
+      tenantId: args.tenantId,
+      auth: args.auth,
+      action: "consent_document_reused",
+      summary: `Reused existing consent document ${args.document.consentReference} for a repeated send intent (${args.reason})`,
+      source: "workflow",
+      consentDocumentId: args.document.id,
+      caseId: args.caseId,
+      metadata: {
+        reusedExistingDocument: true,
+        reuseReason: args.reason,
+        documentStatus: args.document.status,
+      },
+    });
+  } catch (error) {
+    console.error("CONSENT_DOCUMENT_REUSE_AUDIT_FAILED", {
+      tenantId: args.tenantId,
+      caseId: args.caseId,
+      documentId: args.document.id,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+/**
+ * Reuse lookup for a repeated send intent: same case + approved consent form
+ * (or assembly template) + selected procedure. Returns null when no safe
+ * match exists, in which case the caller keeps the original error path.
+ */
+async function findDocumentForSameSendIntent(args: {
+  tenantId: string;
+  caseId: string;
+  body: Record<string, unknown>;
+  requestMetadata: Record<string, unknown>;
+  plannedProcedureOverride?: string | null;
+}): Promise<ReusableConsentDocumentMatch | null> {
+  const approvedConsentFormId = String(
+    args.body.approvedConsentFormId
+      || args.requestMetadata.approvedConsentFormId
+      || args.body.templateId
+      || "",
+  ).trim();
+  const approvedConsentFormCode =
+    typeof args.requestMetadata.approvedConsentFormCode === "string"
+      ? args.requestMetadata.approvedConsentFormCode.trim()
+      : "";
+  const assemblyTemplateId = String(args.body.templateId || "").trim();
+  const plannedProcedure =
+    typeof args.plannedProcedureOverride === "string"
+      ? args.plannedProcedureOverride.trim() || null
+      : typeof args.body.plannedProcedure === "string" && args.body.plannedProcedure.trim()
+        ? args.body.plannedProcedure.trim()
+        : null;
+
+  return findReusableConsentDocument(getPrisma(), {
+    tenantId: args.tenantId,
+    caseId: args.caseId,
+    intent: {
+      approvedConsentFormId,
+      approvedConsentFormCode,
+      assemblyTemplateId,
+      plannedProcedure,
     },
   });
 }
@@ -1120,6 +1321,28 @@ export async function POST(request: NextRequest) {
       ? (body.metadata as Record<string, unknown>)
       : {};
     const approvedConsentFormId = String(body.approvedConsentFormId || requestMetadata.approvedConsentFormId || templateId || "").trim();
+
+    // Idempotent send: a repeat create for the same case + approved form +
+    // procedure reuses the existing document (200 + reusedExistingDocument)
+    // instead of failing with 409 or creating a duplicate.
+    const respondWithExistingDocumentForIntent = async (
+      reason: string,
+      plannedProcedureOverride?: string | null,
+    ) => {
+      const existing = await findDocumentForSameSendIntent({
+        tenantId,
+        caseId,
+        body,
+        requestMetadata,
+        plannedProcedureOverride,
+      });
+      if (!existing) return null;
+      await auditReusedConsentDocument({ auth, tenantId, document: existing, caseId, reason });
+      return buildReusableDocumentResponse(existing, reason);
+    };
+
+    const rawInitialStatus = String(body.initialStatus || "").trim().toUpperCase();
+    const initialStatus = rawInitialStatus === "READY_FOR_SIGNATURE" ? "READY_FOR_SIGNATURE" : "DRAFT";
 
     if (!approvedConsentFormId) {
       return NextResponse.json({ ok: false, error: NO_APPROVED_CONSENT_MESSAGE }, { status: 409 });
@@ -1165,9 +1388,13 @@ export async function POST(request: NextRequest) {
       && requestMetadata.secureSigningBlocked === true
       && requestMetadata.patientMessagingBlocked === true;
 
+    const previewLibraryMaterializationAllowed =
+      process.env.VERCEL_ENV === "preview"
+      && ENABLE_IMC_PILOT_PATIENTS;
+
     if (
       !approvedConsentForm
-      && pilotLibraryMaterializationAllowed
+      && (pilotLibraryMaterializationAllowed || previewLibraryMaterializationAllowed)
     ) {
       await listRuntimeConsentTemplates(
         auth,
@@ -1189,10 +1416,15 @@ export async function POST(request: NextRequest) {
     }
 
     if (!approvedConsentForm) {
+      const reuseResponse = await respondWithExistingDocumentForIntent("approved_consent_form_unresolved");
+      if (reuseResponse) return reuseResponse;
       return NextResponse.json({ ok: false, error: NO_APPROVED_CONSENT_MESSAGE }, { status: 409 });
     }
 
     const governanceSnapshot = (approvedConsentForm.governanceSnapshot || {}) as Record<string, unknown>;
+    const approvedWitnessPolicy = governanceSnapshot.witnessPolicy === undefined
+      ? undefined
+      : parseTemplateWitnessPolicy({ witnessPolicy: governanceSnapshot.witnessPolicy }) ?? undefined;
 
     let approvedConsentPdfTemplateUrl =
       approvedConsentForm.pdfTemplateUrl;
@@ -1204,7 +1436,7 @@ export async function POST(request: NextRequest) {
 
     if (
       !sourceInfo.available
-      && pilotLibraryMaterializationAllowed
+      && (pilotLibraryMaterializationAllowed || previewLibraryMaterializationAllowed)
     ) {
       const approvedLibraryItem =
         resolveApprovedLibraryItem(
@@ -1243,6 +1475,8 @@ export async function POST(request: NextRequest) {
         !== "imc-approved-library"
       || !sourceInfo.available
     ) {
+      const reuseResponse = await respondWithExistingDocumentForIntent("approved_consent_source_unavailable");
+      if (reuseResponse) return reuseResponse;
       return NextResponse.json(
         {
           ok: false,
@@ -1262,6 +1496,8 @@ export async function POST(request: NextRequest) {
     });
 
     if (!template || !template.currentVersionId) {
+      const reuseResponse = await respondWithExistingDocumentForIntent("compatibility_template_unresolved");
+      if (reuseResponse) return reuseResponse;
       return NextResponse.json({ ok: false, error: NO_APPROVED_CONSENT_MESSAGE }, { status: 409 });
     }
 
@@ -1281,6 +1517,8 @@ export async function POST(request: NextRequest) {
     });
 
     if (!templateVersion) {
+      const reuseResponse = await respondWithExistingDocumentForIntent("template_version_unresolved");
+      if (reuseResponse) return reuseResponse;
       return NextResponse.json({ ok: false, error: NO_APPROVED_CONSENT_MESSAGE }, { status: 409 });
     }
 
@@ -1311,21 +1549,32 @@ export async function POST(request: NextRequest) {
           ? metadata.diagnosis
           : null;
 
+    const duplicateIntentResponse = await respondWithExistingDocumentForIntent(
+      "duplicate_create_intent",
+      plannedProcedure,
+    );
+    if (duplicateIntentResponse) return duplicateIntentResponse;
+
     const document = await createConsentDocument(auth, {
       caseId,
       templateId: template.id,
       templateVersionId: template.currentVersionId || undefined,
       language,
       physicianName: typeof body.physicianName === "string" ? body.physicianName.trim() : auth.email || undefined,
+      physicianLicense: typeof body.physicianLicense === "string" ? body.physicianLicense.trim() : undefined,
       physicianSpecialty: typeof body.physicianSpecialty === "string" ? body.physicianSpecialty.trim() : undefined,
       department: typeof body.department === "string" ? body.department.trim() : undefined,
       diagnosis: diagnosis || undefined,
       plannedProcedure: plannedProcedure || undefined,
+      dob: typeof body.dob === "string" ? body.dob.trim() : undefined,
+      gender: typeof body.gender === "string" ? body.gender.trim() : undefined,
       idempotencyKey,
       idempotencyFingerprint:
         typeof body.idempotencyFingerprint === "string"
           ? body.idempotencyFingerprint.trim()
           : undefined,
+      initialStatus,
+      approvedWitnessPolicy,
       metadata: {
         ...requestMetadata,
 
@@ -1346,6 +1595,7 @@ export async function POST(request: NextRequest) {
         sourcePath:
           approvedConsentPdfTemplateUrl,
         governanceSnapshot,
+        ...(approvedWitnessPolicy ? { approvedFormWitnessPolicy: approvedWitnessPolicy } : {}),
         templateId: template.id,
         templateVersionId: templateVersion.id,
         templateCode: template.templateCode,
@@ -1372,6 +1622,39 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     const message = error instanceof ApiError ? error.message : error instanceof Error ? error.message : String(error);
+
+    // A conflicting idempotency key for the same send intent still reuses the
+    // existing document instead of blocking the patient journey with 409.
+    if (error instanceof IdempotencyConflictError) {
+      try {
+        const requestMetadata = body.metadata && typeof body.metadata === "object"
+          ? (body.metadata as Record<string, unknown>)
+          : {};
+        const existing = await findDocumentForSameSendIntent({
+          tenantId,
+          caseId,
+          body,
+          requestMetadata,
+        });
+        if (existing) {
+          await auditReusedConsentDocument({
+            auth,
+            tenantId,
+            document: existing,
+            caseId,
+            reason: "idempotency_conflict_same_intent",
+          });
+          return buildReusableDocumentResponse(existing, "idempotency_conflict_same_intent");
+        }
+      } catch (reuseError) {
+        console.error("CONSENT_DOCUMENT_REUSE_LOOKUP_FAILED", {
+          tenantId,
+          caseId,
+          errorMessage: reuseError instanceof Error ? reuseError.message : String(reuseError),
+        });
+      }
+    }
+
     if (isMissingTableOrColumnError(error)) {
       consentSchemaBootstrapPromise = null;
     }
@@ -1383,7 +1666,8 @@ export async function POST(request: NextRequest) {
       errorName: error instanceof Error ? error.name : "UnknownError",
       errorMessage: message,
     });
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    const status = error instanceof ApiError ? error.status : 500;
+    return NextResponse.json({ ok: false, error: message }, { status });
   }
 }
 
