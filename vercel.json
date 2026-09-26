@@ -1,6 +1,6 @@
 {
-  "installCommand": "cd apps/web && npm install && npm run prisma:generate",
-  "buildCommand": "cd apps/web && npm run runtime:pre-vercel && npm run prisma:generate && npm run build && cd ../.. && node copy-next-output-for-vercel.cjs",
+  "installCommand": "npm install && npm run prisma:generate -w apps/web",
+  "buildCommand": "npm run runtime:pre-vercel -w apps/web && npm run prisma:generate -w apps/web && npm run build -w apps/web && node copy-next-output-for-vercel.cjs",
   "framework": "nextjs",
   "outputDirectory": ".next"
 }
