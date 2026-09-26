@@ -1,6 +1,7 @@
 "use client";
 
 import { isAssemblyApprovedPdfSourceVerified } from "../utils/approvedPdfSource";
+import { evaluateAnesthesiaGate } from "../utils/anesthesiaGate";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type {
@@ -75,6 +76,7 @@ export type Readiness = {
   doctorCompletionReady: boolean;
   doctorReadinessReport: DoctorReadinessReport;
   anesthesiaMappingReady: boolean;
+  anesthesiaGate: ReturnType<typeof evaluateAnesthesiaGate>;
   patientSignatureMapped: boolean;
   fieldMappingReadiness?: ConsentFieldMappingReadiness;
   sendReady: boolean;
@@ -479,9 +481,13 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     }
 
     const requiredAnesthesiaFields = state.fieldMappingReadiness.requiredAnesthesiaFields ?? [];
-    const anesthesiaDecision = state.doctorCompletionValues.anesthesia_applies;
-    if (requiredAnesthesiaFields.length > 0 && anesthesiaDecision === "true") {
-      return "Anesthesia review must be completed before patient dispatch.";
+    const sendAnesthesiaGate = evaluateAnesthesiaGate({
+      requiredAnesthesiaFields,
+      doctorCompletionValues: state.doctorCompletionValues,
+      anesthesiaOverride: state.anesthesiaOverride,
+    });
+    if (!sendAnesthesiaGate.ready) {
+      return sendAnesthesiaGate.message || "Anesthesia review must be completed before patient dispatch.";
     }
 
     if ((state.fieldMappingReadiness.requiredPatientFields?.length ?? 0) === 0) {
@@ -550,6 +556,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
           pdfTemplateUrl: state.assembly.consentForm?.pdfTemplateUrl,
           patientLanguagePreference: state.patient.languagePreference,
           doctorCompletionValues: state.doctorCompletionValues,
+          anesthesiaOverride: state.anesthesiaOverride ?? null,
           filledPreviewSnapshot: {
             filledPreviewGeneratedAt: new Date().toISOString(),
             filledPreviewFormId: state.assembly.consentForm?.id,
@@ -700,10 +707,12 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         && doctorReadinessReport.ready,
       );
     const requiredAnesthesiaFields = fieldMappingReadiness?.requiredAnesthesiaFields ?? [];
-    const anesthesiaDecision = state.doctorCompletionValues.anesthesia_applies;
-    const anesthesiaMappingReady = Boolean(
-      fieldMappingReadiness && (requiredAnesthesiaFields.length === 0 || anesthesiaDecision === "false"),
-    );
+    const anesthesiaGate = evaluateAnesthesiaGate({
+      requiredAnesthesiaFields,
+      doctorCompletionValues: state.doctorCompletionValues,
+      anesthesiaOverride: state.anesthesiaOverride,
+    });
+    const anesthesiaMappingReady = Boolean(fieldMappingReadiness && anesthesiaGate.ready);
     const patientSignatureMapped = Boolean((fieldMappingReadiness?.requiredPatientFields.length || 0) > 0);
 
     const missingItems: string[] = [];
@@ -731,7 +740,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
             ),
         );
       }
-      if (!anesthesiaMappingReady) missingItems.push("Anesthesia workflow reviewed when applicable");
+      if (!anesthesiaMappingReady) missingItems.push(anesthesiaGate.message || "Anesthesia workflow reviewed when applicable");
     }
     if (!educationReady) missingItems.push("Education material loaded or confirmed unavailable");
     if (!previewReviewed) missingItems.push("Patient-facing preview reviewed");
@@ -775,6 +784,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       doctorCompletionReady,
       doctorReadinessReport,
       anesthesiaMappingReady,
+      anesthesiaGate,
       patientSignatureMapped,
       fieldMappingReadiness,
       sendReady,
