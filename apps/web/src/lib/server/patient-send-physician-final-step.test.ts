@@ -14,6 +14,7 @@ process.env.SIGNING_URL_APPROVED_HOSTS = "localhost,127.0.0.1,test.wathiqcare.lo
 import {
   deriveSendRootOperationKey,
   resolveTrustedPdfHash,
+  sendModuleSecureSigningLink,
 } from "@/lib/server/module-secure-signing-service";
 import { createSigningSessionIdempotent } from "@/lib/server/signing-session-service";
 import {
@@ -95,6 +96,16 @@ function createMemoryPrismaClient(options: { signingSessionUpdateManyThrows?: bo
   const sessions = new Map<string, SessionRecord>();
   const tokens = new Map<string, TokenRecord>();
   const dispatches = new Map<string, DispatchRecord>();
+  const consentDocuments = new Map<string, {
+    id: string;
+    tenantId: string;
+    patientName: string | null;
+    mrn: string | null;
+    dob: string | null;
+    physicianName: string | null;
+    physicianSpecialty: string | null;
+    metadata: unknown;
+  }>();
   let sessionIdCounter = 1;
   let tokenIdCounter = 1;
   let dispatchIdCounter = 1;
@@ -276,7 +287,9 @@ function createMemoryPrismaClient(options: { signingSessionUpdateManyThrows?: bo
 
   function updateManyDispatches(args: {
     where: {
+      id?: string;
       tenantId?: string;
+      signingSessionId?: string;
       channel?: PatientMessageChannel;
       providerMessageId?: string;
       status?: { in?: PatientMessageStatus[] };
@@ -285,7 +298,9 @@ function createMemoryPrismaClient(options: { signingSessionUpdateManyThrows?: bo
   }): { count: number } {
     let count = 0;
     for (const record of dispatches.values()) {
+      if (args.where.id !== undefined && record.id !== args.where.id) continue;
       if (args.where.tenantId !== undefined && record.tenantId !== args.where.tenantId) continue;
+      if (args.where.signingSessionId !== undefined && record.signingSessionId !== args.where.signingSessionId) continue;
       if (args.where.channel !== undefined && record.channel !== args.where.channel) continue;
       if (args.where.providerMessageId !== undefined && record.providerMessageId !== args.where.providerMessageId) continue;
       if (args.where.status?.in && !args.where.status.in.includes(record.status)) continue;
@@ -298,21 +313,23 @@ function createMemoryPrismaClient(options: { signingSessionUpdateManyThrows?: bo
   function claimNextEligible(
     tenantId: string,
     channelFilter: PatientMessageChannel | null,
+    sessionFilter: string | null,
+    retryFailedImmediately: boolean,
     now: Date,
     leaseExpiresAt: Date,
   ): DispatchRecord | null {
-    console.log("CLAIM", tenantId, channelFilter, now.toISOString(), dispatches.size);
-    for (const d of dispatches.values()) {
-      console.log("DISPATCH", d.nextAttemptAt.toISOString(), d.status, d.tenantId);
-    }
     const matches: DispatchRecord[] = [];
     for (const record of dispatches.values()) {
       if (record.tenantId !== tenantId) continue;
       if (channelFilter !== null && record.channel !== channelFilter) continue;
+      if (sessionFilter !== null && record.signingSessionId !== sessionFilter) continue;
       let eligible = false;
+      if (record.status === PatientMessageStatus.PENDING && record.nextAttemptAt <= now) {
+        eligible = true;
+      }
       if (
-        (record.status === PatientMessageStatus.PENDING || record.status === PatientMessageStatus.FAILED) &&
-        record.nextAttemptAt <= now
+        record.status === PatientMessageStatus.FAILED &&
+        (retryFailedImmediately || record.nextAttemptAt <= now)
       ) {
         eligible = true;
       }
@@ -364,17 +381,26 @@ function createMemoryPrismaClient(options: { signingSessionUpdateManyThrows?: bo
     >
   > {
     const sql = query.sql.toLowerCase();
-    console.log("QUERYRAW", sql.slice(0, 60), query.values);
     if (sql.includes("update patient_message_dispatches")) {
+      // Prisma.sql deduplicates repeated bind values, so parse by content
+      // rather than by position.
       const tenantId = query.values[0] as string;
-      const channelFilter = (query.values[1] ?? null) as PatientMessageChannel | null;
+      const channelValue = query.values.find((v) => v === "SMS" || v === "EMAIL");
+      const channelFilter = (channelValue ?? null) as PatientMessageChannel | null;
+      const sessionValue = query.values.find(
+        (v) =>
+          v === null ||
+          (typeof v === "string" && v !== tenantId && v !== "SMS" && v !== "EMAIL"),
+      );
+      const sessionFilter = typeof sessionValue === "string" ? sessionValue : null;
+      const retryFailedImmediately = query.values.some((v) => v === true);
       const dates = query.values.filter((v): v is Date => v instanceof Date);
       const now = dates[0] ?? new Date();
       const leaseExpiresAt =
         dates.length > 1
           ? dates.slice(1).reduce((max, d) => (d > max ? d : max), now)
           : now;
-      const claim = claimNextEligible(tenantId, channelFilter, now, leaseExpiresAt);
+      const claim = claimNextEligible(tenantId, channelFilter, sessionFilter, retryFailedImmediately, now, leaseExpiresAt);
       if (!claim) return [];
       const metadata = (claim.metadata || {}) as Record<string, unknown>;
       return [
@@ -400,6 +426,17 @@ function createMemoryPrismaClient(options: { signingSessionUpdateManyThrows?: bo
   }
 
   const modelApi = {
+    consentDocument: {
+      findFirst: async (args: { where: Record<string, unknown> }) => {
+        const { tenantId, id } = args.where as { tenantId?: string; id?: string };
+        for (const doc of consentDocuments.values()) {
+          if (tenantId !== undefined && doc.tenantId !== tenantId) continue;
+          if (id !== undefined && doc.id !== id) continue;
+          return structuredClone(doc);
+        }
+        return null;
+      },
+    },
     signingSession: {
       findUnique: findUniqueSession,
       findFirst: findFirstSession,
@@ -410,10 +447,41 @@ function createMemoryPrismaClient(options: { signingSessionUpdateManyThrows?: bo
     },
     signingSecureToken: {
       create: createToken,
+      findFirst: async (args: { where: Record<string, unknown> }) => {
+        const { sessionId, tenantId, signerRole } = args.where as {
+          sessionId?: string;
+          tenantId?: string;
+          signerRole?: string;
+        };
+        const candidates = Array.from(tokens.values()).filter((t) => {
+          if (sessionId !== undefined && t.sessionId !== sessionId) return false;
+          if (tenantId !== undefined && t.tenantId !== tenantId) return false;
+          if (signerRole !== undefined && t.signerRole !== signerRole) return false;
+          return true;
+        });
+        candidates.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        return candidates[0] ? structuredClone(candidates[0]) : null;
+      },
       updateMany: updateManyTokens,
     },
     patientMessageDispatch: {
       findUnique: findUniqueDispatch,
+      findMany: async (args: {
+        where: {
+          tenantId?: string;
+          signingSessionId?: string;
+          channel?: PatientMessageChannel;
+        };
+      }) => {
+        return Array.from(dispatches.values())
+          .filter((record) => {
+            if (args.where.tenantId !== undefined && record.tenantId !== args.where.tenantId) return false;
+            if (args.where.signingSessionId !== undefined && record.signingSessionId !== args.where.signingSessionId) return false;
+            if (args.where.channel !== undefined && record.channel !== args.where.channel) return false;
+            return true;
+          })
+          .map((record) => structuredClone(record));
+      },
       create: createDispatch,
       update: updateDispatch,
       updateMany: updateManyDispatches,
@@ -434,6 +502,18 @@ function createMemoryPrismaClient(options: { signingSessionUpdateManyThrows?: bo
     },
     get dispatches() {
       return Array.from(dispatches.values()).map((d) => structuredClone(d));
+    },
+    setConsentDocument(record: {
+      id: string;
+      tenantId: string;
+      patientName: string | null;
+      mrn: string | null;
+      dob: string | null;
+      physicianName: string | null;
+      physicianSpecialty: string | null;
+      metadata: unknown;
+    }) {
+      consentDocuments.set(record.id, record);
     },
   };
 
@@ -841,4 +921,143 @@ test("explicit resend invalidates the previous session and is idempotent", async
 
   assert.equal(second.sessionId, third.sessionId);
   assert.equal(client.sessions.filter((s) => s.status !== "REVOKED").length, 1);
+});
+
+function buildInlineSendArgs(
+  client: ReturnType<typeof createMemoryPrismaClient>,
+  smsGateway: ReturnType<typeof createFakeSmsGateway>,
+) {
+  return {
+    tenantId: "t1",
+    initiatedBy: "user-1",
+    moduleKey: "informed_consent" as const,
+    moduleType: "informed_consent" as const,
+    documentId: "doc-1",
+    caseId: "case-1",
+    patientName: "Patient One",
+    mobileNumber: "+966501234567",
+    recipientEmail: "patient@example.com",
+    locale: "ar" as const,
+    client: client as unknown as PrismaClient,
+    smsGateway,
+  };
+}
+
+function seedConsentDocument(client: ReturnType<typeof createMemoryPrismaClient>) {
+  client.setConsentDocument({
+    id: "doc-1",
+    tenantId: "t1",
+    patientName: "Patient One",
+    mrn: "MRN-1",
+    dob: "1980-01-01",
+    physicianName: "Dr. One",
+    physicianSpecialty: "General Surgery",
+    metadata: {},
+  });
+}
+
+test("sendModuleSecureSigningLink delivers the queued SMS inline and marks the session sent", async () => {
+  const client = createMemoryPrismaClient();
+  const gateway = createFakeSmsGateway();
+  seedConsentDocument(client);
+  registerTestRecipient("t1", "case:case-1:mobile", { mobile: "+966501234567" });
+
+  try {
+    const result = await sendModuleSecureSigningLink(buildInlineSendArgs(client, gateway));
+
+    assert.equal(gateway.calls.length, 1, "exactly one SMS must be sent on first valid send");
+    assert.equal(gateway.calls[0]?.recipient, "+966501234567");
+
+    const smsDispatch = client.dispatches.find((d) => d.channel === "SMS");
+    assert.ok(smsDispatch);
+    assert.equal(smsDispatch.status, PatientMessageStatus.ACCEPTED);
+    assert.equal(smsDispatch.providerMessageId, "fake-sms-1");
+
+    const session = client.sessions.find((s) => s.id === result.sessionId);
+    assert.ok(session);
+    assert.equal(session.status, "SENT");
+
+    assert.equal(result.dispatchStatuses.sms, PatientMessageStatus.ACCEPTED);
+  } finally {
+    clearTestRecipients();
+  }
+});
+
+test("sendModuleSecureSigningLink does not send duplicate SMS on repeated clicks", async () => {
+  const client = createMemoryPrismaClient();
+  const gateway = createFakeSmsGateway();
+  seedConsentDocument(client);
+  registerTestRecipient("t1", "case:case-1:mobile", { mobile: "+966501234567" });
+
+  try {
+    const first = await sendModuleSecureSigningLink(buildInlineSendArgs(client, gateway));
+    const second = await sendModuleSecureSigningLink(buildInlineSendArgs(client, gateway));
+
+    assert.equal(first.sessionId, second.sessionId);
+    assert.equal(gateway.calls.length, 1, "repeated send must not send duplicate SMS");
+    assert.equal(
+      client.dispatches.filter((d) => d.channel === "SMS").length,
+      1,
+      "repeated send must not create duplicate dispatches",
+    );
+  } finally {
+    clearTestRecipients();
+  }
+});
+
+test("sendModuleSecureSigningLink retries a transient provider failure on the next send", async () => {
+  const client = createMemoryPrismaClient();
+  const gateway = createFakeSmsGateway();
+  seedConsentDocument(client);
+  registerTestRecipient("t1", "case:case-1:mobile", { mobile: "+966501234567" });
+
+  try {
+    gateway.setFailureCount(1);
+
+    await assert.rejects(
+      sendModuleSecureSigningLink(buildInlineSendArgs(client, gateway)),
+      /SMS delivery failed/,
+    );
+
+    const failedDispatch = client.dispatches.find((d) => d.channel === "SMS");
+    assert.ok(failedDispatch);
+    assert.equal(failedDispatch.status, PatientMessageStatus.FAILED);
+    assert.equal(failedDispatch.lastErrorCode, "SMS_GATEWAY_UNAVAILABLE");
+
+    // The same session is reused and the failed dispatch is retried inline
+    // without waiting for backoff or hitting an attempt ceiling.
+    const result = await sendModuleSecureSigningLink(buildInlineSendArgs(client, gateway));
+
+    assert.equal(gateway.calls.length, 2, "one retry after the transient failure");
+    const retriedDispatch = client.dispatches.find((d) => d.channel === "SMS");
+    assert.equal(retriedDispatch?.status, PatientMessageStatus.ACCEPTED);
+    assert.equal(retriedDispatch?.providerMessageId, "fake-sms-2");
+    assert.equal(
+      client.sessions.find((s) => s.id === result.sessionId)?.status,
+      "SENT",
+    );
+  } finally {
+    clearTestRecipients();
+  }
+});
+
+test("sendModuleSecureSigningLink records permanent provider failures and does not silently succeed", async () => {
+  const client = createMemoryPrismaClient();
+  const gateway = createFakeSmsGateway({ errorCode: "invalid_recipient" });
+  seedConsentDocument(client);
+  registerTestRecipient("t1", "case:case-1:mobile", { mobile: "+966501234567" });
+
+  try {
+    gateway.setPermanentFailure();
+
+    await assert.rejects(
+      sendModuleSecureSigningLink(buildInlineSendArgs(client, gateway)),
+      /SMS delivery failed \(invalid_recipient\)/,
+    );
+
+    const dispatch = client.dispatches.find((d) => d.channel === "SMS");
+    assert.equal(dispatch?.status, PatientMessageStatus.PERMANENT_FAILURE);
+  } finally {
+    clearTestRecipients();
+  }
 });

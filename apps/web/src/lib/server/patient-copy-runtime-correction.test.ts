@@ -26,6 +26,11 @@ import {
   documentRequiresGovernedPatientCopy,
 } from "@/lib/server/public-signing-document-service";
 import { createMemoryPrismaClient } from "@/lib/server/test-helpers/memory-prisma-client";
+import { createFakeSmsGateway } from "@/lib/server/fake-sms-gateway";
+import {
+  registerTestRecipient,
+  clearTestRecipients,
+} from "@/lib/server/recipient-resolution-service";
 
 const TINY_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=";
@@ -188,93 +193,123 @@ test("deriveSendRootOperationKey changes when filled draft fingerprint changes",
   assert.notEqual(withFingerprintA, withFingerprintB);
 });
 
+function seedSmsDeliveryRecipient() {
+  registerTestRecipient("tenant-1", "case:case-1135:mobile", { mobile: "+966501234567" });
+}
+
 test("sendModuleSecureSigningLink binds governed patient copy to the signing session", async () => {
   const client = createMemoryPrismaClient();
+  const gateway = createFakeSmsGateway();
   const fingerprint = computeFingerprintForValues(buildDoctorCompletionValues());
   client.setConsentDocument(buildConsentDocument(fingerprint));
+  seedSmsDeliveryRecipient();
 
-  const result = await sendModuleSecureSigningLink({
-    ...baseSendArgs(fingerprint),
-    browser: createMockBrowser(),
-    client: client as unknown as import("@prisma/client").PrismaClient,
-  });
+  try {
+    const result = await sendModuleSecureSigningLink({
+      ...baseSendArgs(fingerprint),
+      browser: createMockBrowser(),
+      smsGateway: gateway,
+      client: client as unknown as import("@prisma/client").PrismaClient,
+    });
 
-  assert.ok(result.sessionId);
-  assert.equal(client.sessions.length, 1);
+    assert.ok(result.sessionId);
+    assert.equal(client.sessions.length, 1);
+    assert.equal(gateway.calls.length, 1);
 
-  const session = client.sessions[0];
-  assert.equal(session.status, "PENDING");
-  assert.equal(session.documentId, "doc-1135");
+    const session = client.sessions[0];
+    // Inline outbox delivery promotes the session once Taqnyat accepts the SMS.
+    assert.equal(session.status, "SENT");
+    assert.equal(session.documentId, "doc-1135");
 
-  const metadata = session.metadata as Record<string, unknown>;
-  assert.equal(metadata.acroFormBacked, true);
+    const metadata = session.metadata as Record<string, unknown>;
+    assert.equal(metadata.acroFormBacked, true);
 
-  const governed = metadata.governedPatientCopy as Record<string, unknown>;
-  assert.ok(governed, "governedPatientCopy must be stored on the session");
-  assert.equal(typeof governed.pdfHash, "string");
-  assert.ok((governed.pdfHash as string).length > 0);
-  assert.equal(typeof governed.pdfBytesBase64, "string");
-  assert.ok((governed.pdfBytesBase64 as string).length > 0);
-  assert.equal(governed.filledDraftFingerprint, fingerprint);
-  assert.equal(governed.formId, "imc-approved-amputation");
-  assert.equal(governed.approvedPdfUrl, "/approved-consent-forms/amputation.pdf");
-  assert.equal(typeof governed.manifestHash, "string");
+    const governed = metadata.governedPatientCopy as Record<string, unknown>;
+    assert.ok(governed, "governedPatientCopy must be stored on the session");
+    assert.equal(typeof governed.pdfHash, "string");
+    assert.ok((governed.pdfHash as string).length > 0);
+    assert.equal(typeof governed.pdfBytesBase64, "string");
+    assert.ok((governed.pdfBytesBase64 as string).length > 0);
+    assert.equal(governed.filledDraftFingerprint, fingerprint);
+    assert.equal(governed.formId, "imc-approved-amputation");
+    assert.equal(governed.approvedPdfUrl, "/approved-consent-forms/amputation.pdf");
+    assert.equal(typeof governed.manifestHash, "string");
+  } finally {
+    clearTestRecipients();
+  }
 });
 
 test("sendModuleSecureSigningLink revokes stale active session when filled-document identity changes", async () => {
   const client = createMemoryPrismaClient();
+  const gateway = createFakeSmsGateway();
   const fingerprintA = computeFingerprintForValues(buildDoctorCompletionValues());
   client.setConsentDocument(buildConsentDocument(fingerprintA));
+  seedSmsDeliveryRecipient();
 
-  const first = await sendModuleSecureSigningLink({
-    ...baseSendArgs(fingerprintA),
-    browser: createMockBrowser(),
-    client: client as unknown as import("@prisma/client").PrismaClient,
-  });
+  try {
+    const first = await sendModuleSecureSigningLink({
+      ...baseSendArgs(fingerprintA),
+      browser: createMockBrowser(),
+      smsGateway: gateway,
+      client: client as unknown as import("@prisma/client").PrismaClient,
+    });
 
-  const changedValues = { ...buildDoctorCompletionValues(), condition_description_en: "CHANGED CONDITION" };
-  const fingerprintB = computeFingerprintForValues(changedValues);
-  client.setConsentDocument({
-    ...buildConsentDocument(fingerprintB),
-    metadata: {
-      ...buildDocumentMetadata(fingerprintB),
-      doctorCompletionValues: changedValues,
-    },
-  });
+    const changedValues = { ...buildDoctorCompletionValues(), condition_description_en: "CHANGED CONDITION" };
+    const fingerprintB = computeFingerprintForValues(changedValues);
+    client.setConsentDocument({
+      ...buildConsentDocument(fingerprintB),
+      metadata: {
+        ...buildDocumentMetadata(fingerprintB),
+        doctorCompletionValues: changedValues,
+      },
+    });
 
-  const second = await sendModuleSecureSigningLink({
-    ...baseSendArgs(fingerprintB),
-    browser: createMockBrowser(),
-    client: client as unknown as import("@prisma/client").PrismaClient,
-  });
+    const second = await sendModuleSecureSigningLink({
+      ...baseSendArgs(fingerprintB),
+      browser: createMockBrowser(),
+      smsGateway: gateway,
+      client: client as unknown as import("@prisma/client").PrismaClient,
+    });
 
-  assert.notEqual(first.sessionId, second.sessionId);
-  const oldSession = client.sessions.find((s) => s.id === first.sessionId);
-  const newSession = client.sessions.find((s) => s.id === second.sessionId);
-  assert.equal(oldSession?.status, "REVOKED");
-  assert.equal(newSession?.status, "PENDING");
-  assert.equal(client.sessions.filter((s) => s.status !== "REVOKED").length, 1);
+    assert.notEqual(first.sessionId, second.sessionId);
+    const oldSession = client.sessions.find((s) => s.id === first.sessionId);
+    const newSession = client.sessions.find((s) => s.id === second.sessionId);
+    assert.equal(oldSession?.status, "REVOKED");
+    assert.equal(newSession?.status, "SENT");
+    assert.equal(client.sessions.filter((s) => s.status !== "REVOKED").length, 1);
+  } finally {
+    clearTestRecipients();
+  }
 });
 
 test("sendModuleSecureSigningLink reuses the same session for identical governed identity", async () => {
   const client = createMemoryPrismaClient();
+  const gateway = createFakeSmsGateway();
   const fingerprint = computeFingerprintForValues(buildDoctorCompletionValues());
   client.setConsentDocument(buildConsentDocument(fingerprint));
+  seedSmsDeliveryRecipient();
 
-  const first = await sendModuleSecureSigningLink({
-    ...baseSendArgs(fingerprint),
-    browser: createMockBrowser(),
-    client: client as unknown as import("@prisma/client").PrismaClient,
-  });
+  try {
+    const first = await sendModuleSecureSigningLink({
+      ...baseSendArgs(fingerprint),
+      browser: createMockBrowser(),
+      smsGateway: gateway,
+      client: client as unknown as import("@prisma/client").PrismaClient,
+    });
 
-  const second = await sendModuleSecureSigningLink({
-    ...baseSendArgs(fingerprint),
-    browser: createMockBrowser(),
-    client: client as unknown as import("@prisma/client").PrismaClient,
-  });
+    const second = await sendModuleSecureSigningLink({
+      ...baseSendArgs(fingerprint),
+      browser: createMockBrowser(),
+      smsGateway: gateway,
+      client: client as unknown as import("@prisma/client").PrismaClient,
+    });
 
-  assert.equal(first.sessionId, second.sessionId);
-  assert.equal(client.sessions.filter((s) => s.status !== "REVOKED").length, 1);
+    assert.equal(first.sessionId, second.sessionId);
+    assert.equal(gateway.calls.length, 1, "identical identity must not resend the SMS");
+    assert.equal(client.sessions.filter((s) => s.status !== "REVOKED").length, 1);
+  } finally {
+    clearTestRecipients();
+  }
 });
 
 test("resolveGovernedPatientCopyUrl returns the patient-copy endpoint when governed copy is bound", async () => {

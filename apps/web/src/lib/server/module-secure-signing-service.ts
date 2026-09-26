@@ -22,6 +22,11 @@ import {
   isAcroFormBackedPatientCopy,
   type ConsentDocumentForPatientCopy,
 } from "@/lib/server/acroform/patient-copy-dispatch-service";
+import {
+  processPendingDispatches,
+  type SmsGateway,
+} from "@/lib/server/patient-message-outbox-service";
+import { createTaqnyatSmsGateway } from "@/lib/server/taqnyat-sms-gateway";
 
 const prisma = () => getPrisma();
 
@@ -336,6 +341,11 @@ export type SendModuleSecureSigningLinkOptions = {
   filledDraftFingerprint?: string;
   /** Optional Puppeteer browser for deterministic testing. */
   browser?: Browser;
+  /**
+   * SMS gateway used for inline delivery of this session's queued messages.
+   * Defaults to the production Taqnyat gateway; tests inject a fake.
+   */
+  smsGateway?: SmsGateway;
 };
 
 function normalizeSendOptions(args: SendModuleSecureSigningLinkOptions): {
@@ -667,12 +677,116 @@ export async function sendModuleSecureSigningLink(
     metadata: sessionMetadataOverride,
   });
 
-  const smsDispatch = session.dispatches?.find((d) => d.channel === "SMS");
-  const emailDispatch = session.dispatches?.find((d) => d.channel === "EMAIL");
+  // Deliver this session's queued patient messages inline. There is no
+  // separate background dispatcher in this deployment: the outbox claim is
+  // scoped to this session and SMS channel, accepted dispatches are never
+  // re-sent (duplicate-safe retries), and previously failed dispatches are
+  // retried now instead of waiting for a poller that does not exist.
+  const smsGateway = args.smsGateway ?? createTaqnyatSmsGateway();
+  console.log("[secure-signing] delivering session dispatches", {
+    tenantId: args.tenantId,
+    caseId: args.caseId,
+    documentId: args.documentId,
+    sessionId: session.sessionId,
+    approvedConsentFormKey: args.approvedConsentFormKey ?? null,
+    approvedTemplateVersionId: args.approvedTemplateVersionId ?? null,
+    mobileNumber: normalizedMobile.replace(/\d(?=\d{4})/g, "*"),
+    explicitResend: args.explicitResend === true,
+  });
+
+  await processPendingDispatches({
+    tenantId: args.tenantId,
+    smsGateway,
+    channel: PatientMessageChannel.SMS,
+    signingSessionId: session.sessionId,
+    retryFailedImmediately: true,
+    ...(args.client ? { client: args.client } : {}),
+  });
+
+  const refreshedDispatches = await db.patientMessageDispatch.findMany({
+    where: { tenantId: args.tenantId, signingSessionId: session.sessionId },
+  });
+
+  const smsDispatch = refreshedDispatches.find(
+    (dispatch) => dispatch.channel === PatientMessageChannel.SMS,
+  );
+  const emailDispatch = refreshedDispatches.find(
+    (dispatch) => dispatch.channel === PatientMessageChannel.EMAIL,
+  );
+
+  if (
+    smsDispatch &&
+    (smsDispatch.status === PatientMessageStatus.FAILED ||
+      smsDispatch.status === PatientMessageStatus.PERMANENT_FAILURE)
+  ) {
+    const failureCode = smsDispatch.lastErrorCode ?? "UNKNOWN";
+    const failureReason = smsDispatch.lastErrorMessage ?? "SMS provider delivery failed";
+
+    console.error("[secure-signing] sms delivery failed", {
+      tenantId: args.tenantId,
+      caseId: args.caseId,
+      documentId: args.documentId,
+      sessionId: session.sessionId,
+      dispatchId: smsDispatch.id,
+      errorCode: failureCode,
+      failureReason,
+    });
+
+    logRuntimeIncident({
+      module: "secure_signing",
+      type: "PROVIDER_DELIVERY_FAILURE",
+      operation: "sendModuleSecureSigningLink",
+      tenantId: args.tenantId,
+      error: new Error(`SMS delivery failed: ${failureCode}`),
+      details: {
+        caseId: args.caseId,
+        documentId: args.documentId,
+        sessionId: session.sessionId,
+        dispatchId: smsDispatch.id,
+        errorCode: failureCode,
+        failureReason,
+      },
+    });
+
+    try {
+      await appendAuditChainEvent({
+        tenantId: args.tenantId,
+        caseId: args.caseId,
+        eventType: "SECURE_SIGNING_SMS_DELIVERY_FAILED",
+        actorId: args.initiatedBy,
+        actorRole: "system",
+        payloadSummary: `SMS delivery failed for document ${args.documentId} (session ${session.sessionId}): ${failureCode}`,
+        metadataJson: {
+          moduleKey: args.moduleKey,
+          caseId: args.caseId,
+          documentId: args.documentId,
+          sessionId: session.sessionId,
+          dispatchId: smsDispatch.id,
+          errorCode: failureCode,
+          failureReason,
+          mobileHash: hashRecipient(normalizedMobile, { tenantId: args.tenantId }),
+        },
+      });
+    } catch (auditError) {
+      logRuntimeIncident({
+        module: "secure_signing",
+        type: "UNHANDLED_EXCEPTION",
+        operation: "sms_delivery_failure_audit",
+        tenantId: args.tenantId,
+        error: auditError instanceof Error ? auditError : new Error(String(auditError)),
+        details: { sessionId: session.sessionId, reason: "failure_audit_write_failed" },
+      });
+    }
+
+    throw new ApiError(
+      502,
+      `SMS delivery failed (${failureCode}): ${failureReason}`,
+    );
+  }
 
   const dispatchStatuses = {
-    sms: smsDispatch ? PatientMessageStatus.PENDING : PatientMessageStatus.PERMANENT_FAILURE,
-    email: emailDispatch ? PatientMessageStatus.PENDING : PatientMessageStatus.PERMANENT_FAILURE,
+    sms: smsDispatch ? smsDispatch.status : PatientMessageStatus.PERMANENT_FAILURE,
+    email: emailDispatch ? emailDispatch.status : PatientMessageStatus.PERMANENT_FAILURE,
   };
 
   const now = new Date().toISOString();

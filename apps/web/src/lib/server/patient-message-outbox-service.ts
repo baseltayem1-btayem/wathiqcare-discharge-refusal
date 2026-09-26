@@ -177,16 +177,24 @@ export async function createPatientMessageDispatch(
 /**
  * Atomically claim the next eligible dispatch for processing.
  * Uses SELECT FOR UPDATE SKIP LOCKED inside a CTE to avoid duplicate work.
+ *
+ * `signingSessionId` scopes the claim to one session (user-initiated inline
+ * delivery). `retryFailedImmediately` claims FAILED dispatches regardless of
+ * their backoff schedule so an explicit user retry is never blocked by a
+ * previous transient failure.
  */
 export async function claimDispatchForProcessing(
   tenantId: string,
   now: Date,
   channel?: PatientMessageChannel,
   client?: PrismaClient,
+  signingSessionId?: string,
+  retryFailedImmediately = false,
 ): Promise<ClaimedDispatch | null> {
   const db = client ?? prisma();
   const leaseExpiresAt = new Date(now.getTime() + CLAIM_LEASE_SECONDS * 1000);
   const channelFilter = channel ?? null;
+  const sessionFilter = signingSessionId?.trim() || null;
 
   const rows = await db.$queryRaw<
     Array<{
@@ -208,9 +216,10 @@ export async function claimDispatchForProcessing(
       FROM patient_message_dispatches
       WHERE tenant_id = ${tenantId}
         AND (${channelFilter}::text IS NULL OR channel = ${channelFilter}::"PatientMessageChannel")
+        AND (${sessionFilter}::text IS NULL OR signing_session_id = ${sessionFilter})
         AND (
           (status = 'PENDING' AND next_attempt_at <= ${now})
-          OR (status = 'FAILED' AND next_attempt_at <= ${now})
+          OR (status = 'FAILED' AND (${retryFailedImmediately}::boolean OR next_attempt_at <= ${now}))
           OR (status = 'CLAIMED' AND claim_expires_at <= ${now})
         )
       ORDER BY next_attempt_at ASC, created_at ASC
@@ -405,6 +414,7 @@ export async function recordDispatchFailed(
   errorMessage: string,
   client?: PrismaClient | Prisma.TransactionClient,
   now?: Date,
+  options?: { permanentOnExhaustion?: boolean },
 ): Promise<void> {
   const db = client ?? prisma();
   const referenceTime = now ?? new Date();
@@ -420,7 +430,12 @@ export async function recordDispatchFailed(
   ]);
 
   const permanent = isPermanentError(errorCode, errorMessage);
-  const exhausted = dispatch.attemptCount >= dispatch.maxAttempts;
+  // User-initiated inline retries (permanentOnExhaustion: false) keep transient
+  // failures retryable forever; only explicit permanent errors block sending.
+  const exhausted =
+    options?.permanentOnExhaustion === false
+      ? false
+      : dispatch.attemptCount >= dispatch.maxAttempts;
   const nextStatus =
     permanent || exhausted
       ? PatientMessageStatus.PERMANENT_FAILURE
@@ -550,9 +565,40 @@ export async function processPendingDispatches(args: {
   emailGateway?: EmailGateway;
   now?: Date;
   client?: PrismaClient;
+  /** Only process dispatches for this channel. */
+  channel?: PatientMessageChannel;
+  /** Scope claims to a single signing session (user-initiated inline delivery). */
+  signingSessionId?: string;
+  /** Claim FAILED dispatches regardless of backoff (explicit user retry). */
+  retryFailedImmediately?: boolean;
 }): Promise<{ processed: number }> {
   const { tenantId, smsGateway, emailGateway, now = new Date(), client } = args;
   let processed = 0;
+  const failureOptions = args.retryFailedImmediately
+    ? { permanentOnExhaustion: false }
+    : undefined;
+  // A dispatch already attempted in this run must not be re-claimed within the
+  // same run (retryFailedImmediately bypasses backoff, which would otherwise
+  // re-claim the row we just failed until the batch cap).
+  const attemptedThisRun = new Set<string>();
+  const lastFailureByDispatch = new Map<string, { errorCode: string; errorMessage: string }>();
+
+  async function failDispatch(
+    dispatchId: string,
+    errorCode: string,
+    errorMessage: string,
+    referenceTime: Date,
+  ): Promise<void> {
+    lastFailureByDispatch.set(dispatchId, { errorCode, errorMessage });
+    await recordDispatchFailed(
+      dispatchId,
+      errorCode,
+      errorMessage,
+      client,
+      referenceTime,
+      failureOptions,
+    );
+  }
 
   for (let iteration = 0; iteration < MAX_BATCH_SIZE; iteration += 1) {
     // Refresh the claim time each iteration. When the caller supplies a fixed
@@ -560,8 +606,25 @@ export async function processPendingDispatches(args: {
     const iterationNow = args.now
       ? new Date(args.now.getTime() + iteration)
       : new Date();
-    const claim = await claimDispatchForProcessing(tenantId, iterationNow, undefined, client);
+    const claim = await claimDispatchForProcessing(
+      tenantId,
+      iterationNow,
+      args.channel,
+      client,
+      args.signingSessionId,
+      args.retryFailedImmediately === true,
+    );
     if (!claim) break;
+    if (attemptedThisRun.has(claim.id)) {
+      // The claim above already flipped the row back to CLAIMED; restore the
+      // FAILED state with its backoff before stopping this run.
+      const lastFailure = lastFailureByDispatch.get(claim.id);
+      if (lastFailure) {
+        await failDispatch(claim.id, lastFailure.errorCode, lastFailure.errorMessage, iterationNow);
+      }
+      break;
+    }
+    attemptedThisRun.add(claim.id);
 
     processed += 1;
 
@@ -572,11 +635,10 @@ export async function processPendingDispatches(args: {
       });
 
       if (!resolved) {
-        await recordDispatchFailed(
+        await failDispatch(
           claim.id,
           "RECIPIENT_NOT_FOUND",
           "Recipient resolver returned no contact for reference",
-          client,
           iterationNow,
         );
         continue;
@@ -622,11 +684,10 @@ export async function processPendingDispatches(args: {
         });
 
         if (!result.ok) {
-          await recordDispatchFailed(
+          await failDispatch(
             claim.id,
             result.errorCode || "SMS_GATEWAY_FAILED",
             result.errorMessage || "SMS gateway returned failure",
-            client,
             iterationNow,
           );
           continue;
@@ -662,11 +723,10 @@ export async function processPendingDispatches(args: {
         });
 
         if (!result.ok) {
-          await recordDispatchFailed(
+          await failDispatch(
             claim.id,
             result.errorCode || "EMAIL_GATEWAY_FAILED",
             result.errorMessage || "Email gateway returned failure",
-            client,
             iterationNow,
           );
           continue;
@@ -686,21 +746,19 @@ export async function processPendingDispatches(args: {
         }
         continue;
       } else {
-        await recordDispatchFailed(
+        await failDispatch(
           claim.id,
           "GATEWAY_NOT_CONFIGURED",
           `No gateway configured for channel ${claim.channel}`,
-          client,
           iterationNow,
         );
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      await recordDispatchFailed(
+      await failDispatch(
         claim.id,
         "PROCESSING_EXCEPTION",
         message,
-        client,
         iterationNow,
       );
     }

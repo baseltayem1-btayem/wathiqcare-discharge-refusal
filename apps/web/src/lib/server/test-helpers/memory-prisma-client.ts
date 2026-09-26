@@ -252,7 +252,9 @@ export function createMemoryPrismaClient(options: { signingSessionUpdateManyThro
 
   function updateManyDispatches(args: {
     where: {
+      id?: string;
       tenantId?: string;
+      signingSessionId?: string;
       channel?: PatientMessageChannel;
       providerMessageId?: string;
       status?: { in?: PatientMessageStatus[] };
@@ -261,7 +263,9 @@ export function createMemoryPrismaClient(options: { signingSessionUpdateManyThro
   }): { count: number } {
     let count = 0;
     for (const record of dispatches.values()) {
+      if (args.where.id !== undefined && record.id !== args.where.id) continue;
       if (args.where.tenantId !== undefined && record.tenantId !== args.where.tenantId) continue;
+      if (args.where.signingSessionId !== undefined && record.signingSessionId !== args.where.signingSessionId) continue;
       if (args.where.channel !== undefined && record.channel !== args.where.channel) continue;
       if (args.where.providerMessageId !== undefined && record.providerMessageId !== args.where.providerMessageId) continue;
       if (args.where.status?.in && !args.where.status.in.includes(record.status)) continue;
@@ -274,6 +278,8 @@ export function createMemoryPrismaClient(options: { signingSessionUpdateManyThro
   function claimNextEligible(
     tenantId: string,
     channelFilter: PatientMessageChannel | null,
+    sessionFilter: string | null,
+    retryFailedImmediately: boolean,
     now: Date,
     leaseExpiresAt: Date,
   ): DispatchRecord | null {
@@ -281,10 +287,14 @@ export function createMemoryPrismaClient(options: { signingSessionUpdateManyThro
     for (const record of dispatches.values()) {
       if (record.tenantId !== tenantId) continue;
       if (channelFilter !== null && record.channel !== channelFilter) continue;
+      if (sessionFilter !== null && record.signingSessionId !== sessionFilter) continue;
       let eligible = false;
+      if (record.status === PatientMessageStatus.PENDING && record.nextAttemptAt <= now) {
+        eligible = true;
+      }
       if (
-        (record.status === PatientMessageStatus.PENDING || record.status === PatientMessageStatus.FAILED) &&
-        record.nextAttemptAt <= now
+        record.status === PatientMessageStatus.FAILED &&
+        (retryFailedImmediately || record.nextAttemptAt <= now)
       ) {
         eligible = true;
       }
@@ -330,12 +340,22 @@ export function createMemoryPrismaClient(options: { signingSessionUpdateManyThro
   > {
     const sql = query.sql.toLowerCase();
     if (sql.includes("update patient_message_dispatches")) {
+      // Prisma.sql deduplicates repeated bind values, so parse by content
+      // rather than by position.
       const tenantId = query.values[0] as string;
-      const channelFilter = (query.values[1] ?? null) as PatientMessageChannel | null;
+      const channelValue = query.values.find((v) => v === "SMS" || v === "EMAIL");
+      const channelFilter = (channelValue ?? null) as PatientMessageChannel | null;
+      const sessionValue = query.values.find(
+        (v) =>
+          v === null ||
+          (typeof v === "string" && v !== tenantId && v !== "SMS" && v !== "EMAIL"),
+      );
+      const sessionFilter = typeof sessionValue === "string" ? sessionValue : null;
+      const retryFailedImmediately = query.values.some((v) => v === true);
       const dates = query.values.filter((v): v is Date => v instanceof Date);
       const now = dates[0] ?? new Date();
       const leaseExpiresAt = dates.length > 1 ? dates.slice(1).reduce((max, d) => (d > max ? d : max), now) : now;
-      const claim = claimNextEligible(tenantId, channelFilter, now, leaseExpiresAt);
+      const claim = claimNextEligible(tenantId, channelFilter, sessionFilter, retryFailedImmediately, now, leaseExpiresAt);
       if (!claim) return [];
       const metadata = (claim.metadata || {}) as Record<string, unknown>;
       return [
@@ -404,6 +424,22 @@ export function createMemoryPrismaClient(options: { signingSessionUpdateManyThro
     },
     patientMessageDispatch: {
       findUnique: findUniqueDispatch,
+      findMany: async (args: {
+        where: {
+          tenantId?: string;
+          signingSessionId?: string;
+          channel?: PatientMessageChannel;
+        };
+      }) => {
+        return Array.from(dispatches.values())
+          .filter((record) => {
+            if (args.where.tenantId !== undefined && record.tenantId !== args.where.tenantId) return false;
+            if (args.where.signingSessionId !== undefined && record.signingSessionId !== args.where.signingSessionId) return false;
+            if (args.where.channel !== undefined && record.channel !== args.where.channel) return false;
+            return true;
+          })
+          .map((record) => structuredClone(record));
+      },
       create: createDispatch,
       update: updateDispatch,
       updateMany: updateManyDispatches,
