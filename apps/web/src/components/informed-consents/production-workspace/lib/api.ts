@@ -502,6 +502,14 @@ export async function fetchTimeline(args: {
   return Array.isArray(payload) ? payload : [];
 }
 
+function hashIntentKey(value: string): string {
+  let hash = 5381;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = ((hash << 5) + hash + value.charCodeAt(i)) >>> 0;
+  }
+  return hash.toString(16).padStart(8, "0");
+}
+
 export async function createConsentDocument(args: {
   caseId: string;
   templateId?: string;
@@ -517,11 +525,28 @@ export async function createConsentDocument(args: {
   gender?: string;
   initialStatus?: "DRAFT" | "READY_FOR_SIGNATURE";
   metadata?: Record<string, unknown>;
-}): Promise<{ id: string; consentReference: string; status: string; patientName?: string | null; mrn?: string | null }> {
+}): Promise<{
+  id: string;
+  consentReference: string;
+  status: string;
+  patientName?: string | null;
+  mrn?: string | null;
+  reusedExistingDocument: boolean;
+}> {
+  // Deterministic per-intent key: retrying the same send reuses the existing
+  // document on the server instead of creating a duplicate or failing.
+  const idempotencyKey = `ic-doc-${hashIntentKey(
+    [
+      args.caseId,
+      args.approvedConsentFormId || args.templateId || "",
+      args.plannedProcedure || "",
+    ].join(":"),
+  )}`;
+
   const response = await fetch("/api/modules/informed-consents/documents", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(args),
+    body: JSON.stringify({ ...args, idempotencyKey }),
   });
   const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
   if (!response.ok || !payload.ok) {
@@ -534,6 +559,7 @@ export async function createConsentDocument(args: {
     status: String(doc.status),
     patientName: doc.patientName ? String(doc.patientName) : null,
     mrn: doc.mrn ? String(doc.mrn) : null,
+    reusedExistingDocument: payload.reusedExistingDocument === true,
   };
 }
 

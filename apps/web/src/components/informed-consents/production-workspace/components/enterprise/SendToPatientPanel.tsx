@@ -125,7 +125,7 @@ export function SendToPatientPanel({
                 ? "اعتماد المسودة"
                 : "Approve Draft"}
           </Button>
-          <Button variant="default" size="sm" className="h-11 rounded-2xl" disabled={sendDisabled} onClick={onSend}>
+          <Button variant="default" size="sm" className="h-11 w-full rounded-2xl" disabled={sendDisabled} onClick={onSend}>
             <Send className="mr-1 size-4" />
             {sendLoading ? (lang === "ar" ? "جاري الإرسال…" : "Sending…") : (lang === "ar" ? "إرسال إلى المريض" : "Send to Patient")}
           </Button>
@@ -145,6 +145,19 @@ export function SendToPatientPanel({
               {lang === "ar" ? "حالة الرسائل:" : "Dispatch status:"}{" "}
               SMS {signingResult.dispatchStatuses.sms} · Email {signingResult.dispatchStatuses.email}
             </p>
+            {signingResult.signingUrl ? (
+              <p className="mt-1 break-all text-xs text-emerald-900">
+                {lang === "ar" ? "رابط التوقيع:" : "Signing URL:"}{" "}
+                <a
+                  href={signingResult.signingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium underline underline-offset-2"
+                >
+                  {signingResult.signingUrl}
+                </a>
+              </p>
+            ) : null}
           </div>
         ) : null}
       </div>

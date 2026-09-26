@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireModuleOperationalAccess } from "@/lib/server/auth";
+import { requireModuleOperationalAccess, type AuthContext } from "@/lib/server/auth";
 import { isMissingTableOrColumnError } from "@/lib/server/auth-reset";
 import { createConsentDocument } from "@/lib/server/consent-document-create-service";
+import {
+  findReusableConsentDocument,
+  IdempotencyConflictError,
+  type ReusableConsentDocumentMatch,
+} from "@/lib/server/consent-document-create-service";
 import { resolveRuntimeDatabaseUrl } from "@/lib/config/env-validation";
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
@@ -11,6 +16,7 @@ import { imcPilotPatients } from "@/components/informed-consents/production-work
 import { imcApprovedConsentLibraryGenerated } from "@/components/informed-consents/enterprise-workflow/imcApprovedConsentLibrary.generated";
 import { listRuntimeConsentTemplates } from "@/lib/server/informed-consents-template-catalog";
 import { validateIdempotencyKey } from "@/lib/server/idempotency-core";
+import { writeConsentAudit } from "@/lib/server/consent-library-service";
 import { parseTemplateWitnessPolicy } from "@/lib/server/witness-policy-service";
 
 export const dynamic = "force-dynamic";
@@ -1188,6 +1194,98 @@ async function materializeApprovedLibraryConsentForm(
   });
 }
 
+function buildReusableDocumentResponse(
+  document: ReusableConsentDocumentMatch,
+  reason: string,
+) {
+  return NextResponse.json({
+    ok: true,
+    reusedExistingDocument: true,
+    reuseReason: reason,
+    document: {
+      id: document.id,
+      consentReference: document.consentReference,
+      status: document.status,
+      patientName: document.patientName,
+      mrn: document.mrn,
+    },
+  });
+}
+
+async function auditReusedConsentDocument(args: {
+  auth: AuthContext;
+  tenantId: string;
+  document: ReusableConsentDocumentMatch;
+  caseId: string;
+  reason: string;
+}) {
+  try {
+    await writeConsentAudit({
+      tenantId: args.tenantId,
+      auth: args.auth,
+      action: "consent_document_reused",
+      summary: `Reused existing consent document ${args.document.consentReference} for a repeated send intent (${args.reason})`,
+      source: "workflow",
+      consentDocumentId: args.document.id,
+      caseId: args.caseId,
+      metadata: {
+        reusedExistingDocument: true,
+        reuseReason: args.reason,
+        documentStatus: args.document.status,
+      },
+    });
+  } catch (error) {
+    console.error("CONSENT_DOCUMENT_REUSE_AUDIT_FAILED", {
+      tenantId: args.tenantId,
+      caseId: args.caseId,
+      documentId: args.document.id,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+/**
+ * Reuse lookup for a repeated send intent: same case + approved consent form
+ * (or assembly template) + selected procedure. Returns null when no safe
+ * match exists, in which case the caller keeps the original error path.
+ */
+async function findDocumentForSameSendIntent(args: {
+  tenantId: string;
+  caseId: string;
+  body: Record<string, unknown>;
+  requestMetadata: Record<string, unknown>;
+  plannedProcedureOverride?: string | null;
+}): Promise<ReusableConsentDocumentMatch | null> {
+  const approvedConsentFormId = String(
+    args.body.approvedConsentFormId
+      || args.requestMetadata.approvedConsentFormId
+      || args.body.templateId
+      || "",
+  ).trim();
+  const approvedConsentFormCode =
+    typeof args.requestMetadata.approvedConsentFormCode === "string"
+      ? args.requestMetadata.approvedConsentFormCode.trim()
+      : "";
+  const assemblyTemplateId = String(args.body.templateId || "").trim();
+  const plannedProcedure =
+    typeof args.plannedProcedureOverride === "string"
+      ? args.plannedProcedureOverride.trim() || null
+      : typeof args.body.plannedProcedure === "string" && args.body.plannedProcedure.trim()
+        ? args.body.plannedProcedure.trim()
+        : null;
+
+  return findReusableConsentDocument(getPrisma(), {
+    tenantId: args.tenantId,
+    caseId: args.caseId,
+    intent: {
+      approvedConsentFormId,
+      approvedConsentFormCode,
+      assemblyTemplateId,
+      plannedProcedure,
+    },
+  });
+}
+
 export async function POST(request: NextRequest) {
   const auth = await requireModuleOperationalAccess(request, "informed-consents");
   const tenantId = auth.tenant_id || "";
@@ -1223,6 +1321,25 @@ export async function POST(request: NextRequest) {
       ? (body.metadata as Record<string, unknown>)
       : {};
     const approvedConsentFormId = String(body.approvedConsentFormId || requestMetadata.approvedConsentFormId || templateId || "").trim();
+
+    // Idempotent send: a repeat create for the same case + approved form +
+    // procedure reuses the existing document (200 + reusedExistingDocument)
+    // instead of failing with 409 or creating a duplicate.
+    const respondWithExistingDocumentForIntent = async (
+      reason: string,
+      plannedProcedureOverride?: string | null,
+    ) => {
+      const existing = await findDocumentForSameSendIntent({
+        tenantId,
+        caseId,
+        body,
+        requestMetadata,
+        plannedProcedureOverride,
+      });
+      if (!existing) return null;
+      await auditReusedConsentDocument({ auth, tenantId, document: existing, caseId, reason });
+      return buildReusableDocumentResponse(existing, reason);
+    };
 
     const rawInitialStatus = String(body.initialStatus || "").trim().toUpperCase();
     const initialStatus = rawInitialStatus === "READY_FOR_SIGNATURE" ? "READY_FOR_SIGNATURE" : "DRAFT";
@@ -1299,6 +1416,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (!approvedConsentForm) {
+      const reuseResponse = await respondWithExistingDocumentForIntent("approved_consent_form_unresolved");
+      if (reuseResponse) return reuseResponse;
       return NextResponse.json({ ok: false, error: NO_APPROVED_CONSENT_MESSAGE }, { status: 409 });
     }
 
@@ -1356,6 +1475,8 @@ export async function POST(request: NextRequest) {
         !== "imc-approved-library"
       || !sourceInfo.available
     ) {
+      const reuseResponse = await respondWithExistingDocumentForIntent("approved_consent_source_unavailable");
+      if (reuseResponse) return reuseResponse;
       return NextResponse.json(
         {
           ok: false,
@@ -1375,6 +1496,8 @@ export async function POST(request: NextRequest) {
     });
 
     if (!template || !template.currentVersionId) {
+      const reuseResponse = await respondWithExistingDocumentForIntent("compatibility_template_unresolved");
+      if (reuseResponse) return reuseResponse;
       return NextResponse.json({ ok: false, error: NO_APPROVED_CONSENT_MESSAGE }, { status: 409 });
     }
 
@@ -1394,6 +1517,8 @@ export async function POST(request: NextRequest) {
     });
 
     if (!templateVersion) {
+      const reuseResponse = await respondWithExistingDocumentForIntent("template_version_unresolved");
+      if (reuseResponse) return reuseResponse;
       return NextResponse.json({ ok: false, error: NO_APPROVED_CONSENT_MESSAGE }, { status: 409 });
     }
 
@@ -1423,6 +1548,12 @@ export async function POST(request: NextRequest) {
         : typeof metadata.diagnosis === "string"
           ? metadata.diagnosis
           : null;
+
+    const duplicateIntentResponse = await respondWithExistingDocumentForIntent(
+      "duplicate_create_intent",
+      plannedProcedure,
+    );
+    if (duplicateIntentResponse) return duplicateIntentResponse;
 
     const document = await createConsentDocument(auth, {
       caseId,
@@ -1491,6 +1622,39 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     const message = error instanceof ApiError ? error.message : error instanceof Error ? error.message : String(error);
+
+    // A conflicting idempotency key for the same send intent still reuses the
+    // existing document instead of blocking the patient journey with 409.
+    if (error instanceof IdempotencyConflictError) {
+      try {
+        const requestMetadata = body.metadata && typeof body.metadata === "object"
+          ? (body.metadata as Record<string, unknown>)
+          : {};
+        const existing = await findDocumentForSameSendIntent({
+          tenantId,
+          caseId,
+          body,
+          requestMetadata,
+        });
+        if (existing) {
+          await auditReusedConsentDocument({
+            auth,
+            tenantId,
+            document: existing,
+            caseId,
+            reason: "idempotency_conflict_same_intent",
+          });
+          return buildReusableDocumentResponse(existing, "idempotency_conflict_same_intent");
+        }
+      } catch (reuseError) {
+        console.error("CONSENT_DOCUMENT_REUSE_LOOKUP_FAILED", {
+          tenantId,
+          caseId,
+          errorMessage: reuseError instanceof Error ? reuseError.message : String(reuseError),
+        });
+      }
+    }
+
     if (isMissingTableOrColumnError(error)) {
       consentSchemaBootstrapPromise = null;
     }
@@ -1502,7 +1666,8 @@ export async function POST(request: NextRequest) {
       errorName: error instanceof Error ? error.name : "UnknownError",
       errorMessage: message,
     });
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    const status = error instanceof ApiError ? error.status : 500;
+    return NextResponse.json({ ok: false, error: message }, { status });
   }
 }
 
