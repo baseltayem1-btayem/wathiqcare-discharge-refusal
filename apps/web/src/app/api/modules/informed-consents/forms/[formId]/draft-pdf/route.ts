@@ -2,8 +2,15 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { NextRequest, NextResponse } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
-import { renderImcApprovedDoctorDraftPdf } from "@/lib/server/imc-approved-pdf-template-engine";
+import { launchOverlayBrowser } from "@/lib/server/imc-approved-pdf-template-engine";
 import { IMC_APPROVED_CONSENT_FORMS_MANIFEST } from "@/lib/server/imc-approved-consent-forms.manifest";
+import { parseAcroFormFilledDraftRequest } from "@/lib/server/draft-pdf-request-parser";
+import {
+  renderAcroFormFilledDraftPreview,
+  sha256Hex,
+} from "@/lib/server/acroform/filled-draft-preview-service";
+import { getAcroFormTemplateDiagnostics } from "@/lib/server/acroform/acroform-diagnostics-service";
+import { resolveCanonicalAcroFormTemplateId } from "@/lib/server/acroform/acroform-template-identity";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -74,49 +81,113 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const tenantId = auth.tenant_id || "";
 
   if (!tenantId) {
-    return NextResponse.json({ ok: false, error: "Missing tenant context" }, { status: 400 });
-  }
-
-  const { formId } = await Promise.resolve(params);
-  const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-  const approvedPdfUrl =
-    readString(body.approvedPdfUrl) ||
-    readString(body.pdfUrl) ||
-    resolveApprovedPdfUrlFromManifest(formId);
-  const values = readRecord(body.doctorCompletionValues) || readRecord(body.values) || {};
-  const physicianSignatureDataUrl = readString(body.physicianSignatureDataUrl);
-
-  if (!approvedPdfUrl) {
     return NextResponse.json(
-      { ok: false, error: "approvedPdfUrl is required and could not be resolved from the manifest" },
+      { ok: false, error: "Missing tenant context" },
       { status: 400 },
     );
   }
 
-  const pdfBytes = await readPublicPdf(approvedPdfUrl);
-  if (!pdfBytes) {
+  const { formId } = await Promise.resolve(params);
+  const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+
+  const identity = resolveCanonicalAcroFormTemplateId(formId);
+  if (!identity) {
     return NextResponse.json(
-      { ok: false, error: "Approved PDF source could not be loaded for draft overlay" },
+      {
+        ok: false,
+        error: "Form identifier is not a supported AcroForm-backed consent template.",
+      },
+      { status: 400 },
+    );
+  }
+
+  const diagnostics = getAcroFormTemplateDiagnostics(identity.canonicalFormId);
+
+  if (diagnostics.status !== "READY" || !diagnostics.manifestHash) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          diagnostics.blockers?.join("; ") ||
+          "AcroForm manifest is not ready for governed preview.",
+      },
+      { status: 422 },
+    );
+  }
+
+  const approvedPdfUrl =
+    readString(body.approvedPdfUrl) ||
+    readString(body.pdfUrl) ||
+    resolveApprovedPdfUrlFromManifest(formId);
+
+  if (!approvedPdfUrl) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          "approvedPdfUrl is required and could not be resolved from the manifest",
+      },
+      { status: 400 },
+    );
+  }
+
+  const canonicalPdfBytes = await readPublicPdf(approvedPdfUrl);
+
+  if (!canonicalPdfBytes) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Approved PDF source could not be loaded for draft overlay",
+      },
       { status: 404 },
     );
   }
 
-  const rendered = await renderImcApprovedDoctorDraftPdf({
-    pdfBytes,
-    formId,
-    doctorCompletionValues: values,
-    physicianSignatureDataUrl,
-  });
+  const canonicalPdfHash = sha256Hex(canonicalPdfBytes);
 
-  return new NextResponse(rendered.bytes, {
-    status: 200,
-    headers: {
-      "Content-Type": "application/pdf",
-      "Cache-Control": "no-store",
-      "X-WathiqCare-Draft-Overlay": "true",
-      "X-WathiqCare-Pdf-Engine": rendered.renderingEngine,
-      "X-WathiqCare-Physician-Signature-Drawn": String(rendered.physicianSignatureDrawn),
-      "X-WathiqCare-Text-Fields-Drawn": String(rendered.textFieldsDrawn),
-    },
-  });
+  const governedBody: Record<string, unknown> = {
+    ...body,
+    approvedPdfUrl,
+    manifestHash: diagnostics.manifestHash,
+  };
+
+  const parsed = parseAcroFormFilledDraftRequest(formId, governedBody);
+
+  if (parsed.missing.length > 0) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: `Missing required draft fields: ${parsed.missing.join(", ")}`,
+        missing: parsed.missing,
+      },
+      { status: 400 },
+    );
+  }
+
+  const browser = await launchOverlayBrowser();
+
+  try {
+    const rendered = await renderAcroFormFilledDraftPreview({
+      request: parsed.request,
+      browser,
+      canonicalPdfBytes,
+      canonicalPdfHash,
+    });
+
+    return new NextResponse(Buffer.from(rendered.bytes), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Cache-Control": "no-store",
+        "X-WathiqCare-Draft-Overlay": "true",
+        "X-WathiqCare-Draft-Fingerprint": rendered.fingerprint,
+        "X-WathiqCare-Draft-Flattened": String(rendered.summary.flattened),
+        "X-WathiqCare-Draft-Widgets": String(rendered.summary.widgetsRendered),
+      },
+    });
+  } finally {
+    await browser.close().catch(() => {
+      /* ignore close errors */
+    });
+  }
 }

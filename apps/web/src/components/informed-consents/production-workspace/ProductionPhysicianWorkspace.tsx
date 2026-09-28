@@ -6,12 +6,11 @@ import { Card, CardContent } from "@/components/design-system";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { PhysicianContext } from "./types";
 import { useProductionWorkspace } from "./hooks/useProductionWorkspace";
-import { createDoctorCompletedDraftPdfPreview } from "./lib/api";
+import { createAcroFormFilledDraftPreview } from "./lib/api";
 import { PatientEncounterSelector } from "./components/PatientEncounterSelector";
 import { ConsentPreviewModal } from "./components/ConsentPreviewModal";
 import { SendConfirmationModal } from "./components/SendConfirmationModal";
 import { WorkflowStepper } from "./components/WorkflowStepper";
-import { WorkspaceSectionLabel } from "./components/WorkspaceAtoms";
 import {
   PatientsPage,
   EncountersPage,
@@ -27,12 +26,13 @@ import { AuditEvidenceTimeline } from "./components/enterprise/AuditEvidenceTime
 import { ApprovedPdfViewer } from "./components/enterprise/ApprovedPdfViewer";
 import { ComplianceReadinessPanel } from "./components/enterprise/ComplianceReadinessPanel";
 import { DoctorCompletionPanel } from "./components/enterprise/DoctorCompletionPanel";
+import { DoctorCaseWorkspaceShell } from "./components/enterprise/DoctorCaseWorkspaceShell";
 import { EnterpriseSidebar } from "./components/enterprise/EnterpriseSidebar";
 import { PatientContextRibbon } from "./components/enterprise/PatientContextRibbon";
 import { PhysicianWorkspaceHeader } from "./components/enterprise/PhysicianWorkspaceHeader";
 import { ProcedureSelectionPanel } from "./components/enterprise/ProcedureSelectionPanel";
 import { ReadinessChecklist } from "./components/enterprise/ReadinessChecklist";
-import { SendToPatientPanel } from "./components/enterprise/SendToPatientPanel";
+import { SendToPatientActions, SendToPatientPanel } from "./components/enterprise/SendToPatientPanel";
 
 import "./workspace.css";
 
@@ -103,17 +103,29 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
 
 
   useEffect(() => {
-    const formId = state.fieldMappingReadiness?.formId || state.assembly?.consentForm?.id || "";
+    const formId =
+      state.fieldMappingReadiness?.formId ||
+      state.assembly?.consentForm?.id ||
+      "";
     const approvedPdfUrl = resolveAssemblyApprovedPdfUrl(state.assembly);
     const values = state.doctorCompletionValues || {};
-    const hasDoctorValues = Object.values(values).some((value) => String(value || "").trim().length > 0);
-    const hasPhysicianSignature =
-      Boolean(
-        state.physicianSignatureDataUrl
-          .trim(),
-      );
+    const patient = state.patient;
+    const encounter = state.encounter;
 
-    if (!formId || !approvedPdfUrl || (!hasDoctorValues && !hasPhysicianSignature)) {
+    const hasDoctorValues = Object.values(values).some(
+      (value) => String(value || "").trim().length > 0,
+    );
+    const hasPhysicianSignature = Boolean(
+      state.physicianSignatureDataUrl.trim(),
+    );
+
+    if (
+      !formId ||
+      !approvedPdfUrl ||
+      !patient ||
+      !encounter ||
+      (!hasDoctorValues && !hasPhysicianSignature)
+    ) {
       // Pre-existing synchronous setState in effect; kept to preserve workspace
       // reset behavior while we address the broader production release.
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -126,22 +138,53 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
       return;
     }
 
+    if (!patient.dateOfBirth?.trim()) {
+      setDraftPdfLoading(false);
+      setDraftPdfError(
+        "Patient date of birth is required to generate the governed filled PDF preview.",
+      );
+      setDraftPdfUrl((previous) => {
+        if (previous) URL.revokeObjectURL(previous);
+        return undefined;
+      });
+      return;
+    }
+
     const controller = new AbortController();
+
     const timer = window.setTimeout(() => {
       setDraftPdfLoading(true);
       setDraftPdfError(undefined);
 
-      createDoctorCompletedDraftPdfPreview(
+      createAcroFormFilledDraftPreview(
         {
           formId,
           approvedPdfUrl,
           doctorCompletionValues: values,
+          patientDisplay: {
+            name: patient.name,
+            mrn: patient.mrn,
+            dob: patient.dateOfBirth,
+          },
+          physicianContext: {
+            name: physician.name,
+            designation:
+              physician.specialty ||
+              encounter.physicianSpecialty ||
+              physician.department ||
+              encounter.department ||
+              "",
+          },
+          encounterReference: {
+            id: encounter.id,
+            encounterId: encounter.encounterId,
+          },
           physicianSignatureDataUrl:
-            state.physicianSignatureDataUrl,
+            state.physicianSignatureDataUrl || undefined,
         },
         controller.signal,
       )
-        .then((url) => {
+        .then(({ url }) => {
           setDraftPdfUrl((previous) => {
             if (previous) URL.revokeObjectURL(previous);
             return url;
@@ -149,6 +192,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
         })
         .catch((error) => {
           if (controller.signal.aborted) return;
+
           setDraftPdfError(
             error instanceof Error
               ? error.message
@@ -167,12 +211,14 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
       controller.abort();
     };
   }, [
+    physician,
     state.assembly,
+    state.patient,
+    state.encounter,
     state.fieldMappingReadiness?.formId,
     state.doctorCompletionValues,
     state.physicianSignatureDataUrl,
   ]);
-
   const sendReason = (() => {
     if (sendLoading) return "Sending…";
     if (!readiness.patientReady) return "Select a patient first";
@@ -196,8 +242,10 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
 
   const renderWorkspaceContent = () => (
     <div className="space-y-6" dir={lang === "ar" ? "rtl" : "ltr"}>
-      <WorkflowStepper currentStep={state.step} readiness={readiness} lang={lang} />
-
+      <DoctorCaseWorkspaceShell
+        context={<PatientContextRibbon patient={state.patient} encounter={state.encounter} />}
+        progress={<WorkflowStepper currentStep={state.step} readiness={readiness} lang={lang} />}
+        patientSelection={
       <PatientEncounterSelector
         selectedPatient={state.patient}
         selectedEncounter={state.encounter}
@@ -212,14 +260,8 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
           setProcedureQuery("");
           void searchForPatients(q);
         }}
-      />
-
-      <PatientContextRibbon patient={state.patient} encounter={state.encounter} />
-
-      <div>
-        <WorkspaceSectionLabel>{lang === "ar" ? "إعداد الموافقة" : "Consent setup"}</WorkspaceSectionLabel>
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(0,1fr)_340px]">
-          <div className="space-y-6">
+      />}
+        procedure={
             <ProcedureSelectionPanel
               encounter={state.encounter}
               selectedProcedureId={state.selectedProcedureId}
@@ -237,7 +279,8 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
               onSelectProcedure={selectProcedure}
               onResolveAssembly={() => void resolveAssembly()}
               onReviewModeChange={setReviewMode}
-            />
+            />}
+        completion={
             <DoctorCompletionPanel
               mapping={state.fieldMappingReadiness}
               values={state.doctorCompletionValues}
@@ -245,24 +288,25 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
               onValueChange={setDoctorCompletionValue}
               onPhysicianSignatureChange={setPhysicianSignatureDataUrl}
               disabled={sendLoading}
-            />
-            <ReadinessChecklist readiness={readiness} />
-          </div>
-
+            />}
+        preview={
           <ApprovedPdfViewer
             assembly={state.assembly}
             loading={assemblyLoading}
             reviewed={state.previewReviewed}
-                        draftPdfUrl={draftPdfUrl}
+            draftPdfUrl={draftPdfUrl}
             draftPdfLoading={draftPdfLoading}
             draftPdfError={draftPdfError}
             onOpenPreview={() => setPreviewOpen(true)}
             onMarkReviewed={() => setPreviewReviewed(true)}
-          />
-
-          <div className="space-y-6">
+          />}
+        attention={<>
+            <ReadinessChecklist readiness={readiness} />
             <ComplianceReadinessPanel assembly={state.assembly} readiness={readiness} reviewMode={state.reviewMode} />
+        </>}
+        dispatch={
             <SendToPatientPanel
+              hideActions
               mobile={state.recipientMobile}
               email={state.recipientEmail}
               allowlisted={state.sendEligibility?.allowlisted}
@@ -278,15 +322,17 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
               onEmailChange={setRecipientEmail}
               onApproveDraft={handleApprove}
               onSend={handleSend}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <WorkspaceSectionLabel>{lang === "ar" ? "التدقيق والأدلة" : "Audit & evidence"}</WorkspaceSectionLabel>
-        <AuditEvidenceTimeline timeline={state.timeline} signingResult={state.signingResult} />
-      </div>
+            />}
+        evidence={<AuditEvidenceTimeline timeline={state.timeline} signingResult={state.signingResult} />}
+        actions={<SendToPatientActions
+          draftApproved={state.draftApproved}
+          sendDisabled={!readiness.sendReady || sendLoading || !hasApprovedPdfSource}
+          sendReason={sendReason}
+          sendLoading={sendLoading}
+          onApproveDraft={handleApprove}
+          onSend={handleSend}
+        />}
+      />
 
       {state.dryRunSuccess && (
         <Card className="border-emerald-200 bg-emerald-50">
@@ -361,7 +407,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
   return (
     <div className="flex min-h-screen w-full bg-slate-50" dir={lang === "ar" ? "rtl" : "ltr"}>
       <EnterpriseSidebar activePage={activePage} onPageChange={setActivePage} physician={physician} />
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col">
         <PhysicianWorkspaceHeader
           patient={state.patient}
           encounter={state.encounter}

@@ -465,7 +465,7 @@ export async function sendModuleSecureSigningLink(
 ): Promise<SendModuleSecureSigningLinkResult> {
   const { normalizedMobile, normalizedEmail } = normalizeSendOptions(args);
 
-  if (!isValidRecipientEmail(normalizedEmail)) {
+  if (normalizedEmail && !isValidRecipientEmail(normalizedEmail)) {
     throw new ApiError(400, "Invalid email address");
   }
 
