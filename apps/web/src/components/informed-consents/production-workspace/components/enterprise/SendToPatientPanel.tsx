@@ -22,6 +22,25 @@ interface SendToPatientPanelProps {
   onEmailChange: (value: string) => void;
   onApproveDraft: () => void;
   onSend: () => void;
+  hideActions?: boolean;
+}
+
+export function SendToPatientActions({
+  draftApproved, sendDisabled, sendReason, sendLoading, onApproveDraft, onSend,
+}: Pick<SendToPatientPanelProps, "draftApproved" | "sendDisabled" | "sendReason" | "sendLoading" | "onApproveDraft" | "onSend">) {
+  const { lang } = useI18n();
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+      {sendReason ? <p role="status" className="min-w-0 flex-1 text-xs leading-5 text-slate-600">{sendReason}</p> : <span className="flex-1" />}
+      <Button variant={draftApproved ? "outline" : "brand"} size="sm" uppercase={false} className="h-11 rounded-2xl" disabled={draftApproved} onClick={onApproveDraft}>
+        {draftApproved ? (lang === "ar" ? "تم اعتماد المسودة" : "Draft Approved") : (lang === "ar" ? "اعتماد المسودة" : "Approve Draft")}
+      </Button>
+      <Button variant="brand" size="sm" uppercase={false} className="h-11 rounded-2xl" disabled={sendDisabled} onClick={onSend}>
+        <Send className="mr-1 size-4" />
+        {sendLoading ? (lang === "ar" ? "جاري الإرسال…" : "Sending…") : (lang === "ar" ? "إرسال إلى المريض" : "Send to Patient")}
+      </Button>
+    </div>
+  );
 }
 
 export function SendToPatientPanel({
@@ -40,6 +59,7 @@ export function SendToPatientPanel({
   onEmailChange,
   onApproveDraft,
   onSend,
+  hideActions = false,
 }: SendToPatientPanelProps) {
   const { lang } = useI18n();
   const hasContact = Boolean(mobile.trim() || email.trim());
@@ -110,7 +130,7 @@ export function SendToPatientPanel({
           </div>
         ) : null}
 
-        <div className="flex flex-col gap-3">
+        {!hideActions && <div className="flex flex-col gap-3">
           <Button variant={draftApproved ? "outline" : "brand"} size="sm" uppercase={false} className="h-11 rounded-2xl" disabled={draftApproved} onClick={onApproveDraft}>
             {draftApproved ? (lang === "ar" ? "تم اعتماد المسودة" : "Draft Approved") : (lang === "ar" ? "اعتماد المسودة" : "Approve Draft")}
           </Button>
@@ -119,7 +139,7 @@ export function SendToPatientPanel({
             {sendLoading ? (lang === "ar" ? "جاري الإرسال…" : "Sending…") : (lang === "ar" ? "إرسال إلى المريض" : "Send to Patient")}
           </Button>
           {sendReason ? <p className="text-center text-xs leading-5 text-slate-500">{sendReason}</p> : null}
-        </div>
+        </div>}
 
         {signingResult ? (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-800">

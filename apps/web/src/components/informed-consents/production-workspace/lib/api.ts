@@ -6,6 +6,71 @@ import type {
   SecureSigningResult,
   TimelineEvent,
 } from "../types";
+export type AcroFormFilledDraftPreviewInput = {
+  formId: string;
+  approvedPdfUrl: string;
+  manifestHash?: string;
+  doctorCompletionValues: Record<string, string>;
+  patientDisplay: Record<string, unknown>;
+  physicianContext: Record<string, unknown>;
+  encounterReference: Record<string, unknown>;
+  physicianSignatureDataUrl?: string;
+};
+
+export async function createAcroFormFilledDraftPreview(
+  args: AcroFormFilledDraftPreviewInput,
+  signal?: AbortSignal,
+): Promise<{ url: string; fingerprint: string }> {
+  if (signal?.aborted) {
+    const error = new Error("The operation was aborted.");
+    error.name = "AbortError";
+    throw error;
+  }
+
+  const response = await fetch(
+    `/api/modules/informed-consents/forms/${encodeURIComponent(args.formId)}/draft-pdf`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/pdf",
+      },
+      cache: "no-store",
+      signal,
+      body: JSON.stringify({
+        formId: args.formId,
+        approvedPdfUrl: args.approvedPdfUrl,
+        ...(args.manifestHash ? { manifestHash: args.manifestHash } : {}),
+        doctorCompletionValues: args.doctorCompletionValues,
+        patientDisplay: args.patientDisplay,
+        physicianContext: args.physicianContext,
+        encounterReference: args.encounterReference,
+        ...(args.physicianSignatureDataUrl
+          ? { physicianSignatureDataUrl: args.physicianSignatureDataUrl }
+          : {}),
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => ({}))) as {
+      error?: string;
+    };
+
+    throw new Error(
+      payload.error || "Failed to generate doctor-completed draft PDF.",
+    );
+  }
+
+  const blob = await response.blob();
+
+  return {
+    url: URL.createObjectURL(blob),
+    fingerprint:
+      response.headers.get("X-WathiqCare-Draft-Fingerprint") || "",
+  };
+}
+
 
 export async function searchPatients(query: string): Promise<ProductionPatient[]> {
   const response = await fetch(`/api/modules/informed-consents/patients/search?q=${encodeURIComponent(query)}`);
