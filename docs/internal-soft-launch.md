@@ -1,5 +1,12 @@
 # Internal Soft Launch Runbook
 
+> ⚠️ **Deployment Status Notice**
+> Current Railway and Vercel deployments are **non-production validation environments**.
+> They are used for system integration testing and smoke checks **only**.
+> **NO-GO for production cutover** remains in effect.
+> See [`docs/deployment-status.md`](deployment-status.md) for full details and the
+> production release gate requirements.
+
 ## Objective
 Validate the platform in a controlled hospital pilot before external rollout, with focus on the Case Based Medico-Legal Workflow:
 

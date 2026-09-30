@@ -1,5 +1,13 @@
 # WathiqCare Discharge Refusal Module
 
+> ⚠️ **Operational Note — NO-GO for Production Cutover**
+> Current deployments to Railway and Vercel are **non-production validation environments**
+> used for system integration testing and smoke checks only.
+> They do **not** constitute a production release.
+> Production release requires ORM compatibility resolution, full schema-app alignment,
+> a controlled migration plan, and final legal/technical sign-off.
+> See [`docs/deployment-status.md`](docs/deployment-status.md) for details.
+
 A Python-based backend that manages cases where a patient refuses discharge
 after a physician's medical decision.  It covers the full lifecycle from
 clinical order capture through legal escalation, digital consent collection,
