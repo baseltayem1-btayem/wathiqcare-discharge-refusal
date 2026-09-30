@@ -375,7 +375,8 @@
       "agreements": "الاتفاقيات",
       "roi": "الإفصاح عن المعلومات",
       "archive": "الأرشيف",
-      "audit": "التدقيق"
+      "audit": "التدقيق",
+      "documents": "المستندات"
     },
     "overview": {
       "caseProfile": "ملف الحالة",
@@ -494,6 +495,33 @@
       "missing": "توثيق ناقص",
       "completed": "موثق",
       "pending": "بانتظار التوثيق"
+    },
+    "documents": {
+      "title": "مكتبة المستندات",
+      "subtitle": "جميع نماذج الحالة المرتبطة بمرحلة سير العمل الحالية. أنشئ المستندات أو اعرضها أو حمّلها أو أرسلها للتوقيع.",
+      "generateDocumentsBtn": "توليد المستندات",
+      "stage": "المرحلة",
+      "status": "الحالة",
+      "actions": "الإجراءات",
+      "generate": "توليد",
+      "view": "عرض",
+      "download": "تحميل",
+      "sendForSignature": "إرسال للتوقيع",
+      "statusRequired": "مطلوب",
+      "statusNotGenerated": "لم يُولّد",
+      "statusGenerated": "تم التوليد",
+      "statusSigned": "موقّع",
+      "statusMissingSignature": "ينقصه التوقيع",
+      "noWorkflow": "لا يوجد سير عمل نشط. ابدأ سير عمل رفض التصريح لرؤية متطلبات المستندات.",
+      "stageLabel": {
+        "initial_communication": "المرحلة 2 - التواصل الأولي",
+        "support_and_intervention": "المرحلة 3 - الدعم والتدخل",
+        "refusal_form": "المرحلة 4 - نموذج الرفض",
+        "official_notification": "المرحلة 5 - الإشعار الرسمي",
+        "promissory_note": "المرحلة 6 - السند الإذني (غير المؤمّن)",
+        "escalation": "المرحلة 7 - التصعيد",
+        "closure": "المرحلة 8 - الإغلاق"
+      }
     }
   },
   "documents": {
